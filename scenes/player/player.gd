@@ -5,10 +5,11 @@ signal exp_changed(current_xp, xp_to_next)
 signal leveled_up(new_level)
 signal died()
 
+@export var is_combat_enabled: bool = true
 @export var max_hp: float = 100.0
 var current_hp: float = 100.0
 
-@export var base_move_speed: float = 6.5
+@export var base_move_speed: float = 6.8
 @export var base_attack_damage: float = 15.0
 @export var base_attack_speed: float = 1.2
 @export var attack_range: float = 3.8
@@ -20,18 +21,31 @@ var level: int = 1
 var is_dead: bool = false
 var auto_attack_timer: float = 0.0
 var speed_boost_timer: float = 0.0
+var walk_cycle: float = 0.0
 
 # References
 @onready var visual_root: Node3D = $VisualRoot
 @onready var slash_effect: Node3D = $VisualRoot/SlashEffect
+@onready var arm_l: Node3D = $VisualRoot.get_node_or_null("ArmL")
+@onready var arm_r: Node3D = $VisualRoot.get_node_or_null("ArmR")
+@onready var leg_l: Node3D = $VisualRoot.get_node_or_null("LegL")
+@onready var leg_r: Node3D = $VisualRoot.get_node_or_null("LegR")
 
 var damage_number_scene: PackedScene = preload("res://scenes/effects/damage_number.tscn")
 
 func _ready():
 	add_to_group("player")
 	collision_layer = 1 # Layer 1: Player
-	collision_mask = 34 # Layer 2: Enemies, Layer 6: Environment
+	collision_mask = 35 # Layer 1: Player, Layer 2: Enemies, Layer 6: Environment
+	
+	# Load persistent stats from GameData
+	level = GameData.player_level
+	current_xp = GameData.player_current_xp
+	xp_to_next_level = GameData.player_xp_to_next
+	max_hp = 100.0 + GameData.max_hp_bonus
 	current_hp = max_hp
+	GameData.player_current_hp = current_hp
+	
 	emit_signal("hp_changed", current_hp, max_hp)
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 	if slash_effect:
@@ -42,8 +56,10 @@ func _physics_process(delta: float):
 		return
 	
 	_handle_movement(delta)
-	_handle_auto_attack(delta)
-	_handle_items(delta)
+	
+	if is_combat_enabled:
+		_handle_auto_attack(delta)
+		_handle_items(delta)
 
 func _handle_movement(delta: float):
 	var input_vec = Vector2.ZERO
@@ -71,18 +87,44 @@ func _handle_movement(delta: float):
 	else:
 		velocity.y = 0.0
 	
-	velocity.x = move_dir.x * effective_speed
-	velocity.z = move_dir.z * effective_speed
+	# Smooth acceleration and deceleration
+	var target_vel_x = move_dir.x * effective_speed
+	var target_vel_z = move_dir.z * effective_speed
+	velocity.x = lerp(velocity.x, target_vel_x, 15.0 * delta)
+	velocity.z = lerp(velocity.z, target_vel_z, 15.0 * delta)
 	
 	move_and_slide()
+	
+	var horizontal_speed = Vector2(velocity.x, velocity.z).length()
+	var is_moving = horizontal_speed > 0.2
 	
 	# Smooth rotation toward movement direction
 	if move_dir.length_squared() > 0.01:
 		var target_angle = atan2(move_dir.x, move_dir.z)
 		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_angle, 14.0 * delta)
-		
-		# Slight tilt while running
-		visual_root.rotation.z = lerp(visual_root.rotation.z, -input_vec.x * 0.12, 10.0 * delta)
+		visual_root.rotation.z = lerp(visual_root.rotation.z, -input_vec.x * 0.1, 10.0 * delta)
+	else:
+		visual_root.rotation.z = lerp(visual_root.rotation.z, 0.0, 10.0 * delta)
+	
+	# Procedural Animation: Walk / Idle
+	_animate_character(delta, is_moving, horizontal_speed / base_move_speed)
+
+func _animate_character(delta: float, is_moving: bool, speed_ratio: float):
+	if is_moving:
+		walk_cycle += delta * 11.0 * clamp(speed_ratio, 0.5, 1.5)
+		var swing = sin(walk_cycle) * 0.65
+		if arm_l: arm_l.rotation.x = swing
+		if arm_r: arm_r.rotation.x = -swing
+		if leg_l: leg_l.rotation.x = -swing
+		if leg_r: leg_r.rotation.x = swing
+		visual_root.position.y = abs(sin(walk_cycle)) * 0.07
+	else:
+		walk_cycle = 0.0
+		if arm_l: arm_l.rotation.x = lerp_angle(arm_l.rotation.x, 0.0, 10.0 * delta)
+		if arm_r: arm_r.rotation.x = lerp_angle(arm_r.rotation.x, 0.0, 10.0 * delta)
+		if leg_l: leg_l.rotation.x = lerp_angle(leg_l.rotation.x, 0.0, 10.0 * delta)
+		if leg_r: leg_r.rotation.x = lerp_angle(leg_r.rotation.x, 0.0, 10.0 * delta)
+		visual_root.position.y = sin(Time.get_ticks_msec() * 0.003) * 0.03
 
 func _handle_auto_attack(delta: float):
 	var effective_aspd = base_attack_speed * GameData.attack_speed_mult
@@ -108,14 +150,10 @@ func _find_closest_enemy(max_dist: float) -> Node3D:
 	return closest
 
 func _perform_auto_attack(target: Node3D):
-	# Face target briefly
 	var dir_to_target = (target.global_position - global_position).normalized()
 	visual_root.rotation.y = atan2(dir_to_target.x, dir_to_target.z)
-	
-	# Slash visual
 	_show_slash_effect()
 	
-	# Deal damage
 	var dmg = base_attack_damage * GameData.attack_damage_mult
 	if target.has_method("take_damage"):
 		target.take_damage(dmg)
@@ -169,12 +207,18 @@ func gain_xp(amount: int):
 		current_xp -= xp_to_next_level
 		level += 1
 		xp_to_next_level = int(xp_to_next_level * 1.35) + 5
+		GameData.player_level = level
+		GameData.player_current_xp = current_xp
+		GameData.player_xp_to_next = xp_to_next_level
 		emit_signal("leveled_up", level)
 		GameManager.enter_level_up()
+	
+	GameData.player_current_xp = current_xp
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 
 func heal(amount: float):
 	current_hp = min(current_hp + amount, max_hp)
+	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
 	_show_damage_popup(amount, false, true)
 
@@ -183,10 +227,9 @@ func take_damage(amount: float):
 		return
 	
 	current_hp = max(0.0, current_hp - amount)
+	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
 	_show_damage_popup(amount, false, false)
-	
-	# Flash red
 	_flash_red()
 	
 	if current_hp <= 0.0:
@@ -217,7 +260,6 @@ func die():
 	is_dead = true
 	emit_signal("died")
 	
-	# Fall down animation
 	var tween = create_tween()
 	tween.tween_property(visual_root, "rotation:x", -PI / 2.0, 0.4)
 	tween.tween_callback(func(): GameManager.game_over())

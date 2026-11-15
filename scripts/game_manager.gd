@@ -5,8 +5,10 @@ signal time_updated(battle_time)
 signal kill_count_changed(count)
 
 enum GameState { PLAYING, PAUSED, LEVEL_UP, GAME_OVER, VICTORY }
+enum Location { LOBBY, BATTLE }
 
 var current_state: GameState = GameState.PLAYING
+var current_location: Location = Location.LOBBY
 var battle_time: float = 0.0
 var kill_count: int = 0
 var max_battle_time: float = 300.0 # 5 minutes
@@ -47,11 +49,29 @@ func _setup_inputs():
 
 
 func _process(delta: float):
-	if current_state == GameState.PLAYING:
+	if current_location == Location.BATTLE and current_state == GameState.PLAYING:
 		battle_time += delta
 		time_updated.emit(battle_time)
 		if battle_time >= max_battle_time:
 			victory()
+
+func go_to_battle():
+	battle_time = 0.0
+	kill_count = 0
+	current_location = Location.BATTLE
+	current_state = GameState.PLAYING
+	get_tree().paused = false
+	state_changed.emit(current_state)
+	time_updated.emit(0.0)
+	kill_count_changed.emit(0)
+	SceneTransition.change_scene("res://scenes/stages/stage_grassland.tscn")
+
+func go_to_lobby():
+	current_location = Location.LOBBY
+	current_state = GameState.PLAYING
+	get_tree().paused = false
+	state_changed.emit(current_state)
+	SceneTransition.change_scene("res://scenes/stages/village_lobby.tscn")
 
 func add_kill():
 	kill_count += 1
@@ -110,5 +130,7 @@ func restart():
 	current_state = GameState.PLAYING
 	battle_time = 0.0
 	kill_count = 0
-	GameData.reset_data()
+	state_changed.emit(current_state)
+	time_updated.emit(0.0)
+	kill_count_changed.emit(0)
 	get_tree().reload_current_scene()

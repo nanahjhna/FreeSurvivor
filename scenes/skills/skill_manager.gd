@@ -20,6 +20,8 @@ func _ready():
 	player = get_parent() as Node3D
 
 func _process(delta: float):
+	if GameManager.current_location != GameManager.Location.BATTLE:
+		return
 	if GameManager.current_state != GameManager.GameState.PLAYING:
 		return
 	

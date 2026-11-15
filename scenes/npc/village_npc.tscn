@@ -1,0 +1,87 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/npc/village_npc.gd" id="1_npc"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_npc"]
+radius = 0.38
+height = 1.7
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(0.6, 0.7, 0.38)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.2, 0.5, 0.4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_head"]
+size = Vector3(0.44, 0.44, 0.44)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
+albedo_color = Color(0.95, 0.8, 0.65, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_hair"]
+size = Vector3(0.48, 0.18, 0.48)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hair"]
+albedo_color = Color(0.3, 0.2, 0.1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_limb"]
+size = Vector3(0.18, 0.55, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pants"]
+albedo_color = Color(0.15, 0.2, 0.3, 1)
+
+[node name="VillageNPC" type="CharacterBody3D"]
+collision_layer = 32
+collision_mask = 33
+script = ExtResource("1_npc")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+shape = SubResource("CapsuleShape3D_npc")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="Head" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.42, 0)
+mesh = SubResource("BoxMesh_head")
+surface_material_override/0 = SubResource("StandardMaterial3D_head")
+
+[node name="Hair" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.62, 0)
+mesh = SubResource("BoxMesh_hair")
+surface_material_override/0 = SubResource("StandardMaterial3D_hair")
+
+[node name="ArmL" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42, 0.85, 0)
+mesh = SubResource("BoxMesh_limb")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="ArmR" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42, 0.85, 0)
+mesh = SubResource("BoxMesh_limb")
+surface_material_override/0 = SubResource("StandardMaterial3D_body")
+
+[node name="LegL" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.18, 0.28, 0)
+mesh = SubResource("BoxMesh_limb")
+surface_material_override/0 = SubResource("StandardMaterial3D_pants")
+
+[node name="LegR" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0.28, 0)
+mesh = SubResource("BoxMesh_limb")
+surface_material_override/0 = SubResource("StandardMaterial3D_pants")
+
+[node name="NameLabel3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.05, 0)
+billboard = 1
+no_depth_test = true
+text = "주민
+[마을 주민]"
+font_size = 28
+outline_size = 6
+outline_modulate = Color(0, 0, 0, 1)

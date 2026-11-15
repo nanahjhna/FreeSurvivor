@@ -1,6 +1,11 @@
 extends Node3D
 
 func _ready():
+	GameManager.current_location = GameManager.Location.BATTLE
+	GameManager.current_state = GameManager.GameState.PLAYING
+	var player = find_child("Player", true, false)
+	if player:
+		player.is_combat_enabled = true
 	_generate_environment()
 
 func _generate_environment():

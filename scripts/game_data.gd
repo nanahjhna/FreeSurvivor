@@ -1,5 +1,12 @@
 extends Node
 
+# Persistent Player Stats
+var player_level: int = 1
+var player_current_xp: int = 0
+var player_xp_to_next: int = 10
+var player_gold: int = 0
+var player_current_hp: float = 100.0
+
 # Player stat modifiers
 var attack_damage_mult: float = 1.0
 var attack_speed_mult: float = 1.0
