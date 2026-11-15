@@ -1,0 +1,169 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/settings_ui.gd" id="1_settings"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal_panel"]
+bg_color = Color(0.08, 0.1, 0.14, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.72, 0.35, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_size = 20
+
+[node name="SettingsUI" type="CanvasLayer"]
+process_mode = 3
+layer = 50
+script = ExtResource("1_settings")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(560, 480)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal_panel")
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 26
+text = "⚙️ 환경 설정"
+
+[node name="CloseBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox/Header"]
+custom_minimum_size = Vector2(40, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "✕"
+
+[node name="HSeparator" type="HSeparator" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="VolumeBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="VolTitle" type="Label" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "🔊 오디오 볼륨"
+
+[node name="MasterRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox/MasterRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "전체 볼륨"
+
+[node name="MasterSlider" type="HSlider" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 80.0
+
+[node name="BGMRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox/BGMRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "배경음 (BGM)"
+
+[node name="BGMSlider" type="HSlider" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox/BGMRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 75.0
+
+[node name="SFXRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox"]
+layout_mode = 2
+
+[node name="Lbl" type="Label" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox/SFXRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "효과음 (SFX)"
+
+[node name="SFXSlider" type="HSlider" parent="CenterContainer/Panel/Margin/VBox/Content/VolumeBox/SFXRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+value = 85.0
+
+[node name="DisplayBox" type="VBoxContainer" parent="CenterContainer/Panel/Margin/VBox/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DispTitle" type="Label" parent="CenterContainer/Panel/Margin/VBox/Content/DisplayBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "🖥️ 화면 및 조작"
+
+[node name="FullscreenCheck" type="CheckBox" parent="CenterContainer/Panel/Margin/VBox/Content/DisplayBox"]
+layout_mode = 2
+text = " 전체 화면 모드"
+
+[node name="KeyGuide" type="Label" parent="CenterContainer/Panel/Margin/VBox/Content/DisplayBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "• 이동: WASD / 방향키\n• 스킬: Q, W, E, R\n• 아이템: 1, 2, 3\n• 메뉴 단축키: C(캐릭터), P(파티), I(인벤토리), K(스킬)\n• 일시정지: ESC"
+
+[node name="BottomRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="ResetSaveBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox/BottomRow"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+text = "저장 데이터 초기화"
+
+[node name="ConfirmBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox/BottomRow"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = "확인"
+
+[connection signal="pressed" from="CenterContainer/Panel/Margin/VBox/Header/CloseBtn" to="." method="_on_close_button_pressed"]
+[connection signal="value_changed" from="CenterContainer/Panel/Margin/VBox/Content/VolumeBox/MasterSlider" to="." method="_on_master_slider_value_changed"]
+[connection signal="toggled" from="CenterContainer/Panel/Margin/VBox/Content/DisplayBox/FullscreenCheck" to="." method="_on_fullscreen_toggled"]
+[connection signal="pressed" from="CenterContainer/Panel/Margin/VBox/BottomRow/ResetSaveBtn" to="." method="_on_reset_save_pressed"]
+[connection signal="pressed" from="CenterContainer/Panel/Margin/VBox/BottomRow/ConfirmBtn" to="." method="_on_close_button_pressed"]

@@ -22,6 +22,9 @@ func _physics_process(delta: float):
 		queue_free()
 
 func _on_body_entered(body: Node):
-	if body.is_in_group("player") and body.has_method("take_damage"):
-		body.take_damage(damage)
+	if body.is_in_group("player"):
+		if body.has_method("take_magic_damage"):
+			body.take_magic_damage(damage)
+		elif body.has_method("take_damage"):
+			body.take_damage(damage)
 		queue_free()

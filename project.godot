@@ -11,13 +11,16 @@ config_version=5
 [application]
 
 config/name="FreeSurvivor"
-run/main_scene="res://scenes/stages/village_lobby.tscn"
+run/main_scene="res://scenes/ui/title_screen.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
 
 GameData="*res://scripts/game_data.gd"
+GameActions="*res://scripts/game_actions.gd"
+UiFeedback="*res://scenes/ui/ui_feedback.gd"
+HintManager="*res://scripts/hint_manager.gd"
 GameManager="*res://scripts/game_manager.gd"
 SceneTransition="*res://scripts/scene_transition.gd"
 

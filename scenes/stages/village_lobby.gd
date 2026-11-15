@@ -1,18 +1,211 @@
 extends Node3D
 
 @onready var player: CharacterBody3D = $Player
+@onready var battle_portal: Area3D = $BattlePortal
+@onready var battle_prep_ui = $BattlePreparationUI
+@onready var hud = $VillageHUD
+
+var interactables: Array[Dictionary] = []
+var nearest_interaction: Dictionary = {}
+var _last_prompt_id: String = ""
 
 func _ready():
 	GameManager.current_location = GameManager.Location.LOBBY
 	GameManager.current_state = GameManager.GameState.PLAYING
+	battle_portal.battle_requested.connect(_on_battle_requested)
 	
 	if player:
 		# Disable combat features in town
 		player.is_combat_enabled = false
 		# Set player at town central plaza
 		player.global_position = Vector3(0, 0.2, 5.0)
+		# Zoom out camera in village
+		var cam = player.get_node_or_null("Camera3D")
+		if cam:
+			cam.camera_offset = Vector3(0.0, 14.0, 12.0)
 	
 	_build_village_environment()
+	_register_interactable(battle_portal, "battle_start", "성문으로 이동하여 전투 준비", 8.0)
+
+func _on_battle_requested():
+	if GameManager.current_location == GameManager.Location.LOBBY:
+		battle_prep_ui.call("open", GameData.current_selected_stage_id)
+
+# ----------------- INTERACTION SYSTEM -----------------
+# Every building / NPC registers itself with a stable id, a prompt label and
+# an activation radius. Keyboard [E] and clicking the 3D object both call
+# `_interact`, so both paths always perform the same action.
+
+func _register_interactable(node: Node3D, id: String, label: String, radius: float):
+	if node == null:
+		return
+	node.set_meta("interaction_id", id)
+	node.set_meta("interaction_label", label)
+	node.set_meta("interaction_radius", radius)
+	interactables.append({
+		"node": node,
+		"id": id,
+		"label": label,
+		"radius": radius
+	})
+
+func _process(_delta: float):
+	if GameManager.current_location != GameManager.Location.LOBBY:
+		return
+	if get_tree().paused or hud == null:
+		return
+	if player == null or not is_instance_valid(player):
+		return
+
+	var best: Dictionary = {}
+	var best_dist := INF
+	for entry in interactables:
+		var node = entry.get("node")
+		if node == null or not is_instance_valid(node):
+			continue
+		var dist: float = player.global_position.distance_to(node.global_position)
+		if dist <= float(entry.get("radius", 6.0)) and dist < best_dist:
+			best = entry
+			best_dist = dist
+
+	nearest_interaction = best
+	if best.is_empty():
+		if _last_prompt_id != "":
+			_last_prompt_id = ""
+			hud.call("clear_interaction_prompt")
+		return
+
+	var prompt_id: String = str(best.get("id", ""))
+	if prompt_id != _last_prompt_id:
+		_last_prompt_id = prompt_id
+		hud.call("set_interaction_prompt", str(best.get("label", "상호작용")), GameActions.is_mobile())
+
+func try_interact():
+	if get_tree().paused:
+		return
+	if nearest_interaction.is_empty():
+		# Re-evaluate once in case the prompt has not ticked yet.
+		_process(0.0)
+	if nearest_interaction.is_empty():
+		UiFeedback.show_info("가까이에 상호작용할 대상이 없습니다. 건물이나 NPC 가까이 이동하세요.")
+		return
+	_interact(nearest_interaction)
+
+func _interact(entry: Dictionary):
+	var id := str(entry.get("id", ""))
+	var node = entry.get("node")
+	match id:
+		"battle_start":
+			battle_prep_ui.call("open", GameData.current_selected_stage_id)
+		"forge":
+			_open_hud_screen("inventory")
+			UiFeedback.show_info("대장간에서 장비를 관리합니다.")
+		"shop":
+			_open_hud_screen("shop")
+		"inn":
+			_open_hud_screen("shop")
+			UiFeedback.show_info("여관 주인 엘레나에게 말을 걸어 휴식할 수 있습니다.")
+		"quest":
+			_open_hud_screen("quest")
+		"npc_blacksmith":
+			_show_npc_dialog(node, "대장간에서 장비를 손볼 수 있습니다.", [
+				{"label": "🔨 장비 관리 열기", "action": "inventory"},
+				{"label": "📖 도감 보기", "action": "collection"}
+			])
+		"npc_merchant":
+			_show_npc_dialog(node, "필요한 장비와 물약이 있으면 말씀하세요.", [
+				{"label": "🪙 상점 열기", "action": "shop"},
+				{"label": "🎒 장비 관리 열기", "action": "inventory"}
+			])
+		"npc_innkeeper":
+			_show_npc_dialog(node, "따뜻한 침대와 식사가 준비되어 있어요. 50 골드면 체력을 회복할 수 있습니다.", [
+				{"label": "🏨 휴식하기 (50 골드)", "action": "rest"},
+				{"label": "💬 그냥 대화하기", "action": ""}
+			])
+		"npc_guard":
+			_show_npc_dialog(node, "북쪽 성문 밖은 위험합니다. 준비가 되셨나요?", [
+				{"label": "⚔️ 전투 준비 열기", "action": "battle_start"},
+				{"label": "🗺️ 지도 보기", "action": "map"}
+			])
+		"npc_villager":
+			_show_npc_dialog(node, "마을 소식을 들려드릴게요.", [
+				{"label": "📜 퀘스트 확인", "action": "quest"},
+				{"label": "📖 도감 보기", "action": "collection"}
+			])
+		_:
+			UiFeedback.show_info("아직 사용할 수 없는 대상입니다.")
+
+func _open_hud_screen(screen_id: String):
+	if hud and hud.has_method("open_screen"):
+		hud.call("open_screen", screen_id)
+	else:
+		UiFeedback.show_error("화면을 열 수 없습니다.")
+
+func _show_npc_dialog(node, line: String, options: Array):
+	var npc_name := "마을 주민"
+	var role := ""
+	if node != null and is_instance_valid(node):
+		npc_name = str(node.get("npc_name")) if node.get("npc_name") != null else npc_name
+		role = str(node.get("npc_role")) if node.get("npc_role") != null else ""
+	if hud and hud.has_method("show_npc_dialog"):
+		hud.call("show_npc_dialog", npc_name, role, line, options)
+	else:
+		UiFeedback.show_info(line)
+
+func _unhandled_input(event: InputEvent):
+	if GameManager.current_location != GameManager.Location.LOBBY:
+		return
+	if get_tree().paused or GameActions.is_capturing():
+		return
+	var pressed := false
+	var screen_pos := Vector2.ZERO
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		pressed = true
+		screen_pos = event.position
+	elif event is InputEventScreenTouch and event.pressed:
+		pressed = true
+		screen_pos = event.position
+	if not pressed:
+		return
+
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return
+	var from := camera.project_ray_origin(screen_pos)
+	var to := from + camera.project_ray_normal(screen_pos) * 120.0
+	var query := PhysicsRayQueryParameters3D.create(from, to, 32)
+	query.collide_with_bodies = true
+	query.collide_with_areas = true
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return
+	var entry := _find_interactable_from_collider(hit.get("collider"))
+	if entry.is_empty():
+		return
+	var dist: float = player.global_position.distance_to(entry["node"].global_position)
+	if dist > float(entry.get("radius", 6.0)) + 2.5:
+		UiFeedback.show_info("조금 더 가까이 이동한 뒤 다시 시도하세요.")
+		return
+	nearest_interaction = entry
+	_interact(entry)
+	get_viewport().set_input_as_handled()
+
+func _find_interactable_from_collider(collider) -> Dictionary:
+	var current = collider
+	while current != null:
+		if current.has_meta("interaction_id"):
+			var id := str(current.get_meta("interaction_id"))
+			for entry in interactables:
+				if entry.get("node") == current and str(entry.get("id", "")) == id:
+					return entry
+			return {
+				"node": current,
+				"id": id,
+				"label": str(current.get_meta("interaction_label", "상호작용")),
+				"radius": float(current.get_meta("interaction_radius", 6.0))
+			}
+		current = current.get_parent()
+	return {}
 
 func _build_village_environment():
 	var root = Node3D.new()
@@ -37,13 +230,13 @@ func _build_village_environment():
 	_create_notice_board(root, Vector3(8, 0, 4), -PI * 0.25)
 	
 	# 5. Blacksmith Shop (West: X=-20, Z=0)
-	_create_building(root, Vector3(-22, 0, 0), Vector3(10, 5, 8), Color(0.4, 0.42, 0.45), Color(0.2, 0.2, 0.25), "대장간\n[Blacksmith]", true)
+	_create_building(root, Vector3(-22, 0, 0), Vector3(10, 5, 8), Color(0.4, 0.42, 0.45), Color(0.2, 0.2, 0.25), "대장간\n[Blacksmith]", true, "forge", "대장간 이용하기", 9.0)
 	
 	# 6. Weapon & Equipment Shop (East: X=20, Z=0)
-	_create_building(root, Vector3(22, 0, 0), Vector3(10, 5, 8), Color(0.7, 0.65, 0.55), Color(0.65, 0.2, 0.18), "무기 상점\n[Equipment Shop]")
+	_create_building(root, Vector3(22, 0, 0), Vector3(10, 5, 8), Color(0.7, 0.65, 0.55), Color(0.65, 0.2, 0.18), "무기 상점\n[Equipment Shop]", false, "shop", "무기 상점 열기", 9.0)
 	
 	# 7. Inn / Tavern (South-East: X=18, Z=18)
-	_create_building(root, Vector3(18, 0, 20), Vector3(12, 7, 10), Color(0.55, 0.42, 0.3), Color(0.2, 0.35, 0.55), "여관\n[Tavern & Inn]")
+	_create_building(root, Vector3(18, 0, 20), Vector3(12, 7, 10), Color(0.55, 0.42, 0.3), Color(0.2, 0.35, 0.55), "여관\n[Tavern & Inn]", false, "inn", "여관에서 휴식하기", 10.0)
 	
 	# 8. Residential Houses
 	_create_building(root, Vector3(-18, 0, 18), Vector3(8, 4.5, 7), Color(0.75, 0.72, 0.65), Color(0.75, 0.3, 0.15), "마을 주택 A")
@@ -140,7 +333,7 @@ func _build_fountain(parent: Node3D, pos: Vector3):
 	
 	parent.add_child(f)
 
-func _create_building(parent: Node3D, pos: Vector3, size: Vector3, wall_color: Color, roof_color: Color, title: String, is_forge: bool = false):
+func _create_building(parent: Node3D, pos: Vector3, size: Vector3, wall_color: Color, roof_color: Color, title: String, is_forge: bool = false, interaction_id: String = "", interaction_label: String = "", interaction_radius: float = 8.0) -> StaticBody3D:
 	var b = StaticBody3D.new()
 	b.position = pos
 	b.collision_layer = 32
@@ -225,6 +418,9 @@ func _create_building(parent: Node3D, pos: Vector3, size: Vector3, wall_color: C
 	b.add_child(col)
 	
 	parent.add_child(b)
+	if interaction_id != "":
+		_register_interactable(b, interaction_id, interaction_label, interaction_radius)
+	return b
 
 func _create_lamp(parent: Node3D, pos: Vector3):
 	var lamp = StaticBody3D.new()
@@ -312,7 +508,7 @@ func _create_bench(parent: Node3D, pos: Vector3, rot_y: float):
 	
 	parent.add_child(b)
 
-func _create_notice_board(parent: Node3D, pos: Vector3, rot_y: float):
+func _create_notice_board(parent: Node3D, pos: Vector3, rot_y: float) -> StaticBody3D:
 	var nb = StaticBody3D.new()
 	nb.position = pos
 	nb.rotation.y = rot_y
@@ -361,6 +557,8 @@ func _create_notice_board(parent: Node3D, pos: Vector3, rot_y: float):
 	nb.add_child(col)
 	
 	parent.add_child(nb)
+	_register_interactable(nb, "quest", "게시판 보기", 4.5)
+	return nb
 
 func _create_pond(parent: Node3D, pos: Vector3):
 	var pond = Node3D.new()
@@ -396,7 +594,7 @@ func _create_pond(parent: Node3D, pos: Vector3):
 	
 	parent.add_child(pond)
 
-func _create_castle_gate(parent: Node3D, pos: Vector3):
+func _create_castle_gate(parent: Node3D, pos: Vector3) -> StaticBody3D:
 	var gate = StaticBody3D.new()
 	gate.position = pos
 	gate.collision_layer = 32
@@ -471,6 +669,8 @@ func _create_castle_gate(parent: Node3D, pos: Vector3):
 	gate.add_child(col_r)
 	
 	parent.add_child(gate)
+	_register_interactable(gate, "battle_start", "성문으로 이동하여 전투 준비", 8.0)
+	return gate
 
 func _create_crate_stack(parent: Node3D, pos: Vector3):
 	var stack = StaticBody3D.new()
@@ -596,6 +796,7 @@ func _spawn_npcs():
 	bs.outfit_color = Color(0.6, 0.35, 0.15)
 	bs.position = Vector3(-16, 0, 2)
 	npc_root.add_child(bs)
+	_register_interactable(bs, "npc_blacksmith", "헤파이스토와 대화하기", 3.8)
 	
 	# 2. Weapon Merchant
 	var shop = npc_scene.instantiate()
@@ -604,6 +805,7 @@ func _spawn_npcs():
 	shop.outfit_color = Color(0.25, 0.35, 0.65)
 	shop.position = Vector3(16, 0, 2)
 	npc_root.add_child(shop)
+	_register_interactable(shop, "npc_merchant", "마커스와 대화하기", 3.8)
 	
 	# 3. Innkeeper
 	var inn = npc_scene.instantiate()
@@ -612,6 +814,7 @@ func _spawn_npcs():
 	inn.outfit_color = Color(0.65, 0.25, 0.45)
 	inn.position = Vector3(14, 0, 16)
 	npc_root.add_child(inn)
+	_register_interactable(inn, "npc_innkeeper", "엘레나와 대화하기", 3.8)
 	
 	# 4. Gate Guards
 	var guard1 = npc_scene.instantiate()
@@ -620,6 +823,7 @@ func _spawn_npcs():
 	guard1.outfit_color = Color(0.5, 0.55, 0.6)
 	guard1.position = Vector3(-3.2, 0, -30)
 	npc_root.add_child(guard1)
+	_register_interactable(guard1, "npc_guard", "경비병과 대화하기", 3.8)
 	
 	var guard2 = npc_scene.instantiate()
 	guard2.npc_name = "경비병 레오"
@@ -627,6 +831,7 @@ func _spawn_npcs():
 	guard2.outfit_color = Color(0.5, 0.55, 0.6)
 	guard2.position = Vector3(3.2, 0, -30)
 	npc_root.add_child(guard2)
+	_register_interactable(guard2, "npc_guard", "경비병과 대화하기", 3.8)
 	
 	# 5. Wandering Villagers (Patrolling)
 	var v1 = npc_scene.instantiate()
@@ -637,6 +842,7 @@ func _spawn_npcs():
 	v1.outfit_color = Color(0.3, 0.55, 0.3)
 	v1.position = Vector3(-4, 0, -3)
 	npc_root.add_child(v1)
+	_register_interactable(v1, "npc_villager", "토마스와 대화하기", 3.2)
 	
 	var v2 = npc_scene.instantiate()
 	v2.npc_name = "클로이"
@@ -646,3 +852,4 @@ func _spawn_npcs():
 	v2.outfit_color = Color(0.7, 0.45, 0.2)
 	v2.position = Vector3(4, 0, -3)
 	npc_root.add_child(v2)
+	_register_interactable(v2, "npc_villager", "클로이와 대화하기", 3.2)

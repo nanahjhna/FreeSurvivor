@@ -53,6 +53,24 @@ theme_override_font_sizes/font_size = 20
 text = "생존 시간: 00:00"
 horizontal_alignment = 1
 
+[node name="GoldStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "획득 골드: +0"
+horizontal_alignment = 1
+
+[node name="XPStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "획득 경험치: +0"
+horizontal_alignment = 1
+
+[node name="ItemsStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "획득 아이템: 없음"
+horizontal_alignment = 1
+
 [node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
