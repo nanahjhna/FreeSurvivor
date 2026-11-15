@@ -11,13 +11,30 @@ config_version=5
 [application]
 
 config/name="FreeSurvivor"
+run/main_scene="res://scenes/stages/stage_grassland.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
+[autoload]
+
+GameData="*res://scripts/game_data.gd"
+GameManager="*res://scripts/game_manager.gd"
+
 [display]
 
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[layer_names]
+
+3d_physics/layer_1="Player"
+3d_physics/layer_2="Enemies"
+3d_physics/layer_3="PlayerAttacks"
+3d_physics/layer_4="EnemyAttacks"
+3d_physics/layer_5="Pickups"
+3d_physics/layer_6="Environment"
 
 [physics]
 

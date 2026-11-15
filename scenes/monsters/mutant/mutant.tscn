@@ -1,0 +1,64 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/monsters/mutant/mutant.gd" id="1_mutant"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_mutant"]
+radius = 0.65
+height = 2.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_m_body"]
+size = Vector3(1.1, 1.1, 0.7)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m_skin"]
+albedo_color = Color(0.72, 0.18, 0.18, 1)
+roughness = 0.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_m_head"]
+size = Vector3(0.55, 0.55, 0.55)
+
+[sub_resource type="BoxMesh" id="BoxMesh_m_arm"]
+size = Vector3(0.35, 0.9, 0.35)
+
+[sub_resource type="BoxMesh" id="BoxMesh_m_leg"]
+size = Vector3(0.35, 0.7, 0.35)
+
+[node name="Mutant" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 35
+script = ExtResource("1_mutant")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("CapsuleShape3D_mutant")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("BoxMesh_m_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_m_skin")
+
+[node name="Head" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9, 0.1)
+mesh = SubResource("BoxMesh_m_head")
+surface_material_override/0 = SubResource("StandardMaterial3D_m_skin")
+
+[node name="ArmL" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, -0.75, 1.15, -0.1)
+mesh = SubResource("BoxMesh_m_arm")
+surface_material_override/0 = SubResource("StandardMaterial3D_m_skin")
+
+[node name="ArmR" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, -0.258819, 0, 0.258819, 0.965926, 0.75, 1.15, -0.1)
+mesh = SubResource("BoxMesh_m_arm")
+surface_material_override/0 = SubResource("StandardMaterial3D_m_skin")
+
+[node name="LegL" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.32, 0.35, 0)
+mesh = SubResource("BoxMesh_m_leg")
+surface_material_override/0 = SubResource("StandardMaterial3D_m_skin")
+
+[node name="LegR" type="MeshInstance3D" parent="VisualRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.32, 0.35, 0)
+mesh = SubResource("BoxMesh_m_leg")
+surface_material_override/0 = SubResource("StandardMaterial3D_m_skin")
