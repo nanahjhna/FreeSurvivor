@@ -1,0 +1,35 @@
+extends Area3D
+
+@export var damage: float = 26.0
+var hit_targets: Array[Node] = []
+var duration: float = 0.45
+var player_ref: Node3D = null
+
+@onready var mesh: MeshInstance3D = $MeshInstance3D
+
+func setup(player: Node3D, dmg_mult: float):
+	player_ref = player
+	damage = 26.0 * dmg_mult
+	global_position = player.global_position + Vector3(0, 0.8, 0)
+
+func _ready():
+	collision_layer = 4 # Layer 3: PlayerAttacks
+	collision_mask = 2  # Layer 2: Enemies
+	body_entered.connect(_on_body_entered)
+	
+	scale = Vector3(0.2, 1.0, 0.2)
+	var tween = create_tween()
+	tween.tween_property(self, "scale", Vector3(1.1, 1.0, 1.1), duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(queue_free)
+
+func _process(delta: float):
+	if player_ref and is_instance_valid(player_ref):
+		global_position = player_ref.global_position + Vector3(0, 0.8, 0)
+	if mesh:
+		mesh.rotate_y(22.0 * delta)
+
+func _on_body_entered(body: Node):
+	if body.is_in_group("enemies") and not hit_targets.has(body):
+		hit_targets.append(body)
+		if body.has_method("take_damage"):
+			body.take_damage(damage, false)
