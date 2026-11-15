@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/village_hud.gd" id="1_vhud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/minimap.tscn" id="2_mmap"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portrait"]
 bg_color = Color(0.12, 0.25, 0.5, 0.85)
@@ -126,6 +127,25 @@ theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 22
 text = "🏰 시작의 마을 (평화 구역)"
 horizontal_alignment = 1
+
+[node name="TopRight" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -204.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 200.0
+grow_horizontal = 0
+
+[node name="Minimap" parent="TopRight" instance=ExtResource("2_mmap")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="BottomCenter" type="HBoxContainer" parent="."]
 anchors_preset = 7
