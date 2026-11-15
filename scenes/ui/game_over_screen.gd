@@ -20,3 +20,6 @@ func _on_state_changed(new_state):
 
 func _on_restart_pressed():
 	GameManager.restart()
+
+func _on_lobby_pressed():
+	GameManager.go_to_lobby()

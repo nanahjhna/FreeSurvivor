@@ -1,0 +1,88 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/stages/village_lobby.gd" id="1_vlobby"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/stages/battle_portal.tscn" id="3_portal"]
+[ext_resource type="PackedScene" path="res://scenes/ui/village_hud.tscn" id="4_vhud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_town"]
+sky_top_color = Color(0.38, 0.68, 0.98, 1)
+sky_horizon_color = Color(0.78, 0.88, 0.98, 1)
+ground_bottom_color = Color(0.25, 0.5, 0.22, 1)
+ground_horizon_color = Color(0.6, 0.78, 0.5, 1)
+
+[sub_resource type="Sky" id="Sky_town"]
+sky_material = SubResource("ProceduralSkyMaterial_town")
+
+[sub_resource type="Environment" id="Environment_town"]
+background_mode = 2
+sky = SubResource("Sky_town")
+ambient_light_source = 2
+ambient_light_color = Color(0.6, 0.65, 0.7, 1)
+ambient_light_energy = 0.75
+tonemap_mode = 2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(160, 0.2, 160)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+size = Vector2(160, 160)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_grass"]
+albedo_color = Color(0.32, 0.65, 0.26, 1)
+roughness = 0.85
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_plaza"]
+size = Vector2(24, 24)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cobble"]
+albedo_color = Color(0.7, 0.68, 0.64, 1)
+roughness = 0.9
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_road"]
+size = Vector2(8, 40)
+
+[node name="VillageLobby" type="Node3D"]
+script = ExtResource("1_vlobby")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_town")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 30, 0)
+shadow_enabled = true
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 1.25
+
+[node name="Ground" type="StaticBody3D" parent="."]
+collision_layer = 32
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("BoxShape3D_ground")
+
+[node name="GrassMesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("PlaneMesh_ground")
+surface_material_override/0 = SubResource("StandardMaterial3D_grass")
+
+[node name="PlazaCobble" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("PlaneMesh_plaza")
+surface_material_override/0 = SubResource("StandardMaterial3D_cobble")
+
+[node name="NorthRoad" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, -26)
+mesh = SubResource("PlaneMesh_road")
+surface_material_override/0 = SubResource("StandardMaterial3D_cobble")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 5)
+
+[node name="BattlePortal" parent="." instance=ExtResource("3_portal")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -48)
+
+[node name="VillageHUD" parent="." instance=ExtResource("4_vhud")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("5_pause")]

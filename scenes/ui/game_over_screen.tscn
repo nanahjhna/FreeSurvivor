@@ -53,10 +53,22 @@ theme_override_font_sizes/font_size = 20
 text = "생존 시간: 00:00"
 horizontal_alignment = 1
 
-[node name="RestartButton" type="Button" parent="CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(240, 52)
+[node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "다시 시작"
+theme_override_constants/separation = 20
+alignment = 1
 
-[connection signal="pressed" from="CenterContainer/VBoxContainer/RestartButton" to="." method="_on_restart_pressed"]
+[node name="RestartButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(180, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "전투 다시 시작"
+
+[node name="LobbyButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(180, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "마을로 돌아가기"
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/RestartButton" to="." method="_on_restart_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/LobbyButton" to="." method="_on_lobby_pressed"]
