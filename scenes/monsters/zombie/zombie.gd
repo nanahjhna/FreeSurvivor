@@ -1,6 +1,7 @@
 extends "res://scenes/monsters/base_monster.gd"
 
 func _ready():
+	monster_id = "zombie"
 	max_hp = 35.0
 	move_speed = 3.2
 	attack_damage = 7.0

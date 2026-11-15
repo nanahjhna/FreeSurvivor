@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 signal hp_changed(current_hp, max_hp)
+signal sp_changed(current_sp, max_sp)
 signal exp_changed(current_xp, xp_to_next)
 signal leveled_up(new_level)
 signal died()
@@ -8,6 +9,8 @@ signal died()
 @export var is_combat_enabled: bool = true
 @export var max_hp: float = 100.0
 var current_hp: float = 100.0
+@export var max_sp: float = 30.0
+var current_sp: float = 30.0
 
 @export var base_move_speed: float = 6.8
 @export var base_attack_damage: float = 15.0
@@ -22,6 +25,12 @@ var is_dead: bool = false
 var auto_attack_timer: float = 0.0
 var speed_boost_timer: float = 0.0
 var walk_cycle: float = 0.0
+var auto_attack_enabled: bool = true
+var touch_move_vector: Vector2 = Vector2.ZERO
+var manual_attack_cooldown: float = 0.0
+var _hp_regen_timer: float = 0.0
+var _sp_signal_timer: float = 0.0
+var _is_ranged_class: bool = false
 
 # References
 @onready var visual_root: Node3D = $VisualRoot
@@ -32,9 +41,11 @@ var walk_cycle: float = 0.0
 @onready var leg_r: Node3D = $VisualRoot.get_node_or_null("LegR")
 
 var damage_number_scene: PackedScene = preload("res://scenes/effects/damage_number.tscn")
+var stat_manager: StatManager = StatManager.new()
 
 func _ready():
 	add_to_group("player")
+	refresh_persistent_stats()
 	collision_layer = 1 # Layer 1: Player
 	collision_mask = 35 # Layer 1: Player, Layer 2: Enemies, Layer 6: Environment
 	
@@ -42,11 +53,14 @@ func _ready():
 	level = GameData.player_level
 	current_xp = GameData.player_current_xp
 	xp_to_next_level = GameData.player_xp_to_next
-	max_hp = 100.0 + GameData.max_hp_bonus
+	max_hp = stat_manager.max_hp() + GameData.max_hp_bonus
 	current_hp = max_hp
+	max_sp = stat_manager.max_sp()
+	current_sp = max_sp
 	GameData.player_current_hp = current_hp
 	
 	emit_signal("hp_changed", current_hp, max_hp)
+	emit_signal("sp_changed", current_sp, max_sp)
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 	if slash_effect:
 		slash_effect.visible = false
@@ -55,14 +69,22 @@ func _physics_process(delta: float):
 	if is_dead:
 		return
 	
+	if manual_attack_cooldown > 0.0:
+		manual_attack_cooldown = max(0.0, manual_attack_cooldown - delta)
+	
 	_handle_movement(delta)
+	_update_hp_regeneration(delta)
+	_update_sp_regeneration(delta)
 	
 	if is_combat_enabled:
 		_handle_auto_attack(delta)
 		_handle_items(delta)
 
+func set_touch_move(value: Vector2):
+	touch_move_vector = value.limit_length(1.0)
+
 func _handle_movement(delta: float):
-	var input_vec = Vector2.ZERO
+	var input_vec = touch_move_vector
 	if Input.is_action_pressed("move_up"):
 		input_vec.y -= 1.0
 	if Input.is_action_pressed("move_down"):
@@ -72,7 +94,7 @@ func _handle_movement(delta: float):
 	if Input.is_action_pressed("move_right"):
 		input_vec.x += 1.0
 	
-	input_vec = input_vec.normalized()
+	input_vec = input_vec.limit_length(1.0)
 	
 	var effective_speed = base_move_speed * GameData.move_speed_mult
 	if speed_boost_timer > 0.0:
@@ -100,7 +122,7 @@ func _handle_movement(delta: float):
 	
 	# Smooth rotation toward movement direction
 	if move_dir.length_squared() > 0.01:
-		var target_angle = atan2(move_dir.x, move_dir.z)
+		var target_angle = atan2(move_dir.x, move_dir.z) + PI
 		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_angle, 14.0 * delta)
 		visual_root.rotation.z = lerp(visual_root.rotation.z, -input_vec.x * 0.1, 10.0 * delta)
 	else:
@@ -127,6 +149,8 @@ func _animate_character(delta: float, is_moving: bool, speed_ratio: float):
 		visual_root.position.y = sin(Time.get_ticks_msec() * 0.003) * 0.03
 
 func _handle_auto_attack(delta: float):
+	if not auto_attack_enabled:
+		return
 	var effective_aspd = base_attack_speed * GameData.attack_speed_mult
 	auto_attack_timer += delta * effective_aspd
 	
@@ -135,6 +159,24 @@ func _handle_auto_attack(delta: float):
 		if target:
 			_perform_auto_attack(target)
 			auto_attack_timer = 0.0
+
+func try_manual_attack() -> bool:
+	if is_dead or not is_combat_enabled:
+		UiFeedback.show_info("지금은 공격할 수 없습니다.")
+		return false
+	if manual_attack_cooldown > 0.0:
+		return false
+	var target = _find_closest_enemy(attack_range)
+	if target == null:
+		UiFeedback.show_info("공격 범위에 적이 없습니다. 조금 더 가까이 이동하세요.")
+		return false
+	_perform_auto_attack(target)
+	manual_attack_cooldown = 0.25
+	return true
+
+func set_auto_attack(enabled: bool):
+	auto_attack_enabled = enabled
+	UiFeedback.show_info("자동 공격을 %s했습니다." % ("켜" if enabled else "꺼"))
 
 func _find_closest_enemy(max_dist: float) -> Node3D:
 	var enemies = get_tree().get_nodes_in_group("enemies")
@@ -153,10 +195,15 @@ func _perform_auto_attack(target: Node3D):
 	var dir_to_target = (target.global_position - global_position).normalized()
 	visual_root.rotation.y = atan2(dir_to_target.x, dir_to_target.z)
 	_show_slash_effect()
-	
+	if randf() * 100.0 >= stat_manager.hit_rate():
+		_show_damage_popup(0, false, false, "MISS")
+		return
+	var is_critical := randf() * 100.0 < stat_manager.crit_rate()
 	var dmg = base_attack_damage * GameData.attack_damage_mult
+	if is_critical:
+		dmg *= 1.5
 	if target.has_method("take_damage"):
-		target.take_damage(dmg)
+		target.take_damage(dmg, is_critical)
 
 func _show_slash_effect():
 	if slash_effect:
@@ -174,9 +221,11 @@ func _handle_items(_delta: float):
 	elif Input.is_action_just_pressed("item_3"):
 		use_item(3)
 
-func use_item(slot: int):
+func use_item(slot: int) -> bool:
 	if GameData.item_counts.get(slot, 0) <= 0:
-		return
+		var names := {1: "치유 물약", 2: "화면 폭탄", 3: "질풍 물약"}
+		UiFeedback.show_error("%s이(가) 없습니다." % names.get(slot, "아이템"))
+		return false
 	
 	match slot:
 		1: # Heal Potion
@@ -189,6 +238,7 @@ func use_item(slot: int):
 			GameData.item_counts[3] -= 1
 			speed_boost_timer = 5.0
 			_show_damage_popup(0, false, false, "Speed Up!")
+	return true
 
 func _use_bomb():
 	var enemies = get_tree().get_nodes_in_group("enemies")
@@ -203,17 +253,19 @@ func gain_xp(amount: int):
 	if is_dead:
 		return
 	current_xp += amount
-	if current_xp >= xp_to_next_level:
+	var gained_level = false
+	while current_xp >= xp_to_next_level:
 		current_xp -= xp_to_next_level
 		level += 1
-		xp_to_next_level = int(xp_to_next_level * 1.35) + 5
-		GameData.player_level = level
-		GameData.player_current_xp = current_xp
-		GameData.player_xp_to_next = xp_to_next_level
+		xp_to_next_level = int(xp_to_next_level * 1.2) + 2
+		gained_level = true
+	GameData.player_level = level
+	GameData.player_current_xp = current_xp
+	GameData.player_xp_to_next = xp_to_next_level
+	if gained_level:
 		emit_signal("leveled_up", level)
 		GameManager.enter_level_up()
 	
-	GameData.player_current_xp = current_xp
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 
 func heal(amount: float):
@@ -222,14 +274,82 @@ func heal(amount: float):
 	emit_signal("hp_changed", current_hp, max_hp)
 	_show_damage_popup(amount, false, true)
 
-func take_damage(amount: float):
-	if is_dead:
+func refresh_persistent_stats():
+	var char_id := GameData.get_leader_id()
+	var character: Dictionary = GameData.characters.get(char_id, {})
+	stat_manager.setup_from_class(char_id, character)
+	_is_ranged_class = char_id == "archer"
+	base_move_speed = stat_manager.base_spd * stat_manager.move_speed_multiplier()
+	base_attack_damage = stat_manager.phys_atk(_is_ranged_class)
+	base_attack_speed = 1.2 * stat_manager.attack_speed()
+	var old_max_hp = max_hp
+	var old_max_sp = max_sp
+	max_hp = stat_manager.max_hp() + GameData.max_hp_bonus
+	max_sp = stat_manager.max_sp()
+	if old_max_hp > 0.0:
+		current_hp = min(max_hp, current_hp + max_hp - old_max_hp)
+	else:
+		current_hp = max_hp
+	if old_max_sp > 0.0:
+		current_sp = min(max_sp, current_sp + max_sp - old_max_sp)
+	else:
+		current_sp = max_sp
+	GameData.player_current_hp = current_hp
+	if is_inside_tree():
+		emit_signal("hp_changed", current_hp, max_hp)
+		emit_signal("sp_changed", current_sp, max_sp)
+
+func _update_hp_regeneration(delta: float):
+	if current_hp >= max_hp:
+		_hp_regen_timer = 0.0
 		return
-	
-	current_hp = max(0.0, current_hp - amount)
+	_hp_regen_timer += delta
+	if _hp_regen_timer < 1.0:
+		return
+	var elapsed := _hp_regen_timer
+	_hp_regen_timer = 0.0
+	current_hp = min(max_hp, current_hp + stat_manager.hp_recovery_rate() * elapsed)
 	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
-	_show_damage_popup(amount, false, false)
+
+func _update_sp_regeneration(delta: float):
+	if current_sp >= max_sp:
+		_sp_signal_timer = 0.0
+		return
+	current_sp = min(max_sp, current_sp + stat_manager.sp_recovery_rate() * delta)
+	_sp_signal_timer += delta
+	if _sp_signal_timer >= 0.1:
+		_sp_signal_timer = 0.0
+		emit_signal("sp_changed", current_sp, max_sp)
+
+func use_sp(amount: float) -> bool:
+	if amount < 0.0 or current_sp + 0.001 < amount:
+		return false
+	current_sp = max(0.0, current_sp - amount)
+	_sp_signal_timer = 0.0
+	emit_signal("sp_changed", current_sp, max_sp)
+	return true
+
+func take_damage(amount: float):
+	_apply_incoming_damage(amount, stat_manager.phys_def())
+
+func take_magic_damage(amount: float):
+	_apply_incoming_damage(amount, stat_manager.mag_def())
+
+func _apply_incoming_damage(amount: float, defense: float):
+	if is_dead:
+		return
+	if randf() * 100.0 < stat_manager.perfect_dodge():
+		_show_damage_popup(0, false, false, "PERFECT DODGE")
+		return
+	if randf() * 100.0 < stat_manager.evasion():
+		_show_damage_popup(0, false, false, "MISS")
+		return
+	var reduced_damage := amount * 100.0 / (100.0 + maxf(0.0, defense))
+	current_hp = max(0.0, current_hp - reduced_damage)
+	GameData.player_current_hp = current_hp
+	emit_signal("hp_changed", current_hp, max_hp)
+	_show_damage_popup(reduced_damage, false, false)
 	_flash_red()
 	
 	if current_hp <= 0.0:

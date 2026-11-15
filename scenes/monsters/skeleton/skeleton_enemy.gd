@@ -3,6 +3,7 @@ extends "res://scenes/monsters/base_monster.gd"
 var projectile_scene: PackedScene = preload("res://scenes/monsters/skeleton/skeleton_projectile.tscn")
 
 func _ready():
+	monster_id = "skeleton"
 	max_hp = 25.0
 	move_speed = 2.6
 	attack_damage = 8.0

@@ -3,50 +3,26 @@ extends Node
 signal state_changed(new_state)
 signal time_updated(battle_time)
 signal kill_count_changed(count)
+signal location_changed(new_loc)
 
 enum GameState { PLAYING, PAUSED, LEVEL_UP, GAME_OVER, VICTORY }
-enum Location { LOBBY, BATTLE }
+enum Location { TITLE, CHARACTER_SELECT, LOBBY, BATTLE }
 
 var current_state: GameState = GameState.PLAYING
-var current_location: Location = Location.LOBBY
+var current_location: Location = Location.TITLE
 var battle_time: float = 0.0
 var kill_count: int = 0
 var max_battle_time: float = 300.0 # 5 minutes
 
+var stat_manager: StatManager = StatManager.new()
+var skill_loadout: SkillLoadoutManager = SkillLoadoutManager.new()
+var card_manager: CardManager = CardManager.new()
+var deck_manager: DeckManager = DeckManager.new()
+var tutorial: TutorialGuideManager = TutorialGuideManager.new()
+var character_slots: CharacterSlotManager = CharacterSlotManager.new()
+
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_setup_inputs()
-
-func _setup_inputs():
-	var bindings = {
-		"move_up": [KEY_UP, KEY_W],
-		"move_down": [KEY_DOWN, KEY_S],
-		"move_left": [KEY_LEFT, KEY_A],
-		"move_right": [KEY_RIGHT, KEY_D],
-		"skill_q": [KEY_Q],
-		"skill_w": [KEY_W],
-		"skill_e": [KEY_E],
-		"skill_r": [KEY_R],
-		"item_1": [KEY_1],
-		"item_2": [KEY_2],
-		"item_3": [KEY_3],
-		"pause": [KEY_ESCAPE]
-	}
-	for action in bindings:
-		if not InputMap.has_action(action):
-			InputMap.add_action(action)
-		for key in bindings[action]:
-			var ev = InputEventKey.new()
-			ev.physical_keycode = key
-			# Check if already added
-			var already_has = false
-			for existing in InputMap.action_get_events(action):
-				if existing is InputEventKey and existing.physical_keycode == key:
-					already_has = true
-					break
-			if not already_has:
-				InputMap.action_add_event(action, ev)
-
 
 func _process(delta: float):
 	if current_location == Location.BATTLE and current_state == GameState.PLAYING:
@@ -55,29 +31,60 @@ func _process(delta: float):
 		if battle_time >= max_battle_time:
 			victory()
 
-func go_to_battle():
-	battle_time = 0.0
-	kill_count = 0
-	current_location = Location.BATTLE
+func go_to_title():
+	current_location = Location.TITLE
 	current_state = GameState.PLAYING
 	get_tree().paused = false
 	state_changed.emit(current_state)
-	time_updated.emit(0.0)
-	kill_count_changed.emit(0)
-	SceneTransition.change_scene("res://scenes/stages/stage_grassland.tscn")
+	location_changed.emit(current_location)
+	SceneTransition.change_scene("res://scenes/ui/title_screen.tscn")
+
+func go_to_character_select():
+	current_location = Location.CHARACTER_SELECT
+	current_state = GameState.PLAYING
+	get_tree().paused = false
+	state_changed.emit(current_state)
+	location_changed.emit(current_location)
+	SceneTransition.change_scene("res://scenes/ui/character_select.tscn")
 
 func go_to_lobby():
 	current_location = Location.LOBBY
 	current_state = GameState.PLAYING
 	get_tree().paused = false
 	state_changed.emit(current_state)
+	location_changed.emit(current_location)
 	SceneTransition.change_scene("res://scenes/stages/village_lobby.tscn")
+
+func go_to_battle(stage_id: String = "") -> bool:
+	if stage_id != "":
+		if not GameData.is_stage_unlocked(stage_id):
+			return false
+		GameData.current_selected_stage_id = stage_id
+	elif not GameData.is_stage_unlocked(GameData.current_selected_stage_id):
+		return false
+	GameData.reset_data()
+	battle_time = 0.0
+	kill_count = 0
+	current_location = Location.BATTLE
+	current_state = GameState.PLAYING
+	get_tree().paused = false
+	state_changed.emit(current_state)
+	location_changed.emit(current_location)
+	time_updated.emit(0.0)
+	kill_count_changed.emit(0)
+
+	var stage_info = GameData.stages.get(GameData.current_selected_stage_id, GameData.stages["stage_1"])
+	var scene_path = stage_info.get("scene", "res://scenes/stages/stage_grassland.tscn")
+	SceneTransition.change_scene(scene_path)
+	return true
 
 func add_kill():
 	kill_count += 1
 	kill_count_changed.emit(kill_count)
 
 func toggle_pause():
+	if current_location != Location.BATTLE:
+		return
 	if current_state == GameState.PLAYING:
 		pause_game()
 	elif current_state == GameState.PAUSED:
@@ -116,6 +123,8 @@ func game_over():
 		return
 	current_state = GameState.GAME_OVER
 	get_tree().paused = true
+	# Calculate and record result
+	GameData.record_battle_result(false, battle_time, kill_count)
 	state_changed.emit(current_state)
 
 func victory():
@@ -123,10 +132,13 @@ func victory():
 		return
 	current_state = GameState.VICTORY
 	get_tree().paused = true
+	# Calculate and record result
+	GameData.record_battle_result(true, battle_time, kill_count)
 	state_changed.emit(current_state)
 
 func restart():
 	get_tree().paused = false
+	GameData.reset_data()
 	current_state = GameState.PLAYING
 	battle_time = 0.0
 	kill_count = 0

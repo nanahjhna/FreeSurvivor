@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/stages/battle_portal.tscn" id="3_portal"]
 [ext_resource type="PackedScene" path="res://scenes/ui/village_hud.tscn" id="4_vhud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="5_pause"]
+[ext_resource type="PackedScene" path="res://scenes/ui/battle_prep_ui.tscn" id="6_battle_prep"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_town"]
 sky_top_color = Color(0.38, 0.68, 0.98, 1)
@@ -86,3 +87,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -48)
 [node name="VillageHUD" parent="." instance=ExtResource("4_vhud")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("5_pause")]
+
+[node name="BattlePreparationUI" parent="." instance=ExtResource("6_battle_prep")]

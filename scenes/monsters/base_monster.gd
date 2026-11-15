@@ -9,6 +9,7 @@ signal died(monster)
 @export var attack_range: float = 1.4
 @export var attack_interval: float = 1.0
 @export var xp_value: int = 1
+@export var monster_id: String = "zombie"
 
 var current_hp: float
 var target: Node3D = null
@@ -51,7 +52,7 @@ func _update_movement(delta: float):
 	var dist = to_target.length()
 	
 	if dist > 0.1:
-		var target_rot = atan2(to_target.x, to_target.z)
+		var target_rot = atan2(-to_target.x, to_target.z)
 		if visual_root:
 			visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_rot, 8.0 * delta)
 		else:
@@ -134,6 +135,7 @@ func die():
 	
 	# Add Kill count to GameManager
 	GameManager.add_kill()
+	GameData.record_monster_kill(monster_id)
 	
 	# Death animation: fall and shrink
 	if visual_root:
