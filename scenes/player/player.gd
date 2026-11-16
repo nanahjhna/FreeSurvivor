@@ -30,7 +30,12 @@ var touch_move_vector: Vector2 = Vector2.ZERO
 var manual_attack_cooldown: float = 0.0
 var _hp_regen_timer: float = 0.0
 var _sp_signal_timer: float = 0.0
-var _is_ranged_class: bool = false
+var card_hit_bonuses: Dictionary = {}
+var card_sp_regen: float = 0.0
+var survival_shield: float = 0.0
+var survival_shield_timer: float = 0.0
+var last_stand_used: bool = false
+var revive_used: bool = false
 
 # References
 @onready var visual_root: Node3D = $VisualRoot
@@ -53,7 +58,7 @@ func _ready():
 	level = GameData.player_level
 	current_xp = GameData.player_current_xp
 	xp_to_next_level = GameData.player_xp_to_next
-	max_hp = stat_manager.max_hp() + GameData.max_hp_bonus
+	max_hp = (stat_manager.max_hp() + GameData.max_hp_bonus) * (1.0 + GameData.get_survival_bonus("max_hp_percent"))
 	current_hp = max_hp
 	max_sp = stat_manager.max_sp()
 	current_sp = max_sp
@@ -74,6 +79,7 @@ func _physics_process(delta: float):
 	
 	_handle_movement(delta)
 	_update_hp_regeneration(delta)
+	_update_survival_shield(delta)
 	_update_sp_regeneration(delta)
 	
 	if is_combat_enabled:
@@ -96,7 +102,7 @@ func _handle_movement(delta: float):
 	
 	input_vec = input_vec.limit_length(1.0)
 	
-	var effective_speed = base_move_speed * GameData.move_speed_mult
+	var effective_speed = base_move_speed * GameData.move_speed_mult * (1.0 + GameData.get_survival_bonus("move_speed"))
 	if speed_boost_timer > 0.0:
 		effective_speed *= 1.5
 		speed_boost_timer -= delta
@@ -151,11 +157,12 @@ func _animate_character(delta: float, is_moving: bool, speed_ratio: float):
 func _handle_auto_attack(delta: float):
 	if not auto_attack_enabled:
 		return
-	var effective_aspd = base_attack_speed * GameData.attack_speed_mult
+	var speed_multiplier := clampf(GameData.attack_speed_mult * (1.0 + GameData.get_survival_bonus("attack_speed") + GameData.get_survival_bonus("kill_attack_speed")), 0.5, 2.5)
+	var effective_aspd = base_attack_speed * speed_multiplier
 	auto_attack_timer += delta * effective_aspd
 	
 	if auto_attack_timer >= 1.0:
-		var target = _find_closest_enemy(attack_range)
+		var target = _find_closest_enemy(attack_range * (1.0 + GameData.get_survival_bonus("attack_range")))
 		if target:
 			_perform_auto_attack(target)
 			auto_attack_timer = 0.0
@@ -166,7 +173,7 @@ func try_manual_attack() -> bool:
 		return false
 	if manual_attack_cooldown > 0.0:
 		return false
-	var target = _find_closest_enemy(attack_range)
+	var target = _find_closest_enemy(attack_range * (1.0 + GameData.get_survival_bonus("attack_range")))
 	if target == null:
 		UiFeedback.show_info("공격 범위에 적이 없습니다. 조금 더 가까이 이동하세요.")
 		return false
@@ -193,17 +200,64 @@ func _find_closest_enemy(max_dist: float) -> Node3D:
 
 func _perform_auto_attack(target: Node3D):
 	var dir_to_target = (target.global_position - global_position).normalized()
-	visual_root.rotation.y = atan2(dir_to_target.x, dir_to_target.z)
+	visual_root.rotation.y = atan2(dir_to_target.x, dir_to_target.z) + PI
 	_show_slash_effect()
 	if randf() * 100.0 >= stat_manager.hit_rate():
 		_show_damage_popup(0, false, false, "MISS")
 		return
-	var is_critical := randf() * 100.0 < stat_manager.crit_rate()
-	var dmg = base_attack_damage * GameData.attack_damage_mult
+	var is_critical := randf() * 100.0 < minf(80.0, stat_manager.crit_rate() + GameData.get_survival_bonus("crit_chance") * 100.0)
+	var dmg = base_attack_damage * GameData.attack_damage_mult * (1.0 + GameData.get_survival_bonus("damage") + GameData.get_survival_bonus("damage_reckless") + GameData.get_survival_bonus("physical_damage"))
+	var monster_target: BaseMonster = target as BaseMonster
+	if monster_target != null and monster_target.monster_id == "mutant_lord":
+		dmg *= 1.0 + GameData.get_survival_bonus("boss_damage")
+	if current_hp <= max_hp * 0.5:
+		dmg *= 1.0 + GameData.get_survival_bonus("low_hp_damage")
+	if monster_target != null and monster_target.current_hp <= monster_target.max_hp * 0.3:
+		dmg *= 1.0 + GameData.get_survival_bonus("execute_damage")
 	if is_critical:
-		dmg *= 1.5
+		dmg *= 1.5 + GameData.get_survival_bonus("crit_damage")
+	if monster_target != null and not card_hit_bonuses.is_empty():
+		dmg = _apply_card_hit_effects(monster_target, dmg)
 	if target.has_method("take_damage"):
 		target.take_damage(dmg, is_critical)
+		if randf() < GameData.get_survival_bonus("extra_attack"):
+			target.take_damage(dmg * 0.8, false)
+		if randf() < GameData.get_survival_bonus("lightning_proc"):
+			target.take_damage(dmg * 0.5, false)
+		if randf() < GameData.get_survival_bonus("chain_lightning"):
+			var bounced := 0
+			for enemy in get_tree().get_nodes_in_group("enemies"):
+				if enemy != target and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= 8.0:
+					enemy.take_damage(dmg * 0.5)
+					bounced += 1
+					if bounced >= 2:
+						break
+
+func on_monster_killed(_monster: Node):
+	GameData.survival_kills += 1
+	if GameData.get_survival_bonus("kill_attack_speed_rate") > 0.0:
+		var speed_cap := 0.15 if GameData.survival_card_counts.has("015") else 0.20
+		GameData.survival_bonuses["kill_attack_speed"] = minf(speed_cap, GameData.get_survival_bonus("kill_attack_speed") + GameData.get_survival_bonus("kill_attack_speed_rate"))
+	var heal_amount := max_hp * GameData.get_survival_bonus("kill_heal") if GameData.survival_kills % 15 == 0 else 0.0
+	if heal_amount > 0.0:
+		heal(heal_amount)
+	if GameData.get_survival_bonus("kill_explosion") > 0.0 and randf() < GameData.get_survival_bonus("kill_explosion"):
+		for enemy in get_tree().get_nodes_in_group("enemies"):
+			if is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= 4.0:
+				enemy.take_damage(base_attack_damage)
+
+func _apply_card_hit_effects(monster: BaseMonster, damage: float) -> float:
+	if monster.current_hp <= monster.max_hp * 0.4:
+		damage *= 1.0 + float(card_hit_bonuses.get("finisher", 0.0))
+	damage += max_hp * float(card_hit_bonuses.get("shield_bash", 0.0))
+	if monster.card_statuses.has("bleed"):
+		damage += float(card_hit_bonuses.get("blood_burst", 0.0))
+	if monster.card_statuses.has("burn"):
+		damage += float(card_hit_bonuses.get("flame_burst", 0.0))
+	for status in ["bleed", "burn"]:
+		if card_hit_bonuses.has(status):
+			monster.apply_card_status(status, float(card_hit_bonuses[status]))
+	return damage
 
 func _show_slash_effect():
 	if slash_effect:
@@ -238,6 +292,7 @@ func use_item(slot: int) -> bool:
 			GameData.item_counts[3] -= 1
 			speed_boost_timer = 5.0
 			_show_damage_popup(0, false, false, "Speed Up!")
+	GameData.data_updated.emit()
 	return true
 
 func _use_bomb():
@@ -278,9 +333,8 @@ func refresh_persistent_stats():
 	var char_id := GameData.get_leader_id()
 	var character: Dictionary = GameData.characters.get(char_id, {})
 	stat_manager.setup_from_class(char_id, character)
-	_is_ranged_class = char_id == "archer"
 	base_move_speed = stat_manager.base_spd * stat_manager.move_speed_multiplier()
-	base_attack_damage = stat_manager.phys_atk(_is_ranged_class)
+	base_attack_damage = stat_manager.phys_atk()
 	base_attack_speed = 1.2 * stat_manager.attack_speed()
 	var old_max_hp = max_hp
 	var old_max_sp = max_sp
@@ -308,15 +362,24 @@ func _update_hp_regeneration(delta: float):
 		return
 	var elapsed := _hp_regen_timer
 	_hp_regen_timer = 0.0
-	current_hp = min(max_hp, current_hp + stat_manager.hp_recovery_rate() * elapsed)
+	current_hp = min(max_hp, current_hp + (stat_manager.hp_recovery_rate() + max_hp * GameData.get_survival_bonus("hp_regen")) * elapsed)
 	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
+
+func _update_survival_shield(delta: float):
+	var shield_rate := GameData.get_survival_bonus("shield_regen")
+	if shield_rate <= 0.0:
+		return
+	survival_shield_timer += delta
+	if survival_shield_timer >= 30.0:
+		survival_shield_timer = 0.0
+		survival_shield = minf(max_hp * 0.5, survival_shield + max_hp * shield_rate)
 
 func _update_sp_regeneration(delta: float):
 	if current_sp >= max_sp:
 		_sp_signal_timer = 0.0
 		return
-	current_sp = min(max_sp, current_sp + stat_manager.sp_recovery_rate() * delta)
+	current_sp = min(max_sp, current_sp + (stat_manager.sp_recovery_rate() + card_sp_regen) * delta)
 	_sp_signal_timer += delta
 	if _sp_signal_timer >= 0.1:
 		_sp_signal_timer = 0.0
@@ -334,9 +397,9 @@ func take_damage(amount: float):
 	_apply_incoming_damage(amount, stat_manager.phys_def())
 
 func take_magic_damage(amount: float):
-	_apply_incoming_damage(amount, stat_manager.mag_def())
+	_apply_incoming_damage(amount, stat_manager.mag_def(), true)
 
-func _apply_incoming_damage(amount: float, defense: float):
+func _apply_incoming_damage(amount: float, defense: float, is_magic: bool = false):
 	if is_dead:
 		return
 	if randf() * 100.0 < stat_manager.perfect_dodge():
@@ -345,8 +408,22 @@ func _apply_incoming_damage(amount: float, defense: float):
 	if randf() * 100.0 < stat_manager.evasion():
 		_show_damage_popup(0, false, false, "MISS")
 		return
-	var reduced_damage := amount * 100.0 / (100.0 + maxf(0.0, defense))
+	var reduction := GameData.get_survival_bonus("damage_reduction")
+	if is_magic:
+		reduction += GameData.get_survival_bonus("magic_reduction")
+	if current_hp <= max_hp * 0.3:
+		reduction += GameData.get_survival_bonus("low_hp_reduction")
+	var reduced_damage := amount * 100.0 / (100.0 + maxf(0.0, defense)) * (1.0 - clampf(reduction, -0.5, 0.75))
+	var absorbed := minf(survival_shield, reduced_damage)
+	survival_shield -= absorbed
+	reduced_damage -= absorbed
 	current_hp = max(0.0, current_hp - reduced_damage)
+	if current_hp <= 0.0 and GameData.get_survival_bonus("last_stand") > 0.0 and not last_stand_used:
+		last_stand_used = true
+		current_hp = max_hp * 0.3
+	elif current_hp <= 0.0 and GameData.get_survival_bonus("revive") > 0.0 and not revive_used:
+		revive_used = true
+		current_hp = max_hp * 0.5
 	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
 	_show_damage_popup(reduced_damage, false, false)

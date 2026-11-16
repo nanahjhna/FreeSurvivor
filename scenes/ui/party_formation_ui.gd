@@ -78,7 +78,7 @@ func _render_slots():
 		vbox.add_child(name_lbl)
 		
 		var lvl_lbl = Label.new()
-		lvl_lbl.text = "Lv." + str(c.get("level", 1)) + " " + c.get("role", "")
+		lvl_lbl.text = "%s · 영구 능력치" % c.get("role", "")
 		lvl_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lvl_lbl.add_theme_font_size_override("font_size", 11)
 		lvl_lbl.add_theme_color_override("font_color", Color(0.65, 0.7, 0.8))

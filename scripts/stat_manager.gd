@@ -1,8 +1,8 @@
 class_name StatManager
-extends Node
+extends RefCounted
 
 const STAT_KEYS: Array[String] = ["STR", "AGI", "VIT", "INT", "DEX", "LUK"]
-const CLASS_DEFAULTS: Dictionary = {
+const LEGACY_STATS: Dictionary = {
 	"warrior": {"STR": 8, "AGI": 4, "VIT": 7, "INT": 2, "DEX": 3, "LUK": 3},
 	"archer": {"STR": 3, "AGI": 7, "VIT": 4, "INT": 3, "DEX": 8, "LUK": 4},
 	"mage": {"STR": 2, "AGI": 4, "VIT": 3, "INT": 9, "DEX": 4, "LUK": 3},
@@ -11,9 +11,13 @@ const CLASS_DEFAULTS: Dictionary = {
 	"priest": {"STR": 2, "AGI": 4, "VIT": 5, "INT": 8, "DEX": 3, "LUK": 4}
 }
 
-var class_id: String = "warrior"
-var base_stats: Dictionary = CLASS_DEFAULTS["warrior"].duplicate(true)
-var attributes: Dictionary = CLASS_DEFAULTS["warrior"].duplicate(true)
+const FIGHTER_STATS := {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3}
+
+const CLASS_DEFAULTS := {"fighter": FIGHTER_STATS}
+
+var class_id: String = "fighter"
+var base_stats: Dictionary = FIGHTER_STATS.duplicate(true)
+var attributes: Dictionary = FIGHTER_STATS.duplicate(true)
 var base_hp: float = 120.0
 var base_atk: float = 20.0
 var base_def: float = 10.0
@@ -21,11 +25,11 @@ var base_spd: float = 6.8
 
 
 static func get_default_stats(cls: String) -> Dictionary:
-	return CLASS_DEFAULTS.get(cls, CLASS_DEFAULTS["warrior"]).duplicate(true)
+	return CLASS_DEFAULTS.get(cls, FIGHTER_STATS).duplicate(true)
 
 
 func setup_from_class(cls: String, character_data: Dictionary = {}):
-	class_id = cls if CLASS_DEFAULTS.has(cls) else "warrior"
+	class_id = cls
 	base_stats = get_default_stats(class_id)
 	var stored_stats: Dictionary = character_data.get("attributes", {})
 	attributes.clear()

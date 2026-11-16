@@ -2,7 +2,10 @@ extends Node3D
 
 func _ready():
 	GameManager.current_location = GameManager.Location.BATTLE
-	GameManager.current_state = GameManager.GameState.PLAYING
+	# LevelUpPanel opens the five-card starting draft from its _ready().
+	# Do not overwrite its LEVEL_UP state while that draft is active.
+	if GameManager.starting_draft_picks <= 0:
+		GameManager.current_state = GameManager.GameState.PLAYING
 	var player = find_child("Player", true, false)
 	if player:
 		player.is_combat_enabled = true
@@ -45,12 +48,8 @@ func _generate_environment():
 		fence.rotation.y = randf() * TAU
 		decor_root.add_child(fence)
 	
-	# Flowers (no collision, scattered widely including center)
-	for i in range(90):
-		var flower = _create_flower()
-		var pos = _get_random_pos(3.0, 80.0)
-		flower.position = pos
-		decor_root.add_child(flower)
+	# Batch the decorative flowers into one MultiMesh instead of 180 scene nodes.
+	_create_flowers_multimesh(decor_root, 90)
 
 func _get_random_pos(min_r: float, max_r: float) -> Vector3:
 	var angle = randf() * TAU
@@ -181,21 +180,26 @@ func _create_fence() -> StaticBody3D:
 	
 	return fence
 
-func _create_flower() -> Node3D:
-	var flower = Node3D.new()
-	var mesh_inst = MeshInstance3D.new()
-	var b_mesh = BoxMesh.new()
-	b_mesh.size = Vector3(0.25, 0.25, 0.25)
-	mesh_inst.mesh = b_mesh
-	var mat = StandardMaterial3D.new()
-	var colors = [
-		Color(1.0, 0.3, 0.4), # Pink/Red
-		Color(1.0, 0.85, 0.2), # Yellow
-		Color(0.8, 0.3, 1.0), # Purple
-		Color(0.2, 0.8, 1.0)  # Cyan
+func _create_flowers_multimesh(parent: Node3D, count: int):
+	var flower_mesh := BoxMesh.new()
+	flower_mesh.size = Vector3(0.25, 0.25, 0.25)
+	var material := StandardMaterial3D.new()
+	material.vertex_color_use_as_albedo = true
+	flower_mesh.material = material
+	var flowers := MultiMesh.new()
+	flowers.transform_format = MultiMesh.TRANSFORM_3D
+	flowers.use_colors = true
+	flowers.mesh = flower_mesh
+	flowers.instance_count = count
+	var colors := [
+		Color(1.0, 0.3, 0.4), Color(1.0, 0.85, 0.2),
+		Color(0.8, 0.3, 1.0), Color(0.2, 0.8, 1.0)
 	]
-	mat.albedo_color = colors[randi() % colors.size()]
-	mesh_inst.material_override = mat
-	mesh_inst.position.y = 0.12
-	flower.add_child(mesh_inst)
-	return flower
+	for i in range(count):
+		var pos := _get_random_pos(3.0, 80.0) + Vector3(0.0, 0.12, 0.0)
+		flowers.set_instance_transform(i, Transform3D(Basis.IDENTITY, pos))
+		flowers.set_instance_color(i, colors[randi_range(0, colors.size() - 1)])
+	var flower_batch := MultiMeshInstance3D.new()
+	flower_batch.multimesh = flowers
+	flower_batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(flower_batch)

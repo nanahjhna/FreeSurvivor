@@ -94,7 +94,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_font_sizes/font_size = 24
-text = "👥 캐릭터 보관함 및 성장 관리"
+text = "🥋 캐릭터 성장"
 
 [node name="CloseBtn" type="Button" parent="Panel/Margin/VBox/Header"]
 custom_minimum_size = Vector2(36, 32)
@@ -108,26 +108,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 20
-
-[node name="LeftList" type="VBoxContainer" parent="Panel/Margin/VBox/Body"]
-custom_minimum_size = Vector2(280, 0)
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="ListTitle" type="Label" parent="Panel/Margin/VBox/Body/LeftList"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.7, 0.85, 1, 1)
-theme_override_font_sizes/font_size = 16
-text = "보유 캐릭터 목록"
-
-[node name="Scroll" type="ScrollContainer" parent="Panel/Margin/VBox/Body/LeftList"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="ListContainer" type="VBoxContainer" parent="Panel/Margin/VBox/Body/LeftList/Scroll"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 8
 
 [node name="RightDetail" type="PanelContainer" parent="Panel/Margin/VBox/Body"]
 layout_mode = 2
@@ -172,19 +152,19 @@ theme_override_constants/separation = 10
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
 theme_override_font_sizes/font_size = 22
-text = "카엘"
+text = "무도가"
 
 [node name="GradeBadge" type="Label" parent="Panel/Margin/VBox/Body/RightDetail/Content/Header/TextInfo/TopRow"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("StyleBoxFlat_badge")
-text = " SSR • 전사 "
+text = " R • 무도가 "
 
 [node name="TitleLabel" type="Label" parent="Panel/Margin/VBox/Body/RightDetail/Content/Header/TextInfo"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
 theme_override_font_sizes/font_size = 14
-text = "여명의 검사"
+text = "권법 수련자"
 
 [node name="HSep" type="HSeparator" parent="Panel/Margin/VBox/Body/RightDetail/Content"]
 layout_mode = 2
@@ -202,7 +182,7 @@ text = "레벨:"
 [node name="LevelVal" type="Label" parent="Panel/Margin/VBox/Body/RightDetail/Content/StatsGrid"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
-text = "Lv.1 / 50"
+text = "영구 성장"
 
 [node name="HPLbl" type="Label" parent="Panel/Margin/VBox/Body/RightDetail/Content/StatsGrid"]
 layout_mode = 2
@@ -254,7 +234,7 @@ text = "대표 스킬: 검기 방출 (Q)"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.9)
 theme_override_font_sizes/font_size = 13
-text = "근접 베기와 검기 공격에 특화된 균형 잡힌 검사."
+text = "권갑을 두른 두 주먹과 기공으로 싸우는 무도가."
 autowrap_mode = 3
 
 [node name="Spacer" type="Control" parent="Panel/Margin/VBox/Body/RightDetail/Content"]
@@ -274,14 +254,14 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 theme_override_font_sizes/font_size = 14
-text = "성장 비용: 💰 250 골드"
+text = "보유 골드: 0 · 포인트 구매 비용: 100 골드"
 horizontal_alignment = 1
 
 [node name="LevelUpBtn" type="Button" parent="Panel/Margin/VBox/Body/RightDetail/Content/Actions"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "✨ 레벨업 강화"
+text = "＋ 영구 능력치 포인트 획득"
 
 [connection signal="pressed" from="Panel/Margin/VBox/Header/CloseBtn" to="." method="_on_close_pressed"]
 [connection signal="pressed" from="Panel/Margin/VBox/Body/RightDetail/Content/Actions/LevelUpBtn" to="." method="_on_level_up_pressed"]

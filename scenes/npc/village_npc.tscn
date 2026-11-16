@@ -85,3 +85,13 @@ text = "주민
 font_size = 28
 outline_size = 6
 outline_modulate = Color(0, 0, 0, 1)
+
+[node name="InteractionBubble" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.82, 0)
+billboard = 1
+no_depth_test = true
+text = "💬  대화하기\n[E / 터치]"
+font_size = 26
+modulate = Color(0.82, 0.92, 1, 0.95)
+outline_size = 10
+outline_modulate = Color(0.03, 0.08, 0.15, 0.96)

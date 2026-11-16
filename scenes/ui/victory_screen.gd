@@ -2,9 +2,12 @@ extends CanvasLayer
 
 @onready var kill_stat: Label = $CenterContainer/VBoxContainer/Stats/KillStat
 @onready var time_stat: Label = $CenterContainer/VBoxContainer/Stats/TimeStat
+@onready var level_stat: Label = $CenterContainer/VBoxContainer/Stats/LevelStat
 @onready var gold_stat: Label = $CenterContainer/VBoxContainer/Stats/GoldStat
 @onready var xp_stat: Label = $CenterContainer/VBoxContainer/Stats/XPStat
+@onready var cards_stat: Label = $CenterContainer/VBoxContainer/Stats/CardsStat
 @onready var items_stat: Label = $CenterContainer/VBoxContainer/Stats/ItemsStat
+@onready var record_stat: Label = $CenterContainer/VBoxContainer/Stats/RecordStat
 @onready var subtitle: Label = $CenterContainer/VBoxContainer/Sub
 
 func _ready():
@@ -26,11 +29,18 @@ func _refresh_result():
 	subtitle.text = str(result.get("stage_name", "전투 지역")) + " 전투를 완료했습니다!"
 	kill_stat.text = "처치한 몬스터: " + str(result.get("kills", 0))
 	time_stat.text = "전투 시간: %02d:%02d" % [mins, secs]
+	level_stat.text = "도달 서바이벌 레벨: Lv.%d" % int(result.get("survival_level", 1))
 	gold_stat.text = "획득 골드: +%d" % int(result.get("gold_earned", 0))
-	xp_stat.text = "획득 경험치: +%d" % int(result.get("xp_earned", 0))
+	xp_stat.text = "획득 성장 재화: +%d" % int(result.get("growth_currency_earned", 0))
+	var earned_cards: Array = result.get("cards_earned", [])
+	cards_stat.text = "획득 카드: " + (", ".join(PackedStringArray(earned_cards)) if not earned_cards.is_empty() else "없음")
 	var earned_items: Array = result.get("items_earned", [])
 	var items_text = ", ".join(PackedStringArray(earned_items)) if not earned_items.is_empty() else "없음"
 	items_stat.text = "획득 아이템: " + items_text
+	var new_records: Array[String] = []
+	if bool(result.get("new_best_time", false)): new_records.append("최고 생존 시간")
+	if bool(result.get("new_best_level", false)): new_records.append("최고 서바이벌 레벨")
+	record_stat.text = "🏆 최고 기록 갱신: " + (", ".join(PackedStringArray(new_records)) if not new_records.is_empty() else "없음")
 
 func _on_restart_pressed():
 	GameManager.restart()

@@ -2,22 +2,10 @@ extends CanvasLayer
 
 @onready var hp_bar: ProgressBar = $TopLeft/Bars/HPBar
 @onready var hp_label: Label = $TopLeft/Bars/HPBar/Label
-@onready var sp_bar: ProgressBar = $TopLeft/Bars/SPBar
-@onready var sp_label: Label = $TopLeft/Bars/SPBar/Label
 @onready var exp_bar: ProgressBar = $TopLeft/Bars/EXPBar
 @onready var level_label: Label = $TopLeft/PortraitPanel/LevelLabel
 @onready var time_label: Label = $TopCenter/TimeLabel
 @onready var kill_label: Label = $TopRight/KillContainer/KillLabel
-
-# Skills
-@onready var skill_q_cd: ColorRect = $BottomCenter/SkillContainer/SkillQ/CDOverlay
-@onready var skill_q_label: Label = $BottomCenter/SkillContainer/SkillQ/CDLabel
-@onready var skill_w_cd: ColorRect = $BottomCenter/SkillContainer/SkillW/CDOverlay
-@onready var skill_w_label: Label = $BottomCenter/SkillContainer/SkillW/CDLabel
-@onready var skill_e_cd: ColorRect = $BottomCenter/SkillContainer/SkillE/CDOverlay
-@onready var skill_e_label: Label = $BottomCenter/SkillContainer/SkillE/CDLabel
-@onready var skill_r_cd: ColorRect = $BottomCenter/SkillContainer/SkillR/CDOverlay
-@onready var skill_r_label: Label = $BottomCenter/SkillContainer/SkillR/CDLabel
 
 # Items
 @onready var item1_label: Label = $BottomRight/ItemContainer/Item1/CountLabel
@@ -34,8 +22,7 @@ var skill_manager: Node = null
 var dpad: CanvasLayer = null
 
 var auto_battle_button: Button
-var auto_attack_button: Button
-var attack_button: Button
+var _indicator_update_timer: float = 0.0
 
 var _skill_panels: Dictionary = {}
 var _item_panels: Dictionary = {}
@@ -44,6 +31,7 @@ const VIRTUAL_DPAD: PackedScene = preload("res://scenes/ui/virtual_dpad.tscn")
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	$TopLeft/Bars/SPBar.visible = false
 	_connect_signals()
 	_style_action_panels()
 	_build_battle_action_bar()
@@ -71,16 +59,12 @@ func _setup_player(p: Node3D):
 	if p.has_signal("hp_changed"):
 		p.hp_changed.connect(_on_hp_changed)
 		_on_hp_changed(float(p.get("current_hp")), float(p.get("max_hp")))
-	if p.has_signal("sp_changed"):
-		p.sp_changed.connect(_on_sp_changed)
-		_on_sp_changed(float(p.get("current_sp")), float(p.get("max_sp")))
 	if p.has_signal("exp_changed"):
 		p.exp_changed.connect(_on_exp_changed)
 	if p.has_signal("leveled_up"):
 		p.leveled_up.connect(_on_leveled_up)
-	_update_auto_attack_label()
 
-func _process(_delta: float):
+func _process(delta: float):
 	if player_node == null:
 		player_node = get_tree().get_first_node_in_group("player")
 		if player_node:
@@ -92,9 +76,10 @@ func _process(_delta: float):
 	if camera_node == null:
 		camera_node = get_viewport().get_camera_3d()
 
-	_update_item_counts()
-	_update_skill_availability()
-	indicator_overlay.queue_redraw()
+	_indicator_update_timer += delta
+	if _indicator_update_timer >= 0.12:
+		_indicator_update_timer = 0.0
+		indicator_overlay.queue_redraw()
 
 # ------------------------------------------------------------
 # ACTION BUTTONS (skills / items / combat controls)
@@ -107,6 +92,13 @@ func _style_action_panels():
 		"e": $BottomCenter/SkillContainer/SkillE,
 		"r": $BottomCenter/SkillContainer/SkillR
 	}
+	var container := $BottomCenter/SkillContainer
+	for slot in ["a", "s"]:
+		var panel := container.get_node("SkillR").duplicate() as Panel
+		panel.name = "Skill" + str(slot).to_upper()
+		container.add_child(panel)
+		container.move_child(panel, container.get_node("SkillR").get_index())
+		_skill_panels[slot] = panel
 	_item_panels = {
 		1: $BottomRight/ItemContainer/Item1,
 		2: $BottomRight/ItemContainer/Item2,
@@ -189,26 +181,18 @@ func _build_battle_action_bar():
 	flow.alignment = FlowContainer.ALIGNMENT_END
 	margin.add_child(flow)
 
-	attack_button = UiStyle.make_button("⚔️ 공격 [SPACE]", Vector2(150, 40), true)
-	attack_button.pressed.connect(_manual_attack)
-	attack_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("수동 공격", "가까운 적을 즉시 공격합니다.\n자동 공격이 꺼져 있어도 사용할 수 있습니다.", attack_button.global_position + Vector2(0, 46)))
-	attack_button.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
-	flow.add_child(attack_button)
-
-	auto_battle_button = UiStyle.make_button("🤖 자동 전투 [T]", Vector2(150, 40))
+	bar.offset_left = -186.0
+	bar.offset_top = -76.0
+	bar.offset_right = -24.0
+	bar.offset_bottom = -24.0
+	auto_battle_button = UiStyle.make_button("", Vector2(146, 40))
 	auto_battle_button.toggle_mode = true
+	_update_auto_battle_label()
 	auto_battle_button.pressed.connect(_toggle_auto_battle)
-	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 전투", "사거리 안에 적이 있으면 쿨타임마다 스킬을 자동으로 사용합니다.\n체력이 40% 이하이면 자동으로 물약을 사용합니다.", auto_battle_button.global_position + Vector2(0, 46)))
+	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 스킬 시전", "사거리 안의 적에게 습득한 스킬을 시전합니다.\n체력이 40% 이하이면 자동으로 물약을 사용합니다.", auto_battle_button.global_position + Vector2(0, 46)))
 	auto_battle_button.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
 	flow.add_child(auto_battle_button)
 
-	auto_attack_button = UiStyle.make_button("🗡️ 자동 공격: 켜짐", Vector2(170, 40))
-	auto_attack_button.toggle_mode = true
-	auto_attack_button.button_pressed = true
-	auto_attack_button.pressed.connect(_toggle_auto_attack)
-	auto_attack_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 공격", "사거리 안의 적을 자동으로 공격합니다.\n끄면 [공격] 버튼이나 SPACE 키로 직접 공격합니다.", auto_attack_button.global_position + Vector2(0, 46)))
-	auto_attack_button.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
-	flow.add_child(auto_attack_button)
 
 func _build_mobile_dpad():
 	if not GameActions.is_mobile():
@@ -225,18 +209,7 @@ func _cast_skill(key: String):
 	if skill_manager == null or not is_instance_valid(skill_manager):
 		UiFeedback.show_error("스킬 시스템을 찾을 수 없습니다.")
 		return
-	if not skill_manager.call("try_cast", key):
-		var cd := float(skill_manager.call("get_cooldown", key))
-		if cd > 0.05:
-			UiFeedback.show_info("%s 스킬 쿨타임이 %.1f초 남았습니다." % [key.to_upper(), cd])
-		else:
-			var skill_id := GameData.get_equipped_skill(key)
-			var cost := int(GameData.skill_meta.get(skill_id, {}).get("sp_cost", 0))
-			var current_sp := float(player_node.get("current_sp")) if player_node else 0.0
-			if current_sp < cost:
-				UiFeedback.show_info("SP가 부족합니다. (%d / %d)" % [int(current_sp), cost])
-			else:
-				UiFeedback.show_info("%s 스킬을 지금은 사용할 수 없습니다." % key.to_upper())
+	skill_manager.call("press_skill", key)
 
 func _use_item(slot: int):
 	if player_node == null or not is_instance_valid(player_node):
@@ -254,39 +227,17 @@ func _toggle_auto_battle():
 	var enabled: bool = not bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
 	if skill_manager and skill_manager.has_method("set_auto_battle"):
 		skill_manager.call("set_auto_battle", enabled)
-	if auto_battle_button:
-		auto_battle_button.button_pressed = enabled
-		auto_battle_button.text = "🤖 자동 전투: 켜짐" if enabled else "🤖 자동 전투: 꺼짐"
+	_update_auto_battle_label()
 
-func _toggle_auto_attack():
-	if player_node == null or not is_instance_valid(player_node):
-		player_node = get_tree().get_first_node_in_group("player")
-	if player_node == null:
-		return
-	var enabled: bool = not bool(player_node.get("auto_attack_enabled"))
-	if player_node.has_method("set_auto_attack"):
-		player_node.call("set_auto_attack", enabled)
-	_update_auto_attack_label()
-
-func _update_auto_attack_label():
-	if auto_attack_button == null:
-		return
-	var enabled := true
-	if player_node and is_instance_valid(player_node):
-		enabled = bool(player_node.get("auto_attack_enabled"))
-	auto_attack_button.button_pressed = enabled
-	auto_attack_button.text = "🗡️ 자동 공격: 켜짐" if enabled else "🗡️ 자동 공격: 꺼짐"
+func _update_auto_battle_label():
+	var enabled := bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
+	auto_battle_button.set_pressed_no_signal(enabled)
+	auto_battle_button.text = "자동 스킬 %s %s" % ["ON" if enabled else "OFF", GameActions.get_shortcut_text("auto_battle")]
 
 func _on_action_requested(action_id: String):
 	match action_id:
-		"skill_q":
-			_cast_skill("q")
-		"skill_w":
-			_cast_skill("w")
-		"skill_e":
-			_cast_skill("e")
-		"skill_r":
-			_cast_skill("r")
+		"skill_q", "skill_w", "skill_e", "skill_a", "skill_s", "skill_r":
+			_cast_skill(action_id.trim_prefix("skill_"))
 		"item_1":
 			_use_item(1)
 		"item_2":
@@ -310,17 +261,17 @@ func _skill_tooltip(key: String) -> Dictionary:
 	var level := int(GameData.skill_levels.get(skill_id, 1))
 	var cd := float(GameData.skill_cooldowns.get(skill_id, meta.get("base_cd", 1.0)))
 	var dmg := float(meta.get("base_dmg_ratio", 1.0)) + float(meta.get("dmg_step", 0.0)) * (level - 1)
-	var body := "%s\n%s\n\n위력 x%.2f · 쿨타임 %.1f초 · 범위 %.1f · SP %d\n레벨 %d / 10" % [
-		str(meta.get("name", key.to_upper() + " 스킬")),
-		str(meta.get("desc", "")),
-		dmg, cd, float(meta.get("range", 6.0)), int(meta.get("sp_cost", 0)), level
-	]
+	var body := "%s\n쿨타임 %.1f초" % [meta.desc, cd]
+	if skill_id != "renewal":
+		body += "\n위력 x%.2f · 범위 %.1f" % [dmg, float(meta.range)]
+	if not GameData.is_survival_skill_unlocked(skill_id):
+		body += "\n서바이벌 Lv.%d에 습득" % int(meta.unlock_level)
 	var current := 0.0
 	if skill_manager and is_instance_valid(skill_manager):
 		current = float(skill_manager.call("get_cooldown", key))
 	if current > 0.05:
 		body += "\n\n⏳ 쿨타임 %.1f초 남음" % current
-	return {"title": "%s [%s]" % [str(meta.get("name", key.to_upper())), key.to_upper()], "body": body}
+	return {"title": "%s %s" % [meta.name, GameActions.get_shortcut_text("skill_" + key)], "body": body}
 
 func _update_skill_slot_labels():
 	for slot in _skill_panels:
@@ -330,18 +281,22 @@ func _update_skill_slot_labels():
 		var icon := panel.get_node_or_null("Icon") as Label
 		if icon:
 			icon.text = str(meta.get("icon", "—"))
+		var key_label := panel.get_node("KeyLabel") as Label
+		key_label.text = GameActions.get_key_name("skill_" + str(slot)) if GameData.is_survival_skill_unlocked(skill_id) else "Lv.%d" % int(meta.unlock_level)
 		panel.tooltip_text = str(meta.get("name", "빈 스킬 슬롯"))
 	_update_skill_availability()
 
 func _update_skill_availability():
 	if _skill_panels.is_empty():
 		return
-	var current_sp := float(player_node.get("current_sp")) if player_node and is_instance_valid(player_node) else 0.0
 	for slot in _skill_panels:
 		var skill_id := GameData.get_equipped_skill(str(slot))
-		var cost := int(GameData.skill_meta.get(skill_id, {}).get("sp_cost", 0))
 		var panel: Control = _skill_panels[slot]
-		panel.modulate = Color.WHITE if current_sp >= cost else Color(0.58, 0.58, 0.65, 0.8)
+		panel.visible = GameData.is_survival_skill_unlocked(skill_id)
+		if not panel.visible:
+			panel.modulate = Color(0.62, 0.64, 0.70)
+		else:
+			panel.modulate = Color.WHITE
 
 func _item_tooltip(slot: int) -> Dictionary:
 	var names := {1: "치유 물약", 2: "화면 폭탄", 3: "질풍 물약"}
@@ -375,18 +330,13 @@ func _on_hp_changed(curr: float, maximum: float):
 	hp_bar.value = curr
 	hp_label.text = str(int(curr)) + " / " + str(int(maximum))
 
-func _on_sp_changed(curr: float, maximum: float):
-	sp_bar.max_value = maximum
-	sp_bar.value = curr
-	sp_label.text = "%d / %d SP" % [int(curr), int(maximum)]
-	_update_skill_availability()
-
 func _on_exp_changed(curr: int, needed: int):
 	exp_bar.max_value = needed
 	exp_bar.value = curr
 
 func _on_leveled_up(lvl: int):
 	level_label.text = "Lv." + str(lvl)
+	_update_skill_slot_labels()
 
 func _on_time_updated(time_sec: float):
 	var mins = int(time_sec) / 60
@@ -411,21 +361,11 @@ func _update_item_counts():
 		panel.modulate = Color(1, 1, 1, 1) if count > 0 else Color(0.55, 0.55, 0.6, 0.8)
 
 func _on_skill_cooldown_updated(skill_key: String, current_cd: float, max_cd: float):
-	var overlay: ColorRect = null
-	var label: Label = null
-	match skill_key:
-		"q":
-			overlay = skill_q_cd
-			label = skill_q_label
-		"w":
-			overlay = skill_w_cd
-			label = skill_w_label
-		"e":
-			overlay = skill_e_cd
-			label = skill_e_label
-		"r":
-			overlay = skill_r_cd
-			label = skill_r_label
+	var panel := _skill_panels.get(skill_key) as Control
+	if panel == null:
+		return
+	var overlay := panel.get_node("CDOverlay") as ColorRect
+	var label := panel.get_node("CDLabel") as Label
 
 	if overlay and label:
 		if current_cd > 0.05:

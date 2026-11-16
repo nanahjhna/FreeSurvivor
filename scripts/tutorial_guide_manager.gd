@@ -2,7 +2,6 @@ extends Node
 class_name TutorialGuideManager
 
 var hints: Dictionary = {
-	"character_select": "직업을 선택하고 캐릭터를 생성하세요.",
 	"stat_growth": "능력치 포인트를 사용하여 캐릭터를 강화하세요.",
 	"skill_manage": "보유한 스킬을 전투 슬롯에 장착하세요.",
 	"battle_prep": "카드를 선택하고 전투를 시작하세요.",

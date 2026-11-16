@@ -11,23 +11,34 @@ signal died(monster)
 @export var xp_value: int = 1
 @export var monster_id: String = "zombie"
 
+const DAMAGE_NUMBER_SCENE: PackedScene = preload("res://scenes/effects/damage_number.tscn")
+
 var current_hp: float
 var target: Node3D = null
 var can_attack: bool = true
 var attack_cooldown_timer: float = 0.0
 var is_dead: bool = false
+var card_statuses: Dictionary = {}
+var damage_popup_cooldown: float = 0.0
+var hit_flash_cooldown: float = 0.0
 
 @onready var visual_root: Node3D = $VisualRoot
 
 func _ready():
 	add_to_group("enemies")
 	collision_layer = 2  # Layer 2: Enemies
-	collision_mask = 35 # Layer 1: Player, Layer 2: Enemies, Layer 6: Environment
+	collision_mask = 33 # Layer 1: Player and Layer 6: Environment; enemies don't collide with each other.
 	current_hp = max_hp
 
 func _physics_process(delta: float):
+	damage_popup_cooldown = maxf(0.0, damage_popup_cooldown - delta)
+	hit_flash_cooldown = maxf(0.0, hit_flash_cooldown - delta)
 	if is_dead:
 		return
+	if not card_statuses.is_empty():
+		_tick_card_statuses(delta)
+		if is_dead:
+			return
 	
 	if not can_attack:
 		attack_cooldown_timer -= delta
@@ -36,6 +47,25 @@ func _physics_process(delta: float):
 	
 	_find_target()
 	_update_movement(delta)
+
+func apply_card_status(status: String, damage: float):
+	var effect: Dictionary = card_statuses.get(status, {"until_tick": 1.0})
+	effect.damage = damage
+	effect.ticks = 3
+	card_statuses[status] = effect
+
+func _tick_card_statuses(delta: float):
+	for status in card_statuses.keys():
+		var effect: Dictionary = card_statuses[status]
+		effect.until_tick -= delta
+		if effect.until_tick <= 0.0:
+			effect.until_tick += 1.0
+			effect.ticks -= 1
+			take_damage(float(effect.damage))
+			if effect.ticks == 0:
+				card_statuses.erase(status)
+			if is_dead:
+				return
 
 func _find_target():
 	if target == null or not is_instance_valid(target):
@@ -106,18 +136,22 @@ func take_damage(amount: float, is_crit: bool = false):
 		die()
 
 func _flash_hit():
+	if hit_flash_cooldown > 0.0:
+		return
+	hit_flash_cooldown = 0.10
 	if visual_root:
 		var tween = create_tween()
 		tween.tween_property(visual_root, "scale", Vector3(1.2, 0.8, 1.2), 0.06)
 		tween.tween_property(visual_root, "scale", Vector3.ONE, 0.1)
 
 func _show_damage_popup(amount: float, is_crit: bool = false):
-	var popup_scene = load("res://scenes/effects/damage_number.tscn")
-	if popup_scene:
-		var popup = popup_scene.instantiate()
-		get_tree().current_scene.add_child(popup)
-		popup.global_position = global_position + Vector3(0, 1.8, 0)
-		popup.setup(amount, is_crit, false)
+	if damage_popup_cooldown > 0.0:
+		return
+	damage_popup_cooldown = 0.10
+	var popup = DAMAGE_NUMBER_SCENE.instantiate()
+	get_tree().current_scene.add_child(popup)
+	popup.global_position = global_position + Vector3(0, 1.8, 0)
+	popup.setup(amount, is_crit, false)
 
 func die():
 	if is_dead:
@@ -136,6 +170,9 @@ func die():
 	# Add Kill count to GameManager
 	GameManager.add_kill()
 	GameData.record_monster_kill(monster_id)
+	var player := get_tree().get_first_node_in_group("player")
+	if player and player.has_method("on_monster_killed"):
+		player.on_monster_killed(self)
 	
 	# Death animation: fall and shrink
 	if visual_root:
@@ -152,6 +189,21 @@ func _spawn_xp_gem():
 	var gem_scene = load("res://scenes/effects/xp_gem.tscn")
 	if gem_scene:
 		var gem = gem_scene.instantiate()
-		gem.xp_value = xp_value
+		var boss_bonus := 1.0 + GameData.get_survival_bonus("boss_xp") if monster_id == "mutant_lord" else 1.0
+		gem.xp_value = int(round(xp_value * 8 * boss_bonus))
+		gem.gold_reward = randi_range(20, 40) if monster_id != "mutant_lord" else 500
+		gem.potion_reward = 1 if monster_id == "mutant_lord" or randf() < 0.50 else 0
+		gem.lifetime_seconds = 45.0
+		var existing_pickups := get_tree().get_nodes_in_group("xp_gems")
+		if existing_pickups.size() >= 120:
+			for existing in existing_pickups:
+				var pickup := existing as Area3D
+				if not is_instance_valid(pickup) or pickup.is_queued_for_deletion():
+					continue
+				pickup.set("xp_value", int(pickup.get("xp_value")) + int(gem.xp_value))
+				pickup.set("gold_reward", int(pickup.get("gold_reward")) + int(gem.gold_reward))
+				pickup.set("potion_reward", int(pickup.get("potion_reward")) + int(gem.potion_reward))
+				gem.free()
+				return
 		get_tree().current_scene.add_child(gem)
 		gem.global_position = global_position + Vector3(0, 0.5, 0)

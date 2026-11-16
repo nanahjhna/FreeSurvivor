@@ -15,12 +15,7 @@ const ACTIONS := {
 	"character": {
 		"label": "캐릭터", "icon": "👥", "key": KEY_C, "input_action": "menu_character",
 		"context": "lobby", "rebindable": true,
-		"desc": "보유 캐릭터를 확인하고 성장시킵니다."
-	},
-	"party": {
-		"label": "파티", "icon": "🛡️", "key": KEY_P, "input_action": "menu_party",
-		"context": "lobby", "rebindable": true,
-		"desc": "전투에 참여할 캐릭터를 편성합니다."
+		"desc": "무도가의 능력치를 확인하고 성장시킵니다."
 	},
 	"inventory": {
 		"label": "장비", "icon": "🎒", "key": KEY_I, "input_action": "menu_inventory",
@@ -32,6 +27,11 @@ const ACTIONS := {
 		"context": "lobby", "rebindable": true,
 		"desc": "캐릭터의 전투 스킬을 확인하고 강화합니다."
 	},
+	"card_deck": {
+		"label": "카드/덱", "icon": "🃏", "key": KEY_D, "input_action": "menu_card_deck",
+		"context": "lobby", "rebindable": true,
+		"desc": "보유 카드를 확인하고 12장 덱을 편성한 뒤 카드 던전에 입장합니다."
+	},
 	"quest": {
 		"label": "퀘스트", "icon": "📜", "key": KEY_J, "input_action": "menu_quest",
 		"context": "lobby", "rebindable": true,
@@ -40,7 +40,7 @@ const ACTIONS := {
 	"collection": {
 		"label": "도감", "icon": "📖", "key": KEY_B, "input_action": "menu_collection",
 		"context": "lobby", "rebindable": true,
-		"desc": "수집한 캐릭터와 마주친 몬스터를 확인합니다."
+		"desc": "무도가와 마주친 몬스터를 확인합니다."
 	},
 	"shop": {
 		"label": "상점", "icon": "🪙", "key": KEY_O, "input_action": "menu_shop",
@@ -88,6 +88,14 @@ const ACTIONS := {
 		"label": "R 스킬", "icon": "💥", "key": KEY_R, "input_action": "skill_r",
 		"context": "battle", "rebindable": true, "desc": "궁극기 대폭발을 사용합니다."
 	},
+	"skill_a": {
+		"label": "삼연 검기", "icon": "⚔", "key": KEY_A, "input_action": "skill_a",
+		"context": "battle", "rebindable": true, "desc": "서바이벌 Lv.2에 배우는 관통 검기입니다."
+	},
+	"skill_s": {
+		"label": "수호의 기도", "icon": "✚", "key": KEY_S, "input_action": "skill_s",
+		"context": "battle", "rebindable": true, "desc": "서바이벌 Lv.5에 배우는 회복 기술입니다."
+	},
 	"item_1": {
 		"label": "아이템 1", "icon": "🧪", "key": KEY_1, "input_action": "item_1",
 		"context": "battle", "rebindable": true, "desc": "치유 물약을 사용합니다."
@@ -105,7 +113,7 @@ const ACTIONS := {
 		"context": "battle", "rebindable": true, "desc": "가까운 적을 즉시 공격합니다."
 	},
 	"auto_battle": {
-		"label": "자동 전투", "icon": "🤖", "key": KEY_T, "input_action": "toggle_auto_battle",
+		"label": "자동 스킬 시전", "icon": "🤖", "key": KEY_T, "input_action": "toggle_auto_battle",
 		"context": "battle", "rebindable": true, "desc": "스킬을 자동으로 사용합니다."
 	},
 	# Fixed movement bindings: arrow keys only, on every platform.

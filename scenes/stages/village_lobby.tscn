@@ -82,7 +82,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_cobble")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 5)
 
 [node name="BattlePortal" parent="." instance=ExtResource("3_portal")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -48)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -40)
 
 [node name="VillageHUD" parent="." instance=ExtResource("4_vhud")]
 

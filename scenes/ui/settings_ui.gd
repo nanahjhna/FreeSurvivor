@@ -191,7 +191,7 @@ func _on_master_slider_value_changed(value: float):
 func _on_reset_save_pressed():
 	UiFeedback.confirm(
 		"저장 데이터 초기화",
-		"모든 캐릭터 성장, 장비, 퀘스트 진행도가 초기화됩니다.\n정말 초기화하시겠습니까?",
+		"무도가의 성장, 장비, 퀘스트 진행도가 초기화됩니다.\n정말 초기화하시겠습니까?",
 		func():
 			GameData.reset_save()
 			UiFeedback.show_success("저장 데이터를 초기화했습니다.")

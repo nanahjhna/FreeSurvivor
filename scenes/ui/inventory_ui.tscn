@@ -200,7 +200,7 @@ size_flags_vertical = 3
 [node name="ActionBtn" type="Button" parent="Panel/Margin/VBox/Body/RightDetail/Content"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-text = "⚔️ 파티 대표 장착"
+text = "⚔️ 무도가에게 장착"
 
 [connection signal="pressed" from="Panel/Margin/VBox/Header/CloseBtn" to="." method="_on_close_pressed"]
 [connection signal="pressed" from="Panel/Margin/VBox/Tabs/TabAll" to="." method="_on_tab_all"]
