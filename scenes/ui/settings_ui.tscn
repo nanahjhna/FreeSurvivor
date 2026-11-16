@@ -144,7 +144,7 @@ text = " 전체 화면 모드"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
 theme_override_font_sizes/font_size = 13
-text = "• 이동: WASD / 방향키\n• 스킬: Q, W, E, R\n• 아이템: 1, 2, 3\n• 메뉴 단축키: C(캐릭터), P(파티), I(인벤토리), K(스킬)\n• 일시정지: ESC"
+text = "• 이동: 방향키\n• 스킬: Q, W, E, A, S, R\n• 아이템: 1, 2, 3\n• 메뉴 단축키: C(캐릭터), I(인벤토리), K(스킬)\n• 일시정지: ESC"
 
 [node name="BottomRow" type="HBoxContainer" parent="CenterContainer/Panel/Margin/VBox"]
 layout_mode = 2

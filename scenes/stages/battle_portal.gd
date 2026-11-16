@@ -1,7 +1,6 @@
 extends Area3D
-## The gate no longer teleports the player automatically.
-## It is a clickable / interactable target on collision layer 32 so the
-## village interaction system can open the battle preparation screen.
+## Opens battle preparation both on contact and through the village's
+## click/touch/E interaction path.
 
 signal battle_requested
 
@@ -12,10 +11,22 @@ var is_entered: bool = false
 
 func _ready():
 	collision_layer = 32
-	collision_mask = 0
-	monitoring = false
+	collision_mask = 1
+	monitoring = true
 	monitorable = true
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 
 func _process(delta: float):
 	if glow_mesh:
 		glow_mesh.rotate_y(1.5 * delta)
+
+func _on_body_entered(body: Node3D):
+	if is_entered or not body.is_in_group("player"):
+		return
+	is_entered = true
+	battle_requested.emit()
+
+func _on_body_exited(body: Node3D):
+	if body.is_in_group("player"):
+		is_entered = false

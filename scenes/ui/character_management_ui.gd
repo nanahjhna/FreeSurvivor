@@ -2,7 +2,6 @@ extends CanvasLayer
 
 signal closed()
 
-@onready var char_list_container: VBoxContainer = $Panel/Margin/VBox/Body/LeftList/Scroll/ListContainer
 @onready var detail_panel: Control = $Panel/Margin/VBox/Body/RightDetail
 
 # Detail views
@@ -25,7 +24,7 @@ signal closed()
 @onready var levelup_cost_label: Label = $Panel/Margin/VBox/Body/RightDetail/Content/Actions/CostLabel
 @onready var feedback_label: Label = $Panel/Margin/VBox/Body/RightDetail/Content/Actions/FeedbackLabel
 
-var selected_char_id: String = "warrior"
+var selected_char_id := GameData.FIGHTER_ID
 var attribute_points_label: Label
 var attribute_buttons: GridContainer
 var reset_attributes_button: Button
@@ -47,70 +46,8 @@ func close():
 	closed.emit()
 
 func _refresh_ui():
-	_populate_char_list()
+	selected_char_id = GameData.get_leader_id()
 	_update_detail(selected_char_id)
-
-func _populate_char_list():
-	for child in char_list_container.get_children():
-		child.queue_free()
-	
-	for cid in GameData.characters:
-		var c = GameData.characters[cid]
-		var btn = Button.new()
-		btn.custom_minimum_size = Vector2(240, 56)
-		btn.toggle_mode = true
-		btn.button_pressed = (cid == selected_char_id)
-		
-		var hbox = HBoxContainer.new()
-		hbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-		hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		hbox.add_theme_constant_override("separation", 10)
-		
-		var icon = Label.new()
-		icon.text = c.get("icon", "⚔️")
-		icon.add_theme_font_size_override("font_size", 24)
-		icon.custom_minimum_size = Vector2(40, 0)
-		icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		hbox.add_child(icon)
-		
-		var info_vbox = VBoxContainer.new()
-		info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		info_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		
-		var top_row = HBoxContainer.new()
-		var n_lbl = Label.new()
-		n_lbl.text = c.get("name", "")
-		n_lbl.add_theme_font_size_override("font_size", 16)
-		top_row.add_child(n_lbl)
-		
-		var g_lbl = Label.new()
-		g_lbl.text = " [" + c.get("grade", "R") + "]"
-		var grade = c.get("grade", "R")
-		if grade == "SSR":
-			g_lbl.add_theme_color_override("font_color", Color(1, 0.8, 0.2))
-		elif grade == "SR":
-			g_lbl.add_theme_color_override("font_color", Color(0.8, 0.4, 1))
-		else:
-			g_lbl.add_theme_color_override("font_color", Color(0.4, 0.7, 1))
-		top_row.add_child(g_lbl)
-		info_vbox.add_child(top_row)
-		
-		var sub_lbl = Label.new()
-		sub_lbl.text = "Lv." + str(c.get("level", 1)) + " " + c.get("role", "")
-		sub_lbl.add_theme_font_size_override("font_size", 12)
-		sub_lbl.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
-		info_vbox.add_child(sub_lbl)
-		
-		hbox.add_child(info_vbox)
-		btn.add_child(hbox)
-		
-		btn.pressed.connect(func(): _on_char_selected(cid))
-		char_list_container.add_child(btn)
-
-func _on_char_selected(cid: String):
-	selected_char_id = cid
-	_populate_char_list()
-	_update_detail(cid)
 
 func _update_detail(cid: String):
 	if not GameData.characters.has(cid):
@@ -122,15 +59,14 @@ func _update_detail(cid: String):
 	grade_badge.text = " " + c.get("grade", "R") + " • " + c.get("role", "") + " "
 	icon_label.text = c.get("icon", "⚔️")
 	
-	var lvl = c.get("level", 1)
-	level_label.text = "Lv." + str(lvl) + " / " + str(c.get("max_level", 50))
+	level_label.text = "영구 성장"
 	hp_label.text = str(int(stats.max_hp()))
-	atk_label.text = str(int(stats.phys_atk(cid == "archer")))
+	atk_label.text = str(int(stats.phys_atk()))
 	def_label.text = str(int(stats.phys_def()))
 	spd_label.text = "%.1f" % (stats.base_spd * stats.move_speed_multiplier())
 	combat_stats_label.text = (
-		"SP %d  ·  마법 공격 %.1f  ·  공격 속도 %.2f/s\n명중 %.0f%%  ·  회피 %.1f%%  ·  크리티컬 %.1f%%\n물리 방어 %.1f  ·  마법 방어 %.1f  ·  HP 회복 %.2f/s"
-		% [stats.max_sp(), stats.mag_atk(), 1.2 * stats.attack_speed(), stats.hit_rate(),
+		"마법 공격 %.1f  ·  공격 속도 %.2f/s\n명중 %.0f%%  ·  회피 %.1f%%  ·  크리티컬 %.1f%%\n물리 방어 %.1f  ·  마법 방어 %.1f  ·  HP 회복 %.2f/s"
+		% [stats.mag_atk(), 1.2 * stats.attack_speed(), stats.hit_rate(),
 			stats.evasion(), stats.crit_rate(), stats.phys_def(), stats.mag_def(), stats.hp_recovery_rate()]
 	)
 	_refresh_attribute_controls(c, stats)
@@ -138,25 +74,19 @@ func _update_detail(cid: String):
 	skill_title.text = "대표 스킬: " + c.get("signature_skill", "")
 	desc_label.text = c.get("desc", "")
 	
-	var cost = lvl * 250
-	levelup_cost_label.text = "성장 비용: 💰 %d 골드" % cost
-	if lvl >= c.get("max_level", 50):
-		levelup_btn.disabled = true
-		levelup_btn.text = "최대 레벨 도달"
-		feedback_label.text = "최대 레벨에 도달한 캐릭터입니다."
-		feedback_label.add_theme_color_override("font_color", Color(0.72, 0.82, 0.95))
+	var cost := GameData.get_stat_point_gold_cost(cid)
+	levelup_cost_label.text = "보유 골드: %d · 포인트 구매 비용: %d 골드" % [GameData.player_gold, cost]
+	levelup_btn.disabled = GameData.player_gold < cost
+	levelup_btn.text = "＋ 영구 능력치 포인트 획득"
+	if GameData.player_gold < cost:
+		feedback_label.text = "⛔ 골드가 %d 더 필요합니다." % (cost - GameData.player_gold)
+		feedback_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.5))
 	else:
-		levelup_btn.disabled = (GameData.player_gold < cost)
-		levelup_btn.text = "✨ 레벨업 강화"
-		if GameData.player_gold < cost:
-			feedback_label.text = "⛔ 골드 부족: %d 골드가 더 필요합니다." % (cost - GameData.player_gold)
-			feedback_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.5))
-		else:
-			feedback_label.text = ""
+		feedback_label.text = ""
 
 func _on_level_up_pressed():
 	if GameData.level_up_character(selected_char_id):
-		feedback_label.text = "🎉 레벨업 완료! 능력치가 강화되었습니다."
+		feedback_label.text = "🎉 영구 능력치 포인트를 1개 획득했습니다."
 		feedback_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.4))
 	else:
 		feedback_label.text = "❌ 골드가 부족합니다!"
@@ -215,18 +145,17 @@ func _get_stat_preview(character: Dictionary, stats: StatManager, stat_name: Str
 	projected_data["attributes"] = attributes
 	var projected := StatManager.new()
 	projected.setup_from_class(selected_char_id, projected_data)
-	var ranged := selected_char_id == "archer"
 	var effect := ""
 	match stat_name:
 		"STR": effect = "근접 공격력, HP, 소지 한계"
 		"AGI": effect = "공격 속도, 이동 속도, 회피"
 		"VIT": effect = "최대 HP, HP 회복, 물리·마법 방어"
 		"INT": effect = "마법 공격력, SP, 마법 방어"
-		"DEX": effect = "원거리 공격력, 명중, 공격 속도, 마법 공격"
+		"DEX": effect = "공격력, 명중, 공격 속도, 마법 공격"
 		"LUK": effect = "크리티컬, 완전 회피, 명중"
 	return "%s %d → %d\n%s\n상승 후: HP %d · 공격 %.1f · 마법 %.1f · 공격 속도 %.2f/s · 회피 %.1f%% · 크리티컬 %.1f%%" % [
 		stat_name, stats.get_stat(stat_name), stats.get_stat(stat_name) + 1, effect,
-		projected.max_hp(), projected.phys_atk(ranged), projected.mag_atk(),
+		projected.max_hp(), projected.phys_atk(), projected.mag_atk(),
 		1.2 * projected.attack_speed(), projected.evasion(), projected.crit_rate()
 	]
 

@@ -134,7 +134,7 @@ func _create_skill_card(key: String, meta: Dictionary, lvl: int) -> PanelContain
 	vbox.add_child(name_lbl)
 	
 	var lvl_lbl = Label.new()
-	lvl_lbl.text = "현재 레벨: Lv." + str(lvl) + " / 10"
+	lvl_lbl.text = "서바이벌 임시 등급: " + str(lvl)
 	lvl_lbl.add_theme_font_size_override("font_size", 13)
 	lvl_lbl.add_theme_color_override("font_color", Color(0.4, 0.8, 1))
 	lvl_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -143,15 +143,15 @@ func _create_skill_card(key: String, meta: Dictionary, lvl: int) -> PanelContain
 	var cd = max(0.5, meta.base_cd - (meta.cd_step * (lvl - 1)))
 	var dmg = meta.base_dmg_ratio + (meta.dmg_step * (lvl - 1))
 	var stats = Label.new()
-	stats.text = "쿨타임: %.1fs\n위력: x%.2f\n사거리: %.1f · SP: %d" % [
-		cd, dmg, float(meta.get("range", 0.0)), int(meta.get("sp_cost", 0))
+	stats.text = "쿨타임: %.1fs\n위력: x%.2f\n사거리: %.1f" % [
+		cd, dmg, float(meta.get("range", 0.0))
 	]
 	stats.add_theme_font_size_override("font_size", 12)
 	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(stats)
 	var unlock_level := int(meta.get("unlock_level", 1))
 	var unlock_label := Label.new()
-	unlock_label.text = "해금: 계정 레벨 %d" % unlock_level
+	unlock_label.text = "스테이지 시작 시 습득" if unlock_level == 1 else "서바이벌 Lv.%d에 습득" % unlock_level
 	unlock_label.add_theme_font_size_override("font_size", 11)
 	unlock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(unlock_label)
@@ -166,45 +166,22 @@ func _create_skill_card(key: String, meta: Dictionary, lvl: int) -> PanelContain
 	var select_button := Button.new()
 	select_button.text = "스킬 선택 / 장착"
 	select_button.custom_minimum_size = Vector2(0, 38)
-	select_button.disabled = GameData.player_level < unlock_level
-	select_button.tooltip_text = (
-		"스킬을 선택한 후 원하는 슬롯을 눌러 장착합니다."
-		if not select_button.disabled
-		else "계정 레벨 %d에 해금됩니다." % unlock_level
-	)
+	select_button.disabled = false
+	select_button.tooltip_text = "스킬을 선택한 후 원하는 슬롯을 눌러 장착합니다."
 	select_button.pressed.connect(_on_skill_selected.bind(key))
 	vbox.add_child(select_button)
 	
-	var cost = meta.cost_base * lvl
 	var up_btn = Button.new()
 	up_btn.custom_minimum_size = Vector2(0, 42)
-	if lvl >= 10:
-		up_btn.text = "최대 레벨"
-		up_btn.disabled = true
-	else:
-		up_btn.text = "강화 (💰%d)" % cost
-		up_btn.disabled = (GameData.player_gold < cost)
-		if GameData.player_gold < cost:
-			var reason := Label.new()
-			reason.text = "⛔ 골드 %d 부족" % (cost - GameData.player_gold)
-			reason.add_theme_font_size_override("font_size", 11)
-			reason.add_theme_color_override("font_color", Color(1.0, 0.58, 0.5))
-			reason.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			vbox.add_child(reason)
-	
-	up_btn.pressed.connect(func(): _on_upgrade_skill(key))
+	up_btn.text = "전투 레벨업 카드로 임시 강화"
+	up_btn.disabled = true
+	up_btn.tooltip_text = "서바이벌 중 경험치 구슬로 레벨업한 뒤 3장 카드에서 강화할 수 있습니다."
 	vbox.add_child(up_btn)
 	
 	return panel
 
 func _on_upgrade_skill(key: String):
-	if GameData.level_up_skill(key):
-		feedback_label.text = "✨ 스킬이 성공적으로 강화되었습니다!"
-		feedback_label.add_theme_color_override("font_color", Color(0.3, 1, 0.4))
-	else:
-		feedback_label.text = "❌ 골드가 부족합니다!"
-		feedback_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
-	_refresh_ui()
+	feedback_label.text = "스킬 강화는 서바이벌 스테이지의 레벨업 카드에서 획득합니다."
 
 func _on_close_pressed():
 	close()

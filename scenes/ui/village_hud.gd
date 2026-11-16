@@ -1,7 +1,6 @@
 extends CanvasLayer
 
 const CHARACTER_UI: PackedScene = preload("res://scenes/ui/character_management_ui.tscn")
-const PARTY_UI: PackedScene = preload("res://scenes/ui/party_formation_ui.tscn")
 const INVENTORY_UI: PackedScene = preload("res://scenes/ui/inventory_ui.tscn")
 const SKILL_UI: PackedScene = preload("res://scenes/ui/skill_ui.tscn")
 const SETTINGS_UI: PackedScene = preload("res://scenes/ui/settings_ui.tscn")
@@ -37,12 +36,16 @@ var interaction_button: Button
 var battle_prep_ui: CanvasLayer = null
 var dpad: CanvasLayer = null
 var _last_interaction_target: String = ""
+var fast_travel_root: Control
+var main_menu_root: Control
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_resource_panel()
 	_build_hint_panel()
 	_build_action_bar()
+	_build_main_menu()
+	_build_fast_travel_menu()
 	_build_interaction_prompt()
 	_build_mobile_dpad()
 	_load_screens()
@@ -55,9 +58,9 @@ func _ready():
 	GameData.data_updated.connect(_update_stats)
 	GameData.data_updated.connect(_refresh_hint)
 	GameData.currency_changed.connect(_on_currency_changed)
-	GameData.party_updated.connect(_refresh_hint)
 	_update_stats()
 	_refresh_hint()
+	call_deferred("_open_main_menu")
 
 func _process(_delta: float):
 	if player_node == null:
@@ -149,19 +152,158 @@ func _build_action_bar():
 	flow.alignment = FlowContainer.ALIGNMENT_CENTER
 	margin.add_child(flow)
 
-	var menu_actions := [
-		"character", "party", "inventory", "skill", "quest",
-		"collection", "shop", "map", "settings", "battle_start"
-	]
-	for action_id in menu_actions:
-		var button := ActionButton.new()
-		button.setup(action_id, GameActions.is_mobile())
-		if action_id == "battle_start":
-			UiStyle.apply_button(button, true)
-		flow.add_child(button)
-
+	var menu_button := UiStyle.make_button("📖 게임 메뉴", Vector2(210, 52), true)
+	menu_button.pressed.connect(_open_main_menu)
+	flow.add_child(menu_button)
 	if GameActions.is_mobile():
 		action_bar.offset_left = 246.0
+
+func _build_main_menu():
+	main_menu_root = Control.new()
+	main_menu_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	main_menu_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	main_menu_root.visible = false
+	main_menu_root.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(main_menu_root)
+
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.015, 0.025, 0.05, 0.72)
+	main_menu_root.add_child(shade)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	main_menu_root.add_child(center)
+
+	var panel := UiStyle.make_panel()
+	panel.custom_minimum_size = Vector2(760, 590)
+	center.add_child(panel)
+	var margin := UiStyle.make_margin(panel, 28)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 18)
+	margin.add_child(content)
+
+	var title := UiStyle.make_title("🥋 모험 준비", 34)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(title)
+
+	var fighter: Dictionary = GameData.characters[GameData.FIGHTER_ID]
+	var summary := UiStyle.make_label(
+		"%s  ·  골드 %d  ·  성장 재화 %d" % [
+			str(fighter.get("name", "무도가")), GameData.player_gold, GameData.player_growth_currency
+		],
+		20, Color(1.0, 0.87, 0.52)
+	)
+	summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(summary)
+
+	var launch := UiStyle.make_button("⚔️  바로 출격", Vector2(0, 82), true)
+	launch.add_theme_font_size_override("font_size", 30)
+	launch.pressed.connect(_on_launch_pressed)
+	content.add_child(launch)
+
+	var caption := UiStyle.make_label("하고 싶은 일을 눌러 보세요", 18, Color(0.82, 0.88, 0.98))
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(caption)
+
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	content.add_child(grid)
+
+	var options := [
+		["🥋  성장", "character"],
+		["🎒  장비", "inventory"],
+		["✨  스킬", "skill"],
+		["🃏  카드", "card_deck"],
+		["🌄  지역 선택", "stage_select"],
+		["🛍️  상점", "shop"],
+		["📜  퀘스트", "quest"],
+		["⚙️  설정", "settings"]
+	]
+	for option in options:
+		var button := UiStyle.make_button(str(option[0]), Vector2(300, 76))
+		button.add_theme_font_size_override("font_size", 21)
+		button.pressed.connect(_on_main_menu_option.bind(str(option[1])))
+		grid.add_child(button)
+
+	var close := UiStyle.make_button("닫기", Vector2(0, 48))
+	close.pressed.connect(_close_main_menu)
+	content.add_child(close)
+
+func _open_main_menu():
+	main_menu_root.visible = true
+	main_menu_root.move_to_front()
+	get_tree().paused = true
+
+func _close_main_menu():
+	main_menu_root.visible = false
+	get_tree().paused = false
+
+func _on_launch_pressed():
+	_close_main_menu()
+	GameManager.go_to_battle(GameData.current_selected_stage_id)
+
+func _on_main_menu_option(action_id: String):
+	main_menu_root.visible = false
+	if action_id == "stage_select":
+		_open_battle_prep()
+		return
+	if action_id == "card_deck":
+		get_tree().paused = false
+		GameManager.go_to_deck_builder()
+		return
+	open_screen(action_id)
+
+func _build_fast_travel_menu():
+	fast_travel_root = Control.new()
+	fast_travel_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fast_travel_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	fast_travel_root.visible = false
+	add_child(fast_travel_root)
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0, 0, 0, 0.66)
+	fast_travel_root.add_child(backdrop)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fast_travel_root.add_child(center)
+	var panel := UiStyle.make_panel()
+	panel.custom_minimum_size = Vector2(620, 0)
+	center.add_child(panel)
+	var margin := UiStyle.make_margin(panel, 24)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	margin.add_child(box)
+	box.add_child(UiStyle.make_title("📍 마을 빠른 이동", 25))
+	var destinations := [
+		["🔨 대장간", Vector3(-14, 0.2, 4)], ["🪙 장비 상점", Vector3(14, 0.2, 4)],
+		["📜 퀘스트 게시판", Vector3(6, 0.2, 5)], ["🃏 카드 상점", Vector3(-14, 0.2, 14)],
+		["⚔️ 서바이벌 입구", Vector3(0, 0.2, -40)], ["🎴 카드 덱 던전 입구", Vector3(-23, 0.2, 25)]
+	]
+	for destination in destinations:
+		var button := UiStyle.make_button(str(destination[0]), Vector2(0, 48))
+		button.pressed.connect(_fast_travel.bind(destination[1], str(destination[0])))
+		box.add_child(button)
+	var close := UiStyle.make_button("닫기 [ESC]", Vector2(0, 46))
+	close.pressed.connect(func(): fast_travel_root.visible = false)
+	box.add_child(close)
+
+func _open_fast_travel():
+	fast_travel_root.visible = true
+	fast_travel_root.move_to_front()
+
+func _fast_travel(destination: Vector3, label: String):
+	if player_node == null or not is_instance_valid(player_node):
+		player_node = get_tree().get_first_node_in_group("player")
+	if player_node == null:
+		UiFeedback.show_error("플레이어를 찾을 수 없습니다.")
+		return
+	player_node.global_position = destination
+	player_node.set("velocity", Vector3.ZERO)
+	fast_travel_root.visible = false
+	UiFeedback.show_success("%s 앞으로 이동했습니다." % label)
 
 func _build_interaction_prompt():
 	interaction_panel = PanelContainer.new()
@@ -202,7 +344,6 @@ func _build_mobile_dpad():
 func _load_screens():
 	var screen_scenes := {
 		"character": CHARACTER_UI,
-		"party": PARTY_UI,
 		"inventory": INVENTORY_UI,
 		"skill": SKILL_UI,
 		"settings": SETTINGS_UI,
@@ -241,6 +382,9 @@ func _on_action_requested(action_id: String):
 	if action_id == "battle_start":
 		_open_battle_prep()
 		return
+	if action_id == "card_deck":
+		GameManager.go_to_deck_builder()
+		return
 	if not screens.has(action_id):
 		return
 	open_screen(action_id)
@@ -256,14 +400,13 @@ func open_screen(screen_id: String):
 		if old_screen.visible:
 			_close_screen_instance(old_screen)
 	active_screen_id = screen_id
+	main_menu_root.visible = false
 	var screen = screens[screen_id]
 	screen.call("open")
 	get_tree().paused = true
 	_switching = false
 	if screen_id == "character":
 		GameData.mark_tutorial("seen_character")
-	elif screen_id == "party":
-		GameData.mark_tutorial("seen_party")
 	elif screen_id == "inventory":
 		GameData.mark_tutorial("seen_inventory")
 	elif screen_id == "skill":
@@ -295,6 +438,8 @@ func _on_screen_closed(screen_id: String):
 		active_screen_id = ""
 		get_tree().paused = false
 	_refresh_hint()
+	if main_menu_root:
+		_open_main_menu()
 
 func _on_dialog_closed():
 	if _switching:
@@ -424,6 +569,15 @@ func clear_interaction_prompt():
 func _unhandled_input(event: InputEvent):
 	if GameActions.is_capturing():
 		return
+	if fast_travel_root and fast_travel_root.visible and event.is_action_pressed("ui_cancel"):
+		fast_travel_root.visible = false
+		get_viewport().set_input_as_handled()
+		return
+	if main_menu_root and main_menu_root.visible:
+		if event.is_action_pressed("ui_cancel"):
+			_close_main_menu()
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("menu_settings"):
 		if active_screen_id != "":
 			close_active_screen()
@@ -442,9 +596,9 @@ func _update_stats():
 	hp_bar.max_value = max_h
 	hp_bar.value = cur_h
 	hp_label.text = str(int(cur_h)) + " / " + str(int(max_h))
-	level_label.text = "Lv." + str(GameData.player_level)
+	level_label.text = "영구 성장"
 	if gold_label:
-		gold_label.text = "💰 %d 골드     💎 %d 젬" % [GameData.player_gold, GameData.player_gems]
+		gold_label.text = "💰 %d 골드     💎 %d 젬     ✨ %d 성장 재화" % [GameData.player_gold, GameData.player_gems, GameData.player_growth_currency]
 
 func _on_currency_changed(_gold: int, _gems: int):
 	_update_stats()

@@ -3,9 +3,41 @@
 [ext_resource type="Script" path="res://scenes/ui/minimap.gd" id="1_mmap"]
 
 [node name="Minimap" type="Control"]
-custom_minimum_size = Vector2(180, 180)
+custom_minimum_size = Vector2(170, 160)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 180.0
-offset_bottom = 180.0
+offset_right = 170.0
+offset_bottom = 160.0
 script = ExtResource("1_mmap")
+
+[node name="ZoomIn" type="Button" parent="."]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 0
+offset_left = 128.0
+offset_top = 30.0
+offset_right = 170.0
+offset_bottom = 72.0
+tooltip_text = "미니맵 확대"
+text = "+"
+
+[node name="ZoomLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 124.0
+offset_top = 76.0
+offset_right = 170.0
+offset_bottom = 104.0
+text = "40m"
+horizontal_alignment = 1
+
+[node name="ZoomOut" type="Button" parent="."]
+custom_minimum_size = Vector2(42, 42)
+layout_mode = 0
+offset_left = 128.0
+offset_top = 108.0
+offset_right = 170.0
+offset_bottom = 150.0
+tooltip_text = "미니맵 축소"
+text = "−"
+
+[connection signal="pressed" from="ZoomIn" to="." method="_on_zoom_in"]
+[connection signal="pressed" from="ZoomOut" to="." method="_on_zoom_out"]

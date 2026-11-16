@@ -4,11 +4,25 @@ extends CanvasLayer
 @onready var title_label: Label = $CenterContainer/VBoxContainer/TitleLabel
 
 var current_upgrades: Array[Dictionary] = []
+var last_level: int = 1
+var rerolls_left: int = 0
+var reroll_button: Button
+var is_start_draft: bool = false
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
+	$ColorRect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	$CenterContainer/VBoxContainer/Subtitle.text = "서바이벌 전용 강화 · 한 장을 선택하세요 · 이번 스테이지에서만 유지"
+	reroll_button = Button.new()
+	reroll_button.text = "🔄 무료로 다시 뽑기"
+	reroll_button.custom_minimum_size = Vector2(220, 42)
+	reroll_button.pressed.connect(_on_reroll_pressed)
+	$CenterContainer/VBoxContainer.add_child(reroll_button)
 	GameManager.state_changed.connect(_on_game_state_changed)
+	if GameManager.starting_draft_picks > 0:
+		is_start_draft = true
+		GameManager.enter_level_up()
 
 func _on_game_state_changed(new_state):
 	if new_state == GameManager.GameState.LEVEL_UP:
@@ -18,8 +32,24 @@ func _on_game_state_changed(new_state):
 
 func show_upgrades():
 	visible = true
+	var learned := PackedStringArray()
+	for level in range(last_level + 1, GameData.player_level + 1):
+		for skill in GameData.skill_meta.values():
+			if int(skill.unlock_level) == level:
+				learned.append(str(skill.name))
+	last_level = GameData.player_level
+	title_label.text = "레벨 %d" % last_level
+	if is_start_draft:
+		title_label.text = "시작 강화 선택 · %d / 5" % (6 - GameManager.starting_draft_picks)
+	if not learned.is_empty():
+		title_label.text += " · %s 습득" % " · ".join(learned)
+	rerolls_left = int(GameData.get_survival_bonus("free_reroll"))
+	reroll_button.visible = rerolls_left > 0
+	reroll_button.text = "🔄 무료 다시 뽑기 (%d회)" % rerolls_left
 	current_upgrades = GameData.get_random_upgrades(3)
-	
+	_render_cards()
+
+func _render_cards():
 	# Clear old cards
 	for child in cards_container.get_children():
 		child.queue_free()
@@ -29,6 +59,15 @@ func show_upgrades():
 		var up = current_upgrades[i]
 		var card = _create_card(up, i)
 		cards_container.add_child(card)
+
+func _on_reroll_pressed():
+	if not visible or rerolls_left <= 0:
+		return
+	rerolls_left -= 1
+	reroll_button.visible = rerolls_left > 0
+	reroll_button.text = "🔄 무료 다시 뽑기 (%d회)" % rerolls_left
+	current_upgrades = GameData.get_random_upgrades(3)
+	_render_cards()
 
 func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	var btn = Button.new()
@@ -44,7 +83,7 @@ func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	
 	# Icon or header
 	var icon = Label.new()
-	icon.text = "⭐"
+	icon.text = str(upgrade_data.get("grade", "기본"))
 	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon.add_theme_font_size_override("font_size", 42)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -72,9 +111,17 @@ func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	return btn
 
 func _on_card_selected(index: int):
+	if not visible or GameManager.current_state != GameManager.GameState.LEVEL_UP:
+		return
 	if index >= 0 and index < current_upgrades.size():
 		var chosen = current_upgrades[index]
 		GameData.apply_upgrade(chosen)
+		if is_start_draft:
+			GameManager.starting_draft_picks = maxi(0, GameManager.starting_draft_picks - 1)
+			if GameManager.starting_draft_picks > 0:
+				show_upgrades()
+				return
+			is_start_draft = false
 	
 	visible = false
 	GameManager.exit_level_up()

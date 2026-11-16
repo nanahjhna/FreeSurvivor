@@ -103,12 +103,14 @@ func _refresh():
 func _render_characters():
 	for cid in GameData.characters:
 		var c: Dictionary = GameData.characters[cid]
+		var attributes: Dictionary = c.get("attributes", StatManager.get_default_stats(str(cid)))
 		var card := _make_card(
 			str(c.get("icon", "⚔️")),
 			"%s [%s]" % [c.get("name", ""), c.get("grade", "")],
-			"%s · Lv.%d" % [c.get("role", ""), int(c.get("level", 1))],
-			"HP %d  ATK %d  DEF %d\n%s" % [
-				int(c.get("base_hp", 0)), int(c.get("base_atk", 0)), int(c.get("base_def", 0)),
+			"%s · 영구 능력치" % c.get("role", ""),
+			"STR %d  AGI %d  VIT %d\nINT %d  DEX %d  LUK %d\n%s" % [
+				int(attributes.get("STR", 0)), int(attributes.get("AGI", 0)), int(attributes.get("VIT", 0)),
+				int(attributes.get("INT", 0)), int(attributes.get("DEX", 0)), int(attributes.get("LUK", 0)),
 				str(c.get("desc", ""))
 			],
 			Color(1.0, 0.9, 0.5)

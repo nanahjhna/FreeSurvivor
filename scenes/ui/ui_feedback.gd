@@ -13,6 +13,8 @@ var _confirm_root: Control
 var _confirm_callback: Callable
 var _confirm_title: Label
 var _confirm_body: Label
+var _save_label: Label
+var _save_timer: Timer
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -20,6 +22,36 @@ func _ready():
 	_build_toast()
 	_build_tooltip()
 	_build_confirm()
+	_build_save_status()
+	GameData.save_status_changed.connect(_on_save_status_changed)
+
+func _build_save_status():
+	_save_label = UiStyle.make_label("", 13, Color(0.8, 0.9, 1.0))
+	_save_label.anchor_left = 1.0
+	_save_label.anchor_right = 1.0
+	_save_label.offset_left = -210.0
+	_save_label.offset_right = -24.0
+	_save_label.offset_top = 24.0
+	_save_label.offset_bottom = 54.0
+	_save_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_save_label.visible = false
+	add_child(_save_label)
+	_save_timer = Timer.new()
+	_save_timer.one_shot = true
+	_save_timer.timeout.connect(func(): _save_label.visible = false)
+	add_child(_save_timer)
+
+func _on_save_status_changed(status: String):
+	_save_label.visible = true
+	match status:
+		"saving": _save_label.text = "💾 저장 중..."
+		"saved":
+			_save_label.text = "✅ 저장 완료"
+			_save_timer.start(1.4)
+		"failed":
+			_save_label.text = "⛔ 저장 실패"
+			_save_timer.start(4.0)
+			show_error("저장하지 못했습니다. 기존 백업은 유지됩니다. 다시 시도해 주세요.")
 
 # ------------------------------------------------------------
 # TOASTS

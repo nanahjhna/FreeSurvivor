@@ -8,6 +8,7 @@ extends Node3D
 var interactables: Array[Dictionary] = []
 var nearest_interaction: Dictionary = {}
 var _last_prompt_id: String = ""
+var _highlighted_interactable: Node3D = null
 
 func _ready():
 	GameManager.current_location = GameManager.Location.LOBBY
@@ -70,15 +71,26 @@ func _process(_delta: float):
 
 	nearest_interaction = best
 	if best.is_empty():
+		_set_interaction_highlight(null)
 		if _last_prompt_id != "":
 			_last_prompt_id = ""
 			hud.call("clear_interaction_prompt")
 		return
 
 	var prompt_id: String = str(best.get("id", ""))
+	_set_interaction_highlight(best.get("node") as Node3D)
 	if prompt_id != _last_prompt_id:
 		_last_prompt_id = prompt_id
 		hud.call("set_interaction_prompt", str(best.get("label", "상호작용")), GameActions.is_mobile())
+
+func _set_interaction_highlight(target: Node3D):
+	if _highlighted_interactable == target:
+		return
+	if _highlighted_interactable != null and is_instance_valid(_highlighted_interactable) and _highlighted_interactable.has_method("set_interaction_highlight"):
+		_highlighted_interactable.call("set_interaction_highlight", false)
+	_highlighted_interactable = target
+	if _highlighted_interactable != null and _highlighted_interactable.has_method("set_interaction_highlight"):
+		_highlighted_interactable.call("set_interaction_highlight", true)
 
 func try_interact():
 	if get_tree().paused:
@@ -97,6 +109,8 @@ func _interact(entry: Dictionary):
 	match id:
 		"battle_start":
 			battle_prep_ui.call("open", GameData.current_selected_stage_id)
+		"card_dungeon":
+			GameManager.go_to_deck_builder()
 		"forge":
 			_open_hud_screen("inventory")
 			UiFeedback.show_info("대장간에서 장비를 관리합니다.")
@@ -211,6 +225,7 @@ func _build_village_environment():
 	var root = Node3D.new()
 	root.name = "VillageProps"
 	add_child(root)
+	_create_village_boundary(root)
 	
 	# 1. Central Fountain
 	_build_fountain(root, Vector3(0, 0, 0))
@@ -246,8 +261,11 @@ func _build_village_environment():
 	# 9. Small Pond in peaceful park corner (South-West)
 	_create_pond(root, Vector3(-8, 0, 18))
 	
-	# 10. North Gate (출구 / 성문: Z=-32)
-	_create_castle_gate(root, Vector3(0, 0, -32))
+	# North gate forms the only opening in the stone town wall.
+	_create_castle_gate(root, Vector3(0, 0, -40))
+
+	# Card deck dungeon entrance (independent from the survival gate)
+	_create_card_dungeon_portal(root, Vector3(-28, 0, 25))
 	
 	# 11. Crates & Barrels
 	_create_crate_stack(root, Vector3(-16, 0, -4))
@@ -259,6 +277,37 @@ func _build_village_environment():
 	
 	# 13. Spawn NPCs
 	_spawn_npcs()
+
+func _create_village_boundary(parent: Node3D):
+	var boundary := Node3D.new()
+	boundary.name = "VisibleVillageBoundary"
+	parent.add_child(boundary)
+	_create_boundary_segment(boundary, Vector3(0, 2, 40), Vector3(80, 4, 1.5))
+	_create_boundary_segment(boundary, Vector3(-24, 2, -40), Vector3(32, 4, 1.5))
+	_create_boundary_segment(boundary, Vector3(24, 2, -40), Vector3(32, 4, 1.5))
+	_create_boundary_segment(boundary, Vector3(40, 2, 0), Vector3(1.5, 4, 80))
+	_create_boundary_segment(boundary, Vector3(-40, 2, 0), Vector3(1.5, 4, 80))
+
+func _create_boundary_segment(parent: Node3D, position_value: Vector3, size_value: Vector3):
+	var body := StaticBody3D.new()
+	body.position = position_value
+	body.collision_layer = 32
+	body.collision_mask = 1
+	var mesh_instance := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size_value
+	mesh_instance.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.48, 0.49, 0.52)
+	material.roughness = 0.9
+	mesh_instance.material_override = material
+	body.add_child(mesh_instance)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size_value
+	collision.shape = shape
+	body.add_child(collision)
+	parent.add_child(body)
 
 # ----------------- BUILDINGS & STRUCTURES -----------------
 
@@ -633,7 +682,7 @@ func _create_castle_gate(parent: Node3D, pos: Vector3) -> StaticBody3D:
 	var lbl = Label3D.new()
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
-	lbl.text = "⚔️ 북쪽 외곽 성문 ⚔️\n[밖으로 나가면 숲길과 전투 지역]"
+	lbl.text = "⚔️ 서바이벌 던전 입구 ⚔️\n[E / 터치: 출격]"
 	lbl.font_size = 32
 	lbl.outline_size = 8
 	lbl.outline_modulate = Color(0, 0, 0, 1)
@@ -671,6 +720,63 @@ func _create_castle_gate(parent: Node3D, pos: Vector3) -> StaticBody3D:
 	parent.add_child(gate)
 	_register_interactable(gate, "battle_start", "성문으로 이동하여 전투 준비", 8.0)
 	return gate
+
+func _create_card_dungeon_portal(parent: Node3D, pos: Vector3) -> Area3D:
+	var portal := Area3D.new()
+	portal.position = pos
+	portal.collision_layer = 32
+	portal.collision_mask = 1
+	portal.monitoring = true
+	portal.body_entered.connect(_on_card_portal_body_entered)
+	var base := MeshInstance3D.new()
+	var base_mesh := CylinderMesh.new()
+	base_mesh.top_radius = 2.8
+	base_mesh.bottom_radius = 3.2
+	base_mesh.height = 0.5
+	base.mesh = base_mesh
+	base.position.y = 0.25
+	var base_mat := StandardMaterial3D.new()
+	base_mat.albedo_color = Color(0.18, 0.12, 0.28)
+	base_mat.emission_enabled = true
+	base_mat.emission = Color(0.35, 0.12, 0.65)
+	base_mat.emission_energy_multiplier = 1.2
+	base.material_override = base_mat
+	portal.add_child(base)
+	var marker := MeshInstance3D.new()
+	var marker_mesh := BoxMesh.new()
+	marker_mesh.size = Vector3(3.6, 4.2, 0.35)
+	marker.mesh = marker_mesh
+	marker.position.y = 2.3
+	var marker_mat := StandardMaterial3D.new()
+	marker_mat.albedo_color = Color(0.15, 0.08, 0.25, 0.82)
+	marker_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	marker_mat.emission_enabled = true
+	marker_mat.emission = Color(0.65, 0.25, 1.0)
+	marker_mat.emission_energy_multiplier = 2.0
+	marker.material_override = marker_mat
+	portal.add_child(marker)
+	var label := Label3D.new()
+	label.position = Vector3(0, 4.9, 0)
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.text = "🃏 카드 덱 던전\n[E / 클릭 / 터치] 입장"
+	label.font_size = 30
+	label.outline_size = 9
+	label.outline_modulate = Color(0.03, 0.01, 0.07, 1)
+	portal.add_child(label)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(5.0, 4.8, 1.4)
+	collision.shape = shape
+	collision.position.y = 2.4
+	portal.add_child(collision)
+	parent.add_child(portal)
+	_register_interactable(portal, "card_dungeon", "카드 덱 던전 입장", 7.0)
+	return portal
+
+func _on_card_portal_body_entered(body: Node3D):
+	if body.is_in_group("player") and GameManager.current_location == GameManager.Location.LOBBY:
+		GameManager.go_to_deck_builder()
 
 func _create_crate_stack(parent: Node3D, pos: Vector3):
 	var stack = StaticBody3D.new()
@@ -717,6 +823,7 @@ func _populate_nature(parent: Node3D):
 		var pos = Vector3(randf_range(-35, 35), 0, randf_range(-55, 35))
 		# Avoid plaza and main north road
 		if pos.length() < 13.0 or (abs(pos.x) < 4.5 and pos.z < 0 and pos.z > -45):
+			tree.free()
 			continue
 		tree.position = pos
 		parent.add_child(tree)

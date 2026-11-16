@@ -171,19 +171,15 @@ theme_override_colors/font_color = Color(0.9, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 12
 text = "출현 몬스터: 좀비, 스켈레톤, 뮤턴트 (보스)"
 
-[node name="PartyPreview" type="VBoxContainer" parent="Panel/Margin/VBox/Body"]
+[node name="FighterPreview" type="VBoxContainer" parent="Panel/Margin/VBox/Body"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PowerLabel" type="Label" parent="Panel/Margin/VBox/Body/PartyPreview"]
+[node name="PowerLabel" type="Label" parent="Panel/Margin/VBox/Body/FighterPreview"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.9, 1, 1)
 theme_override_font_sizes/font_size = 15
-text = "파티 전투력: 1250  (권장: 180)"
-
-[node name="MembersBox" type="HBoxContainer" parent="Panel/Margin/VBox/Body/PartyPreview"]
-layout_mode = 2
-theme_override_constants/separation = 12
+text = "무도가 전투력: 1250  (권장: 180)"
 
 [node name="RewardBox" type="PanelContainer" parent="Panel/Margin/VBox/Body"]
 layout_mode = 2

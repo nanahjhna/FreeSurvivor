@@ -19,6 +19,9 @@ var walk_cycle: float = 0.0
 @onready var leg_l: Node3D = $VisualRoot.get_node_or_null("LegL")
 @onready var leg_r: Node3D = $VisualRoot.get_node_or_null("LegR")
 @onready var name_label: Label3D = $NameLabel3D
+@onready var interaction_bubble: Label3D = $InteractionBubble
+var _bubble_time := 0.0
+var _interaction_highlighted := false
 
 func _ready():
 	add_to_group("npcs")
@@ -38,6 +41,11 @@ func _ready():
 		body.material_override = mat
 
 func _physics_process(delta: float):
+	_bubble_time += delta
+	if interaction_bubble:
+		interaction_bubble.position.y = 2.82 + sin(_bubble_time * 2.2) * 0.06
+		var target_scale := Vector3.ONE * (1.16 if _interaction_highlighted else 1.0)
+		interaction_bubble.scale = interaction_bubble.scale.lerp(target_scale, minf(1.0, delta * 8.0))
 	if not is_on_floor():
 		velocity.y -= 19.6 * delta
 	else:
@@ -79,6 +87,12 @@ func _physics_process(delta: float):
 			visual_root.position.y = abs(sin(walk_cycle)) * 0.05
 	
 	move_and_slide()
+
+func set_interaction_highlight(highlighted: bool):
+	_interaction_highlighted = highlighted
+	if interaction_bubble:
+		interaction_bubble.modulate = Color(1.0, 0.86, 0.3, 1.0) if highlighted else Color(0.82, 0.92, 1.0, 0.95)
+		interaction_bubble.text = "💬  지금 대화하기!\n[E / 터치]" if highlighted else "💬  대화하기\n[E / 터치]"
 
 func _pick_new_patrol_target():
 	var angle = randf() * TAU

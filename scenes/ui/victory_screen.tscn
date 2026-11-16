@@ -60,6 +60,12 @@ theme_override_font_sizes/font_size = 20
 text = "생존 시간: 05:00 (클리어!)"
 horizontal_alignment = 1
 
+[node name="LevelStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "도달 서바이벌 레벨: Lv.1"
+horizontal_alignment = 1
+
 [node name="GoldStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
@@ -69,13 +75,26 @@ horizontal_alignment = 1
 [node name="XPStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "획득 경험치: +0"
+text = "획득 성장 재화: +0"
+horizontal_alignment = 1
+
+[node name="CardsStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "획득 카드: 없음"
 horizontal_alignment = 1
 
 [node name="ItemsStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "획득 아이템: 없음"
+horizontal_alignment = 1
+
+[node name="RecordStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
+theme_override_font_sizes/font_size = 18
+text = "최고 기록 갱신: 없음"
 horizontal_alignment = 1
 
 [node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]

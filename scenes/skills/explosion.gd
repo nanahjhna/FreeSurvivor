@@ -16,7 +16,7 @@ func _ready():
 	scale = Vector3(0.1, 0.1, 0.1)
 	var tween = create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(self, "scale", Vector3(1.0, 0.8, 1.0), lifetime).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "scale", Vector3.ONE, lifetime).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.set_parallel(false)
 	tween.tween_callback(queue_free)
 
