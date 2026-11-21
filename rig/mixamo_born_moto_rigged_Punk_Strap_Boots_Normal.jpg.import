@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b0wdxhxwknbxe"
 path.s3tc="res://.godot/imported/mixamo_born_moto_rigged_Punk_Strap_Boots_Normal.jpg-4fa8e1a88b7bae8066bbcae9ac51a2c0.s3tc.ctex"
+path.etc2="res://.godot/imported/mixamo_born_moto_rigged_Punk_Strap_Boots_Normal.jpg-4fa8e1a88b7bae8066bbcae9ac51a2c0.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://rig/mixamo_born_moto_rigged_Punk_Strap_Boots_Normal.jpg"
-dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Punk_Strap_Boots_Normal.jpg-4fa8e1a88b7bae8066bbcae9ac51a2c0.s3tc.ctex"]
+dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Punk_Strap_Boots_Normal.jpg-4fa8e1a88b7bae8066bbcae9ac51a2c0.s3tc.ctex", "res://.godot/imported/mixamo_born_moto_rigged_Punk_Strap_Boots_Normal.jpg-4fa8e1a88b7bae8066bbcae9ac51a2c0.etc2.ctex"]
 
 [params]
 

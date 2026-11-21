@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cioblff1p64kw"
 path.s3tc="res://.godot/imported/T_Plaster_BaseColor.png-1110f97e65c60a91e7c8bc9144ee5b6b.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Plaster_BaseColor.png-1110f97e65c60a91e7c8bc9144ee5b6b.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/map/Medieval Village MegaKit[Standard]/Textures/T_Plaster_BaseColor.png"
-dest_files=["res://.godot/imported/T_Plaster_BaseColor.png-1110f97e65c60a91e7c8bc9144ee5b6b.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Plaster_BaseColor.png-1110f97e65c60a91e7c8bc9144ee5b6b.s3tc.ctex", "res://.godot/imported/T_Plaster_BaseColor.png-1110f97e65c60a91e7c8bc9144ee5b6b.etc2.ctex"]
 
 [params]
 

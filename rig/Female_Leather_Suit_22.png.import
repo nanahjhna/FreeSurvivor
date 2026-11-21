@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bda3hoqnsq1xp"
 path.s3tc="res://.godot/imported/Female_Leather_Suit_22.png-71473283b955e5b97c709b06db64fdea.s3tc.ctex"
+path.etc2="res://.godot/imported/Female_Leather_Suit_22.png-71473283b955e5b97c709b06db64fdea.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://rig/Female_Leather_Suit_22.png"
-dest_files=["res://.godot/imported/Female_Leather_Suit_22.png-71473283b955e5b97c709b06db64fdea.s3tc.ctex"]
+dest_files=["res://.godot/imported/Female_Leather_Suit_22.png-71473283b955e5b97c709b06db64fdea.s3tc.ctex", "res://.godot/imported/Female_Leather_Suit_22.png-71473283b955e5b97c709b06db64fdea.etc2.ctex"]
 
 [params]
 

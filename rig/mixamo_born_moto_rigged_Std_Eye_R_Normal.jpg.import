@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c8obiyvr8c6c3"
 path.s3tc="res://.godot/imported/mixamo_born_moto_rigged_Std_Eye_R_Normal.jpg-5fde86ba83c874c3a7fafa4c7e32731c.s3tc.ctex"
+path.etc2="res://.godot/imported/mixamo_born_moto_rigged_Std_Eye_R_Normal.jpg-5fde86ba83c874c3a7fafa4c7e32731c.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://rig/mixamo_born_moto_rigged_Std_Eye_R_Normal.jpg"
-dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Std_Eye_R_Normal.jpg-5fde86ba83c874c3a7fafa4c7e32731c.s3tc.ctex"]
+dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Std_Eye_R_Normal.jpg-5fde86ba83c874c3a7fafa4c7e32731c.s3tc.ctex", "res://.godot/imported/mixamo_born_moto_rigged_Std_Eye_R_Normal.jpg-5fde86ba83c874c3a7fafa4c7e32731c.etc2.ctex"]
 
 [params]
 

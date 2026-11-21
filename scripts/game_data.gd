@@ -122,6 +122,10 @@ var survival_kills: int = 0
 
 # --- UI / Tutorial / Meta state ---
 var input_mode: String = "auto" # auto, pc, mobile
+var camera_view_mode: String = "quarter"
+var camera_elevation_degrees: float = 35.0
+var camera_azimuth_degrees: float = 0.0
+var camera_distance: float = 18.0
 var tutorial_flags: Dictionary = {
 	"seen_character": false,
 	"seen_party": false,
@@ -1028,6 +1032,10 @@ func _serialize_runtime_state() -> Dictionary:
 		"current_selected_stage_id": current_selected_stage_id,
 		"last_battle_result": last_battle_result,
 		"input_mode": input_mode,
+		"camera_view_mode": camera_view_mode,
+		"camera_elevation_degrees": camera_elevation_degrees,
+		"camera_azimuth_degrees": camera_azimuth_degrees,
+		"camera_distance": camera_distance,
 		"tutorial_flags": tutorial_flags,
 		"monster_kill_counts": monster_kill_counts
 	}
@@ -1102,6 +1110,10 @@ func _apply_runtime_state(data: Dictionary):
 		last_battle_result = data["last_battle_result"].duplicate(true)
 
 	input_mode = str(data.get("input_mode", input_mode))
+	camera_view_mode = str(data.get("camera_view_mode", camera_view_mode))
+	camera_elevation_degrees = clampf(float(data.get("camera_elevation_degrees", camera_elevation_degrees)), 20.0, 75.0)
+	camera_azimuth_degrees = wrapf(float(data.get("camera_azimuth_degrees", camera_azimuth_degrees)), -180.0, 180.0)
+	camera_distance = clampf(float(data.get("camera_distance", camera_distance)), 8.0, 24.0)
 	if data.has("tutorial_flags") and data["tutorial_flags"] is Dictionary:
 		for key in data["tutorial_flags"]:
 			tutorial_flags[key] = data["tutorial_flags"][key]

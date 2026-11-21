@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://va4fate0iqee"
 path.s3tc="res://.godot/imported/mixamo_born_moto_rigged_F_Black_Outfit_L_Normal.jpg-68f9f0e4b234323f83d4ca8bf9184ab2.s3tc.ctex"
+path.etc2="res://.godot/imported/mixamo_born_moto_rigged_F_Black_Outfit_L_Normal.jpg-68f9f0e4b234323f83d4ca8bf9184ab2.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://rig/mixamo_born_moto_rigged_F_Black_Outfit_L_Normal.jpg"
-dest_files=["res://.godot/imported/mixamo_born_moto_rigged_F_Black_Outfit_L_Normal.jpg-68f9f0e4b234323f83d4ca8bf9184ab2.s3tc.ctex"]
+dest_files=["res://.godot/imported/mixamo_born_moto_rigged_F_Black_Outfit_L_Normal.jpg-68f9f0e4b234323f83d4ca8bf9184ab2.s3tc.ctex", "res://.godot/imported/mixamo_born_moto_rigged_F_Black_Outfit_L_Normal.jpg-68f9f0e4b234323f83d4ca8bf9184ab2.etc2.ctex"]
 
 [params]
 

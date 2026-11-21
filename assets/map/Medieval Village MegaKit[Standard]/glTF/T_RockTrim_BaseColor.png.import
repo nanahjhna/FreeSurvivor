@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cdy1jt313yutd"
 path.s3tc="res://.godot/imported/T_RockTrim_BaseColor.png-b8a1b96604e98bff934811df54d19003.s3tc.ctex"
+path.etc2="res://.godot/imported/T_RockTrim_BaseColor.png-b8a1b96604e98bff934811df54d19003.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/map/Medieval Village MegaKit[Standard]/glTF/T_RockTrim_BaseColor.png"
-dest_files=["res://.godot/imported/T_RockTrim_BaseColor.png-b8a1b96604e98bff934811df54d19003.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_RockTrim_BaseColor.png-b8a1b96604e98bff934811df54d19003.s3tc.ctex", "res://.godot/imported/T_RockTrim_BaseColor.png-b8a1b96604e98bff934811df54d19003.etc2.ctex"]
 
 [params]
 

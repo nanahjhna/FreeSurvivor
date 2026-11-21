@@ -100,6 +100,15 @@ func _process(delta: float):
 		player_node = get_tree().get_first_node_in_group("player")
 		if player_node:
 			_setup_player(player_node)
+	if player_node != null and is_instance_valid(player_node) and hp_bar != null:
+		var curr := float(player_node.get("current_hp"))
+		var maximum := float(player_node.get("max_hp"))
+		hp_bar.max_value = maximum
+		hp_bar.value = curr
+		if hp_label != null:
+			hp_label.text = str(int(curr)) + " / " + str(int(maximum))
+		if player_node.has_method("sync_head_hp_bar"):
+			player_node.call("sync_head_hp_bar", hp_bar.value, hp_bar.max_value)
 
 	if skill_manager == null or not is_instance_valid(skill_manager):
 		skill_manager = get_tree().root.find_child("SkillManager", true, false)

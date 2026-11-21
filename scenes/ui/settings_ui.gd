@@ -17,6 +17,15 @@ var _advanced_button: Button
 var _portrait_layout := false
 var _awaiting_action: String = ""
 var _awaiting_button: Button = null
+var _camera_box: VBoxContainer
+var _camera_mode_option: OptionButton
+var _camera_angle_slider: HSlider
+var _camera_direction_slider: HSlider
+var _camera_distance_slider: HSlider
+var _camera_angle_value: Label
+var _camera_direction_value: Label
+var _camera_distance_value: Label
+var _camera_settings_changed := false
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -28,7 +37,7 @@ func _ready():
 	_portrait_layout = portrait
 	panel.custom_minimum_size = Vector2(
 		minf(viewport_size.x - 32.0, 660.0) if portrait else 660.0,
-		minf(viewport_size.y - 48.0, 500.0) if portrait else 760.0
+		minf(viewport_size.y - 48.0, 700.0) if portrait else 760.0
 	)
 	var margin := get_node_or_null("CenterContainer/Panel/Margin") as MarginContainer
 	if margin and portrait:
@@ -43,6 +52,7 @@ func _ready():
 	if sfx_slider:
 		sfx_slider.value = 85
 	_build_controls_section()
+	_build_camera_section()
 	_build_hud_section()
 	if portrait:
 		fullscreen_check.visible = false
@@ -131,6 +141,110 @@ func _build_hud_section():
 	edit_button.pressed.connect(_open_hud_editor)
 	content_box.add_child(edit_button)
 
+func _build_camera_section():
+	var separator := HSeparator.new()
+	content_box.add_child(separator)
+	_camera_box = VBoxContainer.new()
+	_camera_box.add_theme_constant_override("separation", 8)
+	content_box.add_child(_camera_box)
+	_camera_box.add_child(UiStyle.make_label("🎥 카메라 시점", 16, Color(0.9, 0.94, 1.0)))
+	var mode_row := HBoxContainer.new()
+	_camera_box.add_child(mode_row)
+	mode_row.add_child(UiStyle.make_label("시점 방식", 14))
+	_camera_mode_option = OptionButton.new()
+	_camera_mode_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_camera_mode_option.custom_minimum_size.y = 40
+	_camera_mode_option.add_item("고정 쿼터뷰", 0)
+	_camera_mode_option.add_item("캐릭터 추적뷰", 1)
+	_camera_mode_option.item_selected.connect(_on_camera_settings_changed)
+	mode_row.add_child(_camera_mode_option)
+	_camera_angle_slider = _add_camera_slider("기울기", 20.0, 75.0, 1.0)
+	_camera_direction_slider = _add_camera_slider("좌우 방향", -180.0, 180.0, 5.0)
+	_camera_distance_slider = _add_camera_slider("거리 / 줌", 4.0, 24.0, 0.5)
+	_refresh_camera_controls()
+
+func _add_camera_slider(title: String, min_value: float, max_value: float, step: float) -> HSlider:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	_camera_box.add_child(row)
+	var title_label := UiStyle.make_label(title, 13)
+	title_label.custom_minimum_size.x = 90.0
+	row.add_child(title_label)
+	var slider := HSlider.new()
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = step
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.custom_minimum_size.y = 32.0
+	slider.value_changed.connect(_on_camera_slider_changed)
+	row.add_child(slider)
+	var value_label := UiStyle.make_label("", 13, Color(1.0, 0.86, 0.45))
+	value_label.custom_minimum_size.x = 54.0
+	row.add_child(value_label)
+	match title:
+		"기울기":
+			_camera_angle_value = value_label
+		"좌우 방향":
+			_camera_direction_value = value_label
+		"거리 / 줌":
+			_camera_distance_value = value_label
+	return slider
+
+func _refresh_camera_controls():
+	var player := _get_camera_player()
+	if _camera_box == null:
+		return
+	_camera_box.visible = player != null
+	if player == null:
+		return
+	_camera_mode_option.select(1 if GameData.camera_view_mode == "follow" else 0)
+	_camera_angle_slider.set_value_no_signal(GameData.camera_elevation_degrees)
+	_camera_direction_slider.set_value_no_signal(GameData.camera_azimuth_degrees)
+	_camera_distance_slider.set_value_no_signal(GameData.camera_distance)
+	_update_camera_value_labels()
+
+func _get_camera_player() -> Node:
+	var scene := get_tree().current_scene
+	return scene.find_child("Player", true, false) if scene else null
+
+func _on_camera_settings_changed(_index: int):
+	_apply_camera_settings()
+
+func _on_camera_slider_changed(_value: float):
+	_update_camera_value_labels()
+	_apply_camera_settings()
+
+func _update_camera_value_labels():
+	if _camera_angle_value: _camera_angle_value.text = "%d°" % roundi(_camera_angle_slider.value)
+	if _camera_direction_value: _camera_direction_value.text = "%d°" % roundi(_camera_direction_slider.value)
+	if _camera_distance_value: _camera_distance_value.text = "%.1fm" % _camera_distance_slider.value
+
+func _apply_camera_settings():
+	var player := _get_camera_player()
+	if player == null:
+		return
+	var camera := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
+	if camera == null:
+		return
+	GameData.camera_view_mode = "follow" if _camera_mode_option.selected == 1 else "quarter"
+	GameData.camera_elevation_degrees = _camera_angle_slider.value
+	GameData.camera_azimuth_degrees = _camera_direction_slider.value
+	GameData.camera_distance = _camera_distance_slider.value
+	var following := GameData.camera_view_mode == "follow"
+	camera.set("quarter_view_enabled", not following)
+	camera.set("back_view_enabled", following)
+	camera.set("first_person_enabled", false)
+	camera.set("quarter_elevation_degrees", GameData.camera_elevation_degrees)
+	camera.set("back_elevation_degrees", GameData.camera_elevation_degrees)
+	camera.set("quarter_azimuth_degrees", GameData.camera_azimuth_degrees)
+	camera.set("back_yaw_offset_degrees", 180.0 + GameData.camera_azimuth_degrees)
+	camera.set("quarter_distance", GameData.camera_distance)
+	camera.set("back_distance", GameData.camera_distance)
+	camera.set("min_back_distance", 4.0)
+	camera.set("max_back_distance", 24.0)
+	camera.call("snap_to_target")
+	_camera_settings_changed = true
+
 func _open_hud_editor():
 	var hud := get_tree().current_scene.find_child("HUD", true, false)
 	if hud and hud.has_method("begin_hud_edit"):
@@ -147,7 +261,7 @@ func _set_advanced_open(is_open: bool):
 	_advanced_button.text = "PC 단축키 · 고급 설정 닫기" if is_open else "PC 단축키 · 고급 설정 보기"
 	if _portrait_layout:
 		var viewport_height := get_viewport().get_visible_rect().size.y
-		panel.custom_minimum_size.y = minf(viewport_height - 48.0, 900.0 if is_open else 500.0)
+		panel.custom_minimum_size.y = minf(viewport_height - 48.0, 900.0 if is_open else 700.0)
 
 func _refresh_input_mode():
 	if _input_mode_option == null:
@@ -228,6 +342,7 @@ func _end_capture():
 
 func open():
 	visible = true
+	_refresh_camera_controls()
 	if _portrait_layout:
 		_set_advanced_open(false)
 	_refresh_key_list()
@@ -237,6 +352,9 @@ func close():
 	if _awaiting_action != "":
 		_end_capture()
 	visible = false
+	if _camera_settings_changed:
+		GameData.save_to_disk()
+		_camera_settings_changed = false
 	closed.emit()
 
 func _on_close_button_pressed():

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cagvthflbrcj2"
 path.s3tc="res://.godot/imported/mixamo_born_moto_rigged_Hair_Transparency_Diffuse_0003-Hair_Transparency_Opacity_0003.png-40b63cbbebd194ef8c83d346fe9da886.s3tc.ctex"
+path.etc2="res://.godot/imported/mixamo_born_moto_rigged_Hair_Transparency_Diffuse_0003-Hair_Transparency_Opacity_0003.png-40b63cbbebd194ef8c83d346fe9da886.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://rig/mixamo_born_moto_rigged_Hair_Transparency_Diffuse_0003-Hair_Transparency_Opacity_0003.png"
-dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Hair_Transparency_Diffuse_0003-Hair_Transparency_Opacity_0003.png-40b63cbbebd194ef8c83d346fe9da886.s3tc.ctex"]
+dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Hair_Transparency_Diffuse_0003-Hair_Transparency_Opacity_0003.png-40b63cbbebd194ef8c83d346fe9da886.s3tc.ctex", "res://.godot/imported/mixamo_born_moto_rigged_Hair_Transparency_Diffuse_0003-Hair_Transparency_Opacity_0003.png-40b63cbbebd194ef8c83d346fe9da886.etc2.ctex"]
 
 [params]
 

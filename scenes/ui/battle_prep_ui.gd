@@ -49,7 +49,7 @@ func _apply_menu_layout():
 	var portrait := viewport_size.y >= viewport_size.x
 	var panel := $Panel as PanelContainer
 	if portrait:
-		var panel_size := Vector2(minf(viewport_size.x - 32.0, 680.0), minf(viewport_size.y - 48.0, 1120.0))
+		var panel_size := Vector2(minf(viewport_size.x - 24.0, 560.0), minf(viewport_size.y - 48.0, 900.0))
 		panel.custom_minimum_size = panel_size
 		panel.offset_left = -panel_size.x * 0.5
 		panel.offset_right = panel_size.x * 0.5
@@ -57,17 +57,43 @@ func _apply_menu_layout():
 		panel.offset_bottom = panel_size.y * 0.5
 		var margin := $Panel/Margin as MarginContainer
 		for side in ["margin_left", "margin_right"]:
-			margin.add_theme_constant_override(side, 16)
+			margin.add_theme_constant_override(side, 12)
 		for side in ["margin_top", "margin_bottom"]:
-			margin.add_theme_constant_override(side, 16)
+			margin.add_theme_constant_override(side, 12)
 		for tab in stage_tab_buttons:
-			tab.custom_minimum_size = Vector2(panel_size.x - 64.0, 166.0)
+			tab.custom_minimum_size = Vector2(panel_size.x - 40.0, 150.0)
 			tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		start_button.custom_minimum_size = Vector2(220, 60)
+		# Put stage title, chapter, and difficulty on separate lines so their
+		# combined text widths cannot push the panel beyond a narrow phone screen.
+		var stage_info_vbox := $Panel/Margin/VBox/Body/StageInfo/Margin/VBox as VBoxContainer
+		var chapter_parent := chapter_lbl.get_parent()
+		chapter_parent.remove_child(chapter_lbl)
+		chapter_parent.remove_child(diff_lbl)
+		stage_info_vbox.add_child(chapter_lbl)
+		stage_info_vbox.add_child(diff_lbl)
+		stage_info_vbox.move_child(chapter_lbl, 1)
+		stage_info_vbox.move_child(diff_lbl, 2)
+		chapter_lbl.add_theme_font_size_override("font_size", 12)
+		diff_lbl.add_theme_font_size_override("font_size", 12)
+		chapter_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		diff_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		# Stack reward labels on phones instead of letting a long row get clipped.
+		var reward_row := $Panel/Margin/VBox/Body/RewardBox/Margin/HBox as HBoxContainer
+		var reward_parent := reward_row.get_parent()
+		var reward_column := VBoxContainer.new()
+		reward_column.add_theme_constant_override("separation", 6)
+		for reward_label in [reward_gold_lbl, reward_xp_lbl, reward_items_lbl]:
+			reward_row.remove_child(reward_label)
+			reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			reward_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			reward_column.add_child(reward_label)
+		reward_parent.remove_child(reward_row)
+		reward_parent.add_child(reward_column)
+		reward_row.queue_free()
+		start_button.custom_minimum_size = Vector2(110, 30)
 		start_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		$Panel/Margin/VBox/BottomRow/CancelBtn.custom_minimum_size = Vector2(140, 56)
-		$Panel/Margin/VBox/BottomRow/StartBattleBtn.add_theme_font_size_override("font_size", 20)
-		$Panel/Margin/VBox/Body/RewardBox/Margin/HBox.add_theme_constant_override("separation", 10)
+		$Panel/Margin/VBox/BottomRow/CancelBtn.custom_minimum_size = Vector2(70, 28)
+		$Panel/Margin/VBox/BottomRow/StartBattleBtn.add_theme_font_size_override("font_size", 14)
 	else:
 		var panel_size := Vector2(minf(880.0, viewport_size.x - 48.0), minf(580.0, viewport_size.y - 48.0))
 		panel.custom_minimum_size = panel_size

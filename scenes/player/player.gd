@@ -49,6 +49,11 @@ var revive_used: bool = false
 @onready var character_model_root: Node3D = $VisualRoot/CharacterModelRoot
 @onready var slash_effect: Node3D = $VisualRoot/SlashEffect
 @onready var camera_node: Camera3D = $CameraPivot/SpringArm3D/Camera3D
+var _head_hp_fill: MeshInstance3D
+var _head_hp_background: MeshInstance3D
+var _head_hp_fill_material: StandardMaterial3D
+var _head_hp_bar_enabled: bool = true
+const HEAD_HP_BAR_WIDTH: float = 0.775
 
 var model_animation_player: AnimationPlayer
 var model_clips: Dictionary = {}
@@ -64,6 +69,11 @@ var stat_manager: StatManager = StatManager.new()
 func _ready():
 	add_to_group("player")
 	set_character_appearance(GameData.get_leader_id())
+	first_person_mode = false
+	if character_model:
+		character_model.visible = true
+	_create_head_hp_bar()
+	hp_changed.connect(_update_head_hp_bar)
 	refresh_persistent_stats()
 	collision_layer = 1 # Layer 1: Player
 	collision_mask = 35 # Layer 1: Player, Layer 2: Enemies, Layer 6: Environment
@@ -79,6 +89,7 @@ func _ready():
 	GameData.player_current_hp = current_hp
 	
 	emit_signal("hp_changed", current_hp, max_hp)
+	_update_head_hp_bar(current_hp, max_hp)
 	emit_signal("sp_changed", current_sp, max_sp)
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 	if slash_effect:
@@ -99,6 +110,11 @@ func _physics_process(delta: float):
 	if is_combat_enabled:
 		_handle_auto_attack(delta)
 		_handle_items(delta)
+
+func _process(_delta: float) -> void:
+	# Keep the world-space indicator in lockstep even if a system updates HP
+	# without emitting the usual signal.
+	_update_head_hp_bar(current_hp, max_hp)
 
 func set_touch_move(value: Vector2):
 	touch_move_vector = value.limit_length(1.0)
@@ -205,6 +221,56 @@ func set_first_person_mode(enabled: bool) -> void:
 	first_person_mode = enabled
 	if character_model:
 		character_model.visible = not enabled
+	_update_head_hp_bar(current_hp, max_hp)
+
+func set_head_hp_bar_visible(enabled: bool) -> void:
+	_head_hp_bar_enabled = enabled
+	_update_head_hp_bar(current_hp, max_hp)
+
+func sync_head_hp_bar(current: float, maximum: float) -> void:
+	_update_head_hp_bar(current, maximum)
+
+func _create_head_hp_bar() -> void:
+	var bar_root := Node3D.new()
+	bar_root.name = "HeadHPBar"
+	bar_root.position = Vector3(0.0, 2.85, 0.0)
+	add_child(bar_root)
+	_head_hp_background = _make_head_hp_mesh(Color(0.055, 0.025, 0.03, 0.9))
+	bar_root.add_child(_head_hp_background)
+	_head_hp_fill = _make_head_hp_mesh(Color(0.9, 0.12, 0.12, 1.0))
+	bar_root.add_child(_head_hp_fill)
+	_head_hp_fill.position.z = 0.01
+	_head_hp_fill_material = _head_hp_fill.material_override as StandardMaterial3D
+
+func _make_head_hp_mesh(color: Color) -> MeshInstance3D:
+	var mesh_instance := MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(HEAD_HP_BAR_WIDTH, 0.08)
+	mesh_instance.mesh = quad
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	material.albedo_color = color
+	material.no_depth_test = true
+	mesh_instance.material_override = material
+	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mesh_instance
+
+func _update_head_hp_bar(current: float, maximum: float) -> void:
+	if _head_hp_fill == null or _head_hp_background == null:
+		return
+	var ratio := clampf(current / maximum, 0.0, 1.0) if maximum > 0.0 else 0.0
+	_head_hp_fill.scale.x = ratio
+	_head_hp_fill.position.x = -(HEAD_HP_BAR_WIDTH * (1.0 - ratio) * 0.5)
+	if _head_hp_fill_material != null:
+		if ratio <= 0.3:
+			_head_hp_fill_material.albedo_color = Color(0.9, 0.12, 0.12, 1.0)
+		elif ratio <= 0.6:
+			_head_hp_fill_material.albedo_color = Color(0.95, 0.8, 0.1, 1.0)
+		else:
+			_head_hp_fill_material.albedo_color = Color(0.15, 0.85, 0.25, 1.0)
+	_head_hp_background.visible = _head_hp_bar_enabled and not first_person_mode
+	_head_hp_fill.visible = _head_hp_bar_enabled and ratio > 0.0 and not first_person_mode
 
 func set_character_2d_mode(enabled: bool):
 	set_character_appearance("fighter_2d" if enabled else "fighter")

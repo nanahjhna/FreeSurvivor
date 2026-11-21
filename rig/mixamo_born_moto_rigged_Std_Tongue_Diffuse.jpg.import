@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://nhjafn10wy8i"
 path.s3tc="res://.godot/imported/mixamo_born_moto_rigged_Std_Tongue_Diffuse.jpg-0ef225d25e56e2f4a57b4f45b6f16fff.s3tc.ctex"
+path.etc2="res://.godot/imported/mixamo_born_moto_rigged_Std_Tongue_Diffuse.jpg-0ef225d25e56e2f4a57b4f45b6f16fff.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://rig/mixamo_born_moto_rigged_Std_Tongue_Diffuse.jpg"
-dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Std_Tongue_Diffuse.jpg-0ef225d25e56e2f4a57b4f45b6f16fff.s3tc.ctex"]
+dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Std_Tongue_Diffuse.jpg-0ef225d25e56e2f4a57b4f45b6f16fff.s3tc.ctex", "res://.godot/imported/mixamo_born_moto_rigged_Std_Tongue_Diffuse.jpg-0ef225d25e56e2f4a57b4f45b6f16fff.etc2.ctex"]
 
 [params]
 

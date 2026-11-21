@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bsjgd2e7u0csr"
 path.s3tc="res://.godot/imported/T_VineLeaf_png.png-2884acbb49b17e3257a8166ef43da6b6.s3tc.ctex"
+path.etc2="res://.godot/imported/T_VineLeaf_png.png-2884acbb49b17e3257a8166ef43da6b6.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/map/Medieval Village MegaKit[Standard]/glTF/T_VineLeaf_png.png"
-dest_files=["res://.godot/imported/T_VineLeaf_png.png-2884acbb49b17e3257a8166ef43da6b6.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_VineLeaf_png.png-2884acbb49b17e3257a8166ef43da6b6.s3tc.ctex", "res://.godot/imported/T_VineLeaf_png.png-2884acbb49b17e3257a8166ef43da6b6.etc2.ctex"]
 
 [params]
 

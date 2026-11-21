@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b2lqs5v3wuf7p"
 path.s3tc="res://.godot/imported/mixamo_born_moto_rigged_Std_Lower_Teeth_Diffuse.jpg-83529ff5ee43e68f03695cd95662676e.s3tc.ctex"
+path.etc2="res://.godot/imported/mixamo_born_moto_rigged_Std_Lower_Teeth_Diffuse.jpg-83529ff5ee43e68f03695cd95662676e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://rig/mixamo_born_moto_rigged_Std_Lower_Teeth_Diffuse.jpg"
-dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Std_Lower_Teeth_Diffuse.jpg-83529ff5ee43e68f03695cd95662676e.s3tc.ctex"]
+dest_files=["res://.godot/imported/mixamo_born_moto_rigged_Std_Lower_Teeth_Diffuse.jpg-83529ff5ee43e68f03695cd95662676e.s3tc.ctex", "res://.godot/imported/mixamo_born_moto_rigged_Std_Lower_Teeth_Diffuse.jpg-83529ff5ee43e68f03695cd95662676e.etc2.ctex"]
 
 [params]
 

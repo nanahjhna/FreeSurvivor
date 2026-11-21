@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c18eg5bgiis07"
 path.s3tc="res://.godot/imported/char04_1.png-083de5244d2969bb713abfe446fa6697.s3tc.ctex"
+path.etc2="res://.godot/imported/char04_1.png-083de5244d2969bb713abfe446fa6697.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/char/char04/char04_1.png"
-dest_files=["res://.godot/imported/char04_1.png-083de5244d2969bb713abfe446fa6697.s3tc.ctex"]
+dest_files=["res://.godot/imported/char04_1.png-083de5244d2969bb713abfe446fa6697.s3tc.ctex", "res://.godot/imported/char04_1.png-083de5244d2969bb713abfe446fa6697.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c0yjhjwf2q101"
 path.s3tc="res://.godot/imported/T_Brick_Normal.png-0d5cbfd8f73b19a11f3a0ffd2ac8c9be.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Brick_Normal.png-0d5cbfd8f73b19a11f3a0ffd2ac8c9be.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/map/Medieval Village MegaKit[Standard]/glTF/T_Brick_Normal.png"
-dest_files=["res://.godot/imported/T_Brick_Normal.png-0d5cbfd8f73b19a11f3a0ffd2ac8c9be.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Brick_Normal.png-0d5cbfd8f73b19a11f3a0ffd2ac8c9be.s3tc.ctex", "res://.godot/imported/T_Brick_Normal.png-0d5cbfd8f73b19a11f3a0ffd2ac8c9be.etc2.ctex"]
 
 [params]
 

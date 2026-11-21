@@ -23,6 +23,8 @@ func _ready():
 	if player:
 		# Disable combat features in town
 		player.is_combat_enabled = false
+		if player.has_method("set_head_hp_bar_visible"):
+			player.call("set_head_hp_bar_visible", false)
 		if player.has_method("set_first_person_mode"):
 			player.call("set_first_person_mode", false)
 		# Set player at town central plaza
@@ -30,11 +32,11 @@ func _ready():
 		# Use the same third-person back view while exploring the village.
 		var cam := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 		if cam:
-			cam.set("quarter_view_enabled", true)
-			cam.set("quarter_distance", 18.0)
-			cam.set("quarter_elevation_degrees", 35.0)
-			cam.set("quarter_azimuth_degrees", 0.0)
-			cam.set("back_view_enabled", false)
+			cam.set("quarter_view_enabled", GameData.camera_view_mode != "follow")
+			cam.set("quarter_distance", GameData.camera_distance)
+			cam.set("quarter_elevation_degrees", GameData.camera_elevation_degrees)
+			cam.set("quarter_azimuth_degrees", GameData.camera_azimuth_degrees)
+			cam.set("back_view_enabled", GameData.camera_view_mode == "follow")
 			cam.set("first_person_enabled", false)
 			cam.fov = 60.0
 			cam.call("snap_to_target")
@@ -324,7 +326,8 @@ func _build_village_environment():
 	var root = Node3D.new()
 	root.name = "VillageProps"
 	add_child(root)
-	_create_village_boundary(root)
+	# Village walls removed per user request.
+	_build_village_roads(root)
 	
 	# 1. Central Fountain
 	_build_fountain(root, Vector3(0, 0, 0))
@@ -353,15 +356,11 @@ func _build_village_environment():
 	_create_building(root, Vector3(18, 0, 20), Vector3(12, 7, 10), Color(0.55, 0.42, 0.3), Color(0.2, 0.35, 0.55), "여관\n[Tavern & Inn]", false, "inn", "여관에서 휴식하기", 10.0)
 	
 	# 8. Residential Houses
-	_create_building(root, Vector3(-18, 0, 18), Vector3(8, 4.5, 7), Color(0.75, 0.72, 0.65), Color(0.75, 0.3, 0.15), "마을 주택 A")
-	_create_building(root, Vector3(-20, 0, -18), Vector3(8, 4.5, 7), Color(0.7, 0.7, 0.65), Color(0.25, 0.45, 0.25), "마을 주택 B")
-	_create_building(root, Vector3(20, 0, -18), Vector3(8, 4.5, 7), Color(0.72, 0.68, 0.6), Color(0.5, 0.25, 0.4), "마을 주택 C")
+	_create_building(root, Vector3(-18, 0, 18), Vector3(18, 10, 15), Color(0.75, 0.72, 0.65), Color(0.75, 0.3, 0.15), "마을 주택 A")
+	_create_building(root, Vector3(-20, 0, -18), Vector3(18, 10, 15), Color(0.7, 0.7, 0.65), Color(0.25, 0.45, 0.25), "마을 주택 B")
+	_create_building(root, Vector3(20, 0, -18), Vector3(18, 10, 15), Color(0.72, 0.68, 0.6), Color(0.5, 0.25, 0.4), "마을 주택 C")
 	
-	# 9. Small Pond in peaceful park corner (South-West)
-	_create_pond(root, Vector3(-8, 0, 18))
-	
-	# North gate forms the only opening in the stone town wall.
-	_create_castle_gate(root, Vector3(0, 0, -40))
+	# North gate / town wall removed per user request.
 
 	# Card deck dungeon entrance (independent from the survival gate)
 	_create_card_dungeon_portal(root, Vector3(-28, 0, 25))
@@ -371,14 +370,14 @@ func _build_village_environment():
 	_create_crate_stack(root, Vector3(16, 0, -4))
 	_create_crate_stack(root, Vector3(14, 0, 15))
 	
-	# 12. Trees & Flowers along roads
+	# 12. Flowers along roads
 	_populate_nature(root)
-	_add_map_asset(root, "Prop_Wagon", Vector3(-30, 0, 14), PI * 0.5, Vector3.ONE)
+	_add_map_asset(root, "Prop_Wagon", Vector3(-24, 0, 14), PI * 0.5, Vector3.ONE)
 	_add_map_asset(root, "Prop_Crate", Vector3(-14, 0, -7), 0.2, Vector3.ONE)
 	_add_map_asset(root, "Prop_Crate", Vector3(-12.8, 0, -7.1), -0.15, Vector3(0.9, 0.9, 0.9))
-	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-34, 0, 22), PI * 0.5, Vector3(1.4, 1.0, 1.0))
-	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-34, 0, 20), PI * 0.5, Vector3(1.4, 1.0, 1.0))
-	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-34, 0, 18), PI * 0.5, Vector3(1.4, 1.0, 1.0))
+	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-27, 0, 22), PI * 0.5, Vector3(1.4, 1.0, 1.0))
+	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-27, 0, 20), PI * 0.5, Vector3(1.4, 1.0, 1.0))
+	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-27, 0, 18), PI * 0.5, Vector3(1.4, 1.0, 1.0))
 	
 	# 13. Spawn NPCs
 	_spawn_npcs()
@@ -386,12 +385,14 @@ func _build_village_environment():
 func _create_village_boundary(parent: Node3D):
 	var boundary := Node3D.new()
 	boundary.name = "VisibleVillageBoundary"
+	# Align the village wall with the dungeon entrance direction.
+	boundary.rotation.y = atan2(-28.0, 25.0)
 	parent.add_child(boundary)
-	_create_boundary_segment(boundary, Vector3(0, 2, 40), Vector3(80, 4, 1.5))
-	_create_boundary_segment(boundary, Vector3(-24, 2, -40), Vector3(32, 4, 1.5))
-	_create_boundary_segment(boundary, Vector3(24, 2, -40), Vector3(32, 4, 1.5))
-	_create_boundary_segment(boundary, Vector3(40, 2, 0), Vector3(1.5, 4, 80))
-	_create_boundary_segment(boundary, Vector3(-40, 2, 0), Vector3(1.5, 4, 80))
+	_create_boundary_segment(boundary, Vector3(0, 2, 32), Vector3(64, 4, 1.5))
+	_create_boundary_segment(boundary, Vector3(-20, 2, -32), Vector3(24, 4, 1.5))
+	_create_boundary_segment(boundary, Vector3(20, 2, -32), Vector3(24, 4, 1.5))
+	_create_boundary_segment(boundary, Vector3(32, 2, 0), Vector3(1.5, 4, 64))
+	_create_boundary_segment(boundary, Vector3(-32, 2, 0), Vector3(1.5, 4, 64))
 
 func _create_boundary_segment(parent: Node3D, position_value: Vector3, size_value: Vector3):
 	var body := StaticBody3D.new()
@@ -413,6 +414,15 @@ func _create_boundary_segment(parent: Node3D, position_value: Vector3, size_valu
 	collision.shape = shape
 	body.add_child(collision)
 	parent.add_child(body)
+
+func _build_village_roads(parent: Node3D) -> void:
+	# Lay a broad cobblestone avenue from the plaza to the gate, plus a cross street.
+	for row in range(10):
+		var z := -27.0 + float(row) * 6.0
+		for x in [-4.0, 0.0, 4.0]:
+			_add_map_asset(parent, "Floor_UnevenBrick", Vector3(x, 0.015, z), 0.0, Vector3(2.0, 1.0, 3.0))
+	for x in [-24.0, -12.0, 0.0, 12.0, 24.0]:
+		_add_map_asset(parent, "Floor_UnevenBrick", Vector3(x, 0.02, 0.0), 0.0, Vector3(6.0, 1.0, 2.0))
 
 func _add_map_asset(parent: Node3D, asset_name: String, position_value: Vector3, rotation_y: float = 0.0, scale_value: Vector3 = Vector3.ONE) -> Node3D:
 	var packed: PackedScene = _village_asset_cache.get(asset_name) as PackedScene
@@ -450,7 +460,8 @@ func _build_modular_building_shell(parent: Node3D, size: Vector3):
 				piece = "Wall_Plaster_Window_Wide_Round"
 			var piece_position := Vector3.ZERO
 			var rotation_y := 0.0
-			var piece_scale := Vector3(spacing * 0.5, 1.0, 1.0)
+			var wall_height_scale := maxf(1.0, size.y / 6.0)
+			var piece_scale := Vector3(spacing * 0.5, wall_height_scale, 1.0)
 			match side:
 				0:
 					piece_position = Vector3(-size.x * 0.5 + spacing * (float(index) + 0.5), 0.0, size.z * 0.5)
@@ -465,7 +476,8 @@ func _build_modular_building_shell(parent: Node3D, size: Vector3):
 					rotation_y = -PI * 0.5
 					piece_scale.x = spacing * 0.5
 			_add_map_asset(parent, piece, piece_position, rotation_y, piece_scale)
-	_add_map_asset(parent, "Roof_RoundTiles_8x8", Vector3(0, 3.7, 0), 0.0, Vector3(size.x / 9.9, 0.7, size.z / 9.9))
+	var roof_height := maxf(3.7, size.y * 0.65)
+	_add_map_asset(parent, "Roof_RoundTiles_8x8", Vector3(0, roof_height, 0), 0.0, Vector3(size.x / 9.9, 0.7, size.z / 9.9))
 
 # ----------------- BUILDINGS & STRUCTURES -----------------
 
@@ -547,6 +559,17 @@ func _create_building(parent: Node3D, pos: Vector3, size: Vector3, wall_color: C
 	b.collision_mask = 3
 	
 	_build_modular_building_shell(b, size)
+	if size.y >= 9.0:
+		# Upper-floor balconies give the larger homes the timbered, lived-in
+		# silhouette shown in the asset pack preview.
+		for balcony_x in [-4.0, 4.0]:
+			_add_map_asset(
+				b,
+				"Balcony_Simple_Straight",
+				Vector3(balcony_x, size.y * 0.42, size.z * 0.5 + 0.75),
+				0.0,
+				Vector3(2.0, 1.4, 1.2)
+			)
 	
 	# Signboard with 3D Text
 	var sign_lbl = Label3D.new()
@@ -936,16 +959,6 @@ func _create_crate_stack(parent: Node3D, pos: Vector3):
 
 func _populate_nature(parent: Node3D):
 	seed(101)
-	for i in range(25):
-		var tree = _create_village_tree()
-		var pos = Vector3(randf_range(-35, 35), 0, randf_range(-55, 35))
-		# Avoid plaza and main north road
-		if pos.length() < 13.0 or (abs(pos.x) < 4.5 and pos.z < 0 and pos.z > -45):
-			tree.free()
-			continue
-		tree.position = pos
-		parent.add_child(tree)
-	
 	for i in range(40):
 		var flower = _create_village_flower()
 		var pos = Vector3(randf_range(-30, 30), 0, randf_range(-40, 30))

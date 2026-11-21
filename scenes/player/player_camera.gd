@@ -272,8 +272,8 @@ func adjust_zoom(steps: int) -> void:
 
 
 func reset_zoom() -> void:
-	_target_quarter_distance = 18.0
-	_target_back_distance = 5.5
+	_target_quarter_distance = GameData.camera_distance
+	_target_back_distance = GameData.camera_distance
 
 
 func _unhandled_input(event: InputEvent) -> void:
