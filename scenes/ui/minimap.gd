@@ -3,7 +3,7 @@ extends Control
 @export var radar_range: float = 40.0 # World distance represented from center to edge
 @export var is_circular: bool = false
 
-const MAP_SIZE := Vector2(124.0, 124.0)
+const MAP_SIZE := Vector2(160.0, 160.0)
 const MIN_RANGE := 15.0
 const MAX_RANGE := 100.0
 const ZOOM_STEP := 10.0
@@ -12,9 +12,10 @@ var player: Node3D = null
 var portal: Node3D = null
 var _redraw_timer: float = 0.0
 @onready var zoom_label: Label = $ZoomLabel
+@onready var portal_distance_label: Label = $PortalDistance
 
 func _ready():
-	custom_minimum_size = Vector2(170, 160)
+	custom_minimum_size = Vector2(160, 184)
 	_update_zoom_label()
 
 func _process(delta: float):
@@ -26,18 +27,25 @@ func _process(delta: float):
 		player = get_tree().get_first_node_in_group("player")
 	
 	if portal == null or not is_instance_valid(portal):
-		portal = get_tree().current_scene.find_child("BattlePortal", true, false)
+		portal = get_tree().current_scene.find_child("ReturnPortal", true, false)
+		if portal == null:
+			portal = get_tree().current_scene.find_child("BattlePortal", true, false)
+	if portal_distance_label:
+		if portal and is_instance_valid(portal) and player and is_instance_valid(player):
+			portal_distance_label.text = "포털 %.0fm" % player.global_position.distance_to(portal.global_position)
+			portal_distance_label.visible = true
+		else:
+			portal_distance_label.visible = false
 	
 	queue_redraw()
 
 func _draw():
 	var center := MAP_SIZE * 0.5
-	var radius := 56.0
+	var radius := 72.0
 	
 	# Square map background and border.
-	draw_rect(Rect2(Vector2(4, 4), MAP_SIZE - Vector2(8, 8)), Color(0.06, 0.09, 0.13, 0.92), true)
-	draw_rect(Rect2(Vector2(4, 4), MAP_SIZE - Vector2(8, 8)), Color(0.35, 0.58, 0.78, 0.95), false, 3.0)
-	draw_rect(Rect2(Vector2(34, 34), Vector2(56, 56)), Color(0.2, 0.3, 0.4, 0.35), false, 1.0)
+	draw_rect(Rect2(Vector2(3, 3), MAP_SIZE - Vector2(6, 6)), Color(0.035, 0.055, 0.09, 0.82), true)
+	draw_rect(Rect2(Vector2(3, 3), MAP_SIZE - Vector2(6, 6)), Color(0.28, 0.45, 0.64, 0.82), false, 1.0)
 	
 	# Crosshairs (subtle)
 	draw_line(Vector2(center.x, center.y - radius), Vector2(center.x, center.y + radius), Color(0.25, 0.35, 0.45, 0.25), 1.0)
@@ -118,6 +126,10 @@ func _draw_battle_elements(center: Vector2, radius: float, p_pos: Vector3):
 					draw_circle(e_pos, 4.2, Color(1.0, 0.15, 0.35, 1.0))
 				else:
 					draw_circle(e_pos, 2.8, Color(0.95, 0.25, 0.2, 0.9))
+	if portal and is_instance_valid(portal):
+		var portal_pos := _world_to_map_clamped_square(portal.global_position, p_pos, center, radius - 7.0)
+		_draw_diamond(portal_pos, 6.5, Color(0.2, 0.85, 1.0, 1.0))
+		_draw_diamond(portal_pos, 3.2, Color(0.88, 0.98, 1.0, 1.0))
 
 func _draw_player_arrow(center: Vector2):
 	var rot_y = 0.0

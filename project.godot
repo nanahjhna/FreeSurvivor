@@ -18,6 +18,8 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameData="*res://scripts/game_data.gd"
+PlayerManager="*res://scripts/player_manager.gd"
+MonsterManager="*res://scripts/monster_manager.gd"
 GameActions="*res://scripts/game_actions.gd"
 UiFeedback="*res://scenes/ui/ui_feedback.gd"
 HintManager="*res://scripts/hint_manager.gd"
@@ -26,10 +28,15 @@ SceneTransition="*res://scripts/scene_transition.gd"
 
 [display]
 
-window/size/viewport_width=1920
-window/size/viewport_height=1080
+window/size/viewport_width=720
+window/size/viewport_height=1280
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[filesystem]
+
+import/blender/enabled=false
 
 [layer_names]
 

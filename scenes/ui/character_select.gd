@@ -21,7 +21,7 @@ var selected_character_id := ""
 var selected_class_id := GameData.FIGHTER_ID
 var creation_slot := -1
 
-var slot_list: VBoxContainer
+var slot_list: HBoxContainer
 var class_list: VBoxContainer
 var detail_name: Label
 var detail_subtitle: Label
@@ -30,7 +30,6 @@ var detail_equipment: Label
 var detail_progress: Label
 var feedback_label: Label
 var delete_button: Button
-var enter_button: Button
 var delete_dialog: ConfirmationDialog
 var name_edit: LineEdit
 var create_button: Button
@@ -38,7 +37,13 @@ var create_button: Button
 var preview_container: SubViewportContainer
 var preview_viewport: SubViewport
 var preview_player: CharacterBody3D
+var preview_camera: Camera3D
 var preview_visual: Node3D
+var preview_camera_base_offset: Vector3 = Vector3(0.0, 4.5, 5.5)
+var preview_zoom: float = 1.0
+const PREVIEW_ZOOM_MIN := 0.55
+const PREVIEW_ZOOM_MAX := 1.55
+const PREVIEW_ZOOM_STEP := 0.12
 var _dragging := false
 var _last_drag_position := Vector2.ZERO
 var _preview_rotation := 0.0
@@ -54,41 +59,40 @@ func _ready():
 func _show_selection(preferred_id: String = ""):
 	screen_mode = ScreenMode.SELECT
 	_clear_screen()
-	var layout := _build_shell("CHARACTER SELECT", "← 타이틀", GameManager.go_to_title)
+	var layout := _build_shell("캐릭터 선택", "← 타이틀", GameManager.go_to_title)
 	var body := _new_body(layout)
 
-	var left := _make_section(body, 350, "캐릭터 슬롯")
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	left.add_child(scroll)
-	slot_list = VBoxContainer.new()
-	slot_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slot_list.add_theme_constant_override("separation", 8)
-	scroll.add_child(slot_list)
-
-	_build_preview(_make_section(body, 560, "3D 미리보기 · 드래그/터치로 회전"))
-	_build_detail_panel(_make_section(body, 430, "캐릭터 정보"))
-
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 10)
-	layout.add_child(actions)
-	delete_button = UiStyle.make_button("🗑 캐릭터 삭제", Vector2(210, 50))
-	delete_button.tooltip_text = "선택한 캐릭터의 저장 데이터만 삭제합니다. [Delete]"
-	delete_button.pressed.connect(_request_delete)
-	actions.add_child(delete_button)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	actions.add_child(spacer)
-	var new_button := UiStyle.make_button("＋ 새 캐릭터 생성", Vector2(230, 50))
-	new_button.tooltip_text = "첫 번째 빈 슬롯에서 캐릭터를 만듭니다. [N]"
-	new_button.pressed.connect(_create_in_first_empty_slot)
-	actions.add_child(new_button)
-	enter_button = UiStyle.make_button("게임 접속", Vector2(220, 50), true)
-	enter_button.tooltip_text = "선택한 캐릭터로 3D 마을에 접속합니다. [Enter]"
-	enter_button.pressed.connect(_enter_selected_character)
-	actions.add_child(enter_button)
-	feedback_label = _add_feedback(layout, "슬롯을 선택하세요. 더블클릭으로도 접속할 수 있습니다.")
+	if _is_portrait_layout():
+		var hero_row := HBoxContainer.new()
+		hero_row.add_theme_constant_override("separation", 10)
+		hero_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body.add_child(hero_row)
+		var preview_section := _make_section(hero_row, 352, "캐릭터")
+		preview_section.custom_minimum_size.x = minf(352.0, get_viewport_rect().size.x * 0.53)
+		_build_preview(preview_section)
+		var details_section := _make_section(hero_row, 270, "정보")
+		details_section.custom_minimum_size.x = minf(270.0, get_viewport_rect().size.x * 0.40)
+		var detail_card := UiStyle.make_panel(UiStyle.INK_SOFT)
+		detail_card.add_theme_stylebox_override("panel", UiStyle.panel_style(UiStyle.INK_SOFT, Color(0.62, 0.42, 0.23, 0.8), 1))
+		detail_card.custom_minimum_size = Vector2(0, clampf(get_viewport_rect().size.y * 0.28, 270.0, 360.0))
+		detail_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		details_section.add_child(detail_card)
+		var detail_margin := UiStyle.make_margin(detail_card, 10)
+		var detail_content := VBoxContainer.new()
+		detail_content.add_theme_constant_override("separation", 6)
+		detail_margin.add_child(detail_content)
+		_build_detail_panel(detail_content)
+		delete_button = _create_delete_button()
+		details_section.add_child(delete_button)
+		_build_slot_section(body)
+	else:
+		_build_slot_section(body)
+		_build_preview(_make_section(body, 560, "선택한 캐릭터 · 드래그하여 회전"))
+		var info_section := _make_section(body, 430, "캐릭터 정보")
+		_build_detail_panel(info_section)
+		delete_button = _create_delete_button()
+		info_section.add_child(delete_button)
+	feedback_label = _add_feedback(layout, "캐릭터 슬롯을 누르면 바로 게임을 시작합니다.")
 
 	delete_dialog = ConfirmationDialog.new()
 	delete_dialog.title = "캐릭터 영구 삭제"
@@ -130,7 +134,7 @@ func _show_creation(slot_index: int):
 	_build_preview(_make_section(body, 560, "캐릭터 미리보기 · 드래그/터치로 회전"))
 	_build_detail_panel(_make_section(body, 440, "직업 정보"))
 
-	var footer := HBoxContainer.new()
+	var footer: Container = VBoxContainer.new() if _is_portrait_layout() else HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 10)
 	layout.add_child(footer)
 	footer.add_child(UiStyle.make_label("캐릭터 이름", 16, Color(1.0, 0.86, 0.45)))
@@ -148,6 +152,12 @@ func _show_creation(slot_index: int):
 	create_button = UiStyle.make_button("캐릭터 생성", Vector2(220, 50), true)
 	create_button.pressed.connect(_create_character)
 	footer.add_child(create_button)
+	if _is_portrait_layout():
+		name_edit.custom_minimum_size = Vector2(0, 56)
+		name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		for action in [random_button, create_button]:
+			action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			action.custom_minimum_size.y = 58
 	feedback_label = _add_feedback(layout, "생성 후 선택 화면으로 돌아오며 자동 접속하지 않습니다.")
 	_populate_classes()
 	_select_class(selected_class_id)
@@ -156,6 +166,7 @@ func _show_creation(slot_index: int):
 
 func _clear_screen():
 	preview_player = null
+	preview_camera = null
 	preview_visual = null
 	preview_viewport = null
 	preview_container = null
@@ -170,31 +181,46 @@ func _build_shell(title_text: String, back_text: String, back_action: Callable) 
 	add_child(screen_root)
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.025, 0.04, 0.072, 1.0)
+	backdrop.color = Color(0.025, 0.014, 0.014, 1.0)
 	screen_root.add_child(backdrop)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	screen_root.add_child(center)
 	var panel := UiStyle.make_panel()
-	panel.custom_minimum_size = Vector2(1540, 880)
+	panel.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.035, 0.025, 0.024, 0.96), Color(0.76, 0.52, 0.27, 0.8), 2))
+	var viewport_size := get_viewport_rect().size
+	if _is_portrait_layout():
+		panel.custom_minimum_size = Vector2(minf(viewport_size.x - 32.0, 680.0), viewport_size.y - 48.0)
+	else:
+		panel.custom_minimum_size = Vector2(minf(1540.0, viewport_size.x - 48.0), minf(880.0, viewport_size.y - 48.0))
 	center.add_child(panel)
-	var margin := UiStyle.make_margin(panel, 22)
+	var margin := UiStyle.make_margin(panel, 16 if _is_portrait_layout() else 22)
 	var layout := VBoxContainer.new()
 	layout.add_theme_constant_override("separation", 14)
 	margin.add_child(layout)
-	var header := HBoxContainer.new()
+	var header: Container = VBoxContainer.new() if _is_portrait_layout() else HBoxContainer.new()
 	layout.add_child(header)
-	var title := UiStyle.make_title(title_text, 29)
+	var title := UiStyle.make_title(title_text, 23 if _is_portrait_layout() else 29)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	var back := UiStyle.make_button(back_text, Vector2(170, 46))
+	var back := UiStyle.make_button(back_text, Vector2(170, 48))
 	back.tooltip_text = "이전 화면으로 돌아갑니다. [Esc]"
 	back.pressed.connect(back_action)
 	header.add_child(back)
 	return layout
 
 
-func _new_body(layout: VBoxContainer) -> HBoxContainer:
+func _new_body(layout: VBoxContainer) -> Control:
+	if _is_portrait_layout():
+		var scroll := ScrollContainer.new()
+		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		layout.add_child(scroll)
+		var body := VBoxContainer.new()
+		body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		body.add_theme_constant_override("separation", 14)
+		scroll.add_child(body)
+		return body
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 18)
@@ -204,37 +230,71 @@ func _new_body(layout: VBoxContainer) -> HBoxContainer:
 
 func _make_section(parent: Control, width: float, heading: String) -> VBoxContainer:
 	var section := VBoxContainer.new()
-	section.custom_minimum_size = Vector2(width, 0)
-	section.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	section.custom_minimum_size = Vector2(0 if _is_portrait_layout() else width, 0)
+	section.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	section.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if _is_portrait_layout() else Control.SIZE_EXPAND_FILL
 	section.add_theme_constant_override("separation", 10)
 	parent.add_child(section)
 	section.add_child(UiStyle.make_label(heading, 17, Color(1.0, 0.86, 0.44)))
 	return section
 
 
+func _build_slot_section(parent: Control):
+	var section := _make_section(parent, 350, "캐릭터 슬롯 · %d개" % GameData.get_character_slot_count())
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size.y = 142.0 if _is_portrait_layout() else 160.0
+	scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if _is_portrait_layout() else Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	section.add_child(scroll)
+	slot_list = HBoxContainer.new()
+	slot_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	slot_list.add_theme_constant_override("separation", 8)
+	scroll.add_child(slot_list)
+
+
+func _create_delete_button() -> Button:
+	var button := UiStyle.make_button("🗑 캐릭터 삭제", Vector2(0, 44))
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.tooltip_text = "선택한 캐릭터의 저장 데이터만 삭제합니다."
+	button.pressed.connect(_request_delete)
+	return button
+
+
 func _build_detail_panel(panel: VBoxContainer):
-	detail_name = UiStyle.make_title("", 27)
-	panel.add_child(detail_name)
-	detail_subtitle = UiStyle.make_label("", 15, Color(0.72, 0.84, 1.0))
-	panel.add_child(detail_subtitle)
-	panel.add_child(HSeparator.new())
-	detail_stats = UiStyle.make_label("", 15, Color(0.87, 0.92, 1.0))
+	var name_parent: Container = panel
+	var stats_parent: Container = panel
+	detail_name = UiStyle.make_title("", 20 if _is_portrait_layout() else 27)
+	detail_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_parent.add_child(detail_name)
+	detail_subtitle = UiStyle.make_label("", 14 if _is_portrait_layout() else 15, Color(0.82, 0.72, 0.58))
+	detail_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_parent.add_child(detail_subtitle)
+	if not _is_portrait_layout():
+		panel.add_child(HSeparator.new())
+	detail_stats = UiStyle.make_label("", 15, UiStyle.IVORY)
 	detail_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	panel.add_child(detail_stats)
+	detail_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats_parent.add_child(detail_stats)
 	detail_equipment = UiStyle.make_label("", 14, Color(1.0, 0.84, 0.42))
 	detail_equipment.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(detail_equipment)
-	detail_progress = UiStyle.make_label("", 13, Color(0.74, 0.82, 0.92))
+	detail_progress = UiStyle.make_label("", 13, UiStyle.MUTED)
 	detail_progress.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_progress.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	panel.add_child(detail_progress)
 
 
 func _add_feedback(layout: VBoxContainer, text: String) -> Label:
-	var label := UiStyle.make_label(text, 13, Color(0.74, 0.82, 0.94))
+	var label := UiStyle.make_label(text, 13, UiStyle.MUTED)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	layout.add_child(label)
 	return label
+
+
+func _is_portrait_layout() -> bool:
+	var viewport_size := get_viewport_rect().size
+	return viewport_size.y >= viewport_size.x
 
 
 func _populate_slots():
@@ -242,20 +302,24 @@ func _populate_slots():
 		child.queue_free()
 	for slot_index in range(GameData.get_character_slot_count()):
 		var profile := GameData.get_profile_at_slot(slot_index)
-		var button := UiStyle.make_button("", Vector2(0, 88))
+		var viewport_width := get_viewport_rect().size.x
+		var card_width := clampf((viewport_width - 112.0) / 5.0, 104.0, 136.0)
+		var button := UiStyle.make_button("", Vector2(card_width, 128 if _is_portrait_layout() else 144))
 		button.toggle_mode = true
+		button.add_theme_font_size_override("font_size", 13 if _is_portrait_layout() else 14)
 		if profile.is_empty():
-			button.text = "[%02d]  ＋ 빈 슬롯\n        새 캐릭터 생성" % (slot_index + 1)
+			button.text = "[%02d]\n＋\n새 캐릭터" % (slot_index + 1)
 			button.tooltip_text = "이 슬롯에 새 캐릭터를 생성합니다."
 		else:
 			var class_data := GameData.get_profile_class_data(profile)
-			button.text = "[%02d]  %s  %s\n        %s · 최고 생존 Lv.%d" % [
+			button.text = "[%02d] %s\n%s\n%s · Lv.%d" % [
 				slot_index + 1, str(class_data.get("icon", "⚔️")), str(profile.get("name", "이름 없음")),
 				str(class_data.get("role", profile.get("class_id", ""))), int(profile.get("best_survival_level", 1))]
-			button.tooltip_text = "클릭: 선택 · 더블클릭: 접속"
+			button.tooltip_text = "누르면 이 캐릭터로 게임을 시작합니다."
 			button.button_pressed = str(profile.get("id", "")) == selected_character_id
+			if button.button_pressed:
+				button.add_theme_stylebox_override("normal", UiStyle.button_style(Color(0.22, 0.045, 0.028, 0.98), UiStyle.GOLD_BRIGHT))
 		button.pressed.connect(_on_slot_pressed.bind(slot_index))
-		button.gui_input.connect(_on_slot_gui_input.bind(slot_index))
 		slot_list.add_child(button)
 
 
@@ -266,27 +330,17 @@ func _on_slot_pressed(slot_index: int):
 		return
 	selected_character_id = str(profile.get("id", ""))
 	GameData.select_character_profile(selected_character_id)
-	_populate_slots()
-	_update_selected_profile()
-
-
-func _on_slot_gui_input(event: InputEvent, slot_index: int):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
-		var profile := GameData.get_profile_at_slot(slot_index)
-		if not profile.is_empty():
-			selected_character_id = str(profile.get("id", ""))
-			_enter_selected_character()
+	_enter_selected_character()
 
 
 func _update_selected_profile():
 	var profile := GameData.get_character_profile(selected_character_id)
 	var exists := not profile.is_empty()
 	delete_button.disabled = not exists
-	enter_button.disabled = not exists
 	if not exists:
 		detail_name.text = "저장된 캐릭터 없음"
-		detail_subtitle.text = "빈 슬롯을 눌러 첫 캐릭터를 생성하세요."
-		detail_stats.text = "캐릭터 생성 → 슬롯 저장 → 캐릭터 선택 → 게임 접속"
+		detail_subtitle.text = "빈 슬롯을 눌러 생성하세요."
+		detail_stats.text = "캐릭터를 만들면\n능력치가 표시됩니다."
 		detail_equipment.text = ""
 		detail_progress.text = "생성 직후에는 이 화면으로 돌아옵니다."
 		_set_preview_class(GameData.FIGHTER_ID, {})
@@ -296,22 +350,37 @@ func _update_selected_profile():
 	var stats := GameData.get_profile_stat_manager(profile)
 	detail_name.text = "%s  %s" % [str(class_data.get("icon", "⚔️")), str(profile.get("name", ""))]
 	detail_subtitle.text = "%s · %s" % [str(class_data.get("role", class_id)), str(class_data.get("title", ""))]
-	detail_stats.text = (
-		"영구 능력치\nSTR %d   AGI %d   VIT %d\nINT %d   DEX %d   LUK %d\n\nHP %d\n물리 공격 %.1f   마법 공격 %.1f\n물리 방어 %.1f   마법 방어 %.1f"
-		% [stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"), stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK"),
-		stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.mag_atk(), stats.phys_def(), stats.mag_def()])
+	if _is_portrait_layout():
+		detail_stats.text = "STR %d  AGI %d  VIT %d\nINT %d  DEX %d  LUK %d" % [
+			stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"),
+			stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK")]
+	else:
+		detail_stats.text = (
+			"영구 능력치\nSTR %d   AGI %d   VIT %d\nINT %d   DEX %d   LUK %d\n\nHP %d\n물리 공격 %.1f   마법 공격 %.1f\n물리 방어 %.1f   마법 방어 %.1f"
+			% [stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"), stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK"),
+			stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.mag_atk(), stats.phys_def(), stats.mag_def()])
 	var equipment := _get_profile_equipment(profile)
-	detail_equipment.text = "장착 무기  %s\n장착 방어구  %s" % [equipment.weapon, equipment.armor]
-	detail_progress.text = "최고 생존 시간  %s\n최고 서바이벌 레벨  %d\n총 플레이 시간  %s\n마지막 접속  %s" % [
-		_format_survival_time(float(profile.get("best_survival_time", 0.0))), int(profile.get("best_survival_level", 1)),
-		_format_play_time(int(profile.get("play_time_seconds", 0))), str(profile.get("last_played_at", "아직 접속하지 않음"))]
+	if _is_portrait_layout():
+		detail_equipment.text = "HP %d · 공격 %.1f · 방어 %.1f\n무기 %s · 방어구 %s" % [stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.phys_def(), equipment.weapon, equipment.armor]
+		detail_progress.text = "최고 생존 %s · 서바이벌 Lv.%d\n마지막 접속 %s" % [
+			_format_survival_time(float(profile.get("best_survival_time", 0.0))), int(profile.get("best_survival_level", 1)),
+			str(profile.get("last_played_at", "아직 접속하지 않음"))]
+	else:
+		detail_equipment.text = "장착 무기  %s\n장착 방어구  %s" % [equipment.weapon, equipment.armor]
+		detail_progress.text = "최고 생존 시간  %s\n최고 서바이벌 레벨  %d\n총 플레이 시간  %s\n마지막 접속  %s" % [
+			_format_survival_time(float(profile.get("best_survival_time", 0.0))), int(profile.get("best_survival_level", 1)),
+			_format_play_time(int(profile.get("play_time_seconds", 0))), str(profile.get("last_played_at", "아직 접속하지 않음"))]
 	_set_preview_class(class_id, class_data)
 
 
 func _get_profile_equipment(profile: Dictionary) -> Dictionary:
-	var state: Dictionary = profile.get("state", {})
+	var state_value: Variant = profile.get("state", {})
+	var state: Dictionary = state_value if state_value is Dictionary else {}
 	var class_id := str(profile.get("class_id", GameData.FIGHTER_ID))
-	var equipped: Dictionary = state.get("equipped_gear", {}).get(class_id, {})
+	var gear_value: Variant = state.get("equipped_gear", {})
+	var gear_by_class: Dictionary = gear_value if gear_value is Dictionary else {}
+	var equipped_value: Variant = gear_by_class.get(class_id, {})
+	var equipped: Dictionary = equipped_value if equipped_value is Dictionary else {}
 	var result := {"weapon": "없음", "armor": "없음"}
 	for item in state.get("inventory", []):
 		if not item is Dictionary:
@@ -324,10 +393,10 @@ func _get_profile_equipment(profile: Dictionary) -> Dictionary:
 
 
 func _format_play_time(total_seconds: int) -> String:
-	return "%d시간 %02d분" % [total_seconds / 3600, (total_seconds % 3600) / 60]
+	return "%d시간 %02d분" % [int(total_seconds / 3600.0), int((total_seconds % 3600) / 60.0)]
 
 func _format_survival_time(total_seconds: float) -> String:
-	return "%02d:%02d" % [int(total_seconds) / 60, int(total_seconds) % 60]
+	return "%02d:%02d" % [int(total_seconds / 60.0), int(total_seconds) % 60]
 
 
 func _first_profile_id() -> String:
@@ -399,10 +468,15 @@ func _select_class(class_id: String):
 	var stats := GameData.get_class_template_stat_manager(class_id)
 	detail_name.text = "%s  %s" % [str(character.get("icon", "⚔️")), str(character.get("role", class_id))]
 	detail_subtitle.text = str(character.get("title", ""))
-	detail_stats.text = (
-		"기본 능력치\nSTR %d   AGI %d   VIT %d\nINT %d   DEX %d   LUK %d\n\n초기 전투 수치\nHP %d\n물리 공격 %.1f   마법 공격 %.1f\n물리 방어 %.1f   마법 방어 %.1f"
-		% [stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"), stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK"),
-		stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.mag_atk(), stats.phys_def(), stats.mag_def()])
+	if _is_portrait_layout():
+		detail_stats.text = "STR %d  AGI %d  VIT %d\nINT %d  DEX %d  LUK %d" % [
+			stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"),
+			stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK")]
+	else:
+		detail_stats.text = (
+			"기본 능력치\nSTR %d   AGI %d   VIT %d\nINT %d   DEX %d   LUK %d\n\n초기 전투 수치\nHP %d\n물리 공격 %.1f   마법 공격 %.1f\n물리 방어 %.1f   마법 방어 %.1f"
+			% [stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"), stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK"),
+			stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.mag_atk(), stats.phys_def(), stats.mag_def()])
 	detail_equipment.text = "대표 무기  %s\n대표 스킬  %s" % [str(character.get("weapon_name", CLASS_WEAPONS.get(class_id, "기본 무기"))), str(character.get("signature_skill", ""))]
 	detail_progress.text = "%s\n\n전투 스타일: %s" % [str(character.get("desc", "")), str(character.get("combat_style", CLASS_GROWTH.get(class_id, "균형 성장")))]
 	for child in class_list.get_children():
@@ -449,41 +523,67 @@ func _create_character():
 		feedback_label.text = "캐릭터를 저장하지 못했습니다."
 		return
 	_show_selection(new_id)
-	feedback_label.text = "캐릭터를 생성했습니다. '게임 접속'을 눌러 마을로 이동하세요."
+	feedback_label.text = "캐릭터를 생성했습니다. 슬롯을 누르면 게임을 시작합니다."
 
 
 func _build_preview(parent: VBoxContainer):
+	preview_zoom = 1.0
 	preview_container = SubViewportContainer.new()
-	preview_container.custom_minimum_size = Vector2(550, 670)
+	var preview_height := clampf(get_viewport_rect().size.y * 0.28, 270.0, 360.0) if _is_portrait_layout() else 670.0
+	var preview_width := minf(get_viewport_rect().size.x * 0.53 - 16.0, 352.0) if _is_portrait_layout() else 550.0
+	preview_container.custom_minimum_size = Vector2(preview_width, preview_height)
 	preview_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	preview_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	preview_container.stretch = true
 	preview_container.mouse_filter = Control.MOUSE_FILTER_STOP
 	preview_container.gui_input.connect(_on_preview_input)
-	parent.add_child(preview_container)
+	var preview_frame := PanelContainer.new()
+	preview_frame.custom_minimum_size = Vector2(preview_width + 4.0, preview_height + 4.0)
+	preview_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview_frame.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.045, 0.025, 0.023, 0.98), UiStyle.GOLD, 1))
+	parent.add_child(preview_frame)
+	preview_frame.add_child(preview_container)
+	var zoom_row := HBoxContainer.new()
+	zoom_row.alignment = BoxContainer.ALIGNMENT_END
+	zoom_row.add_theme_constant_override("separation", 6)
+	parent.add_child(zoom_row)
+	zoom_row.add_child(UiStyle.make_label("미리보기 확대", 13, UiStyle.MUTED))
+	var zoom_out := UiStyle.make_button("−", Vector2(42, 38))
+	zoom_out.tooltip_text = "캐릭터 미리보기 축소"
+	zoom_out.pressed.connect(_adjust_preview_zoom.bind(1.0 + PREVIEW_ZOOM_STEP))
+	zoom_row.add_child(zoom_out)
+	var zoom_reset := UiStyle.make_button("기본", Vector2(54, 38))
+	zoom_reset.tooltip_text = "미리보기 배율을 기본값으로 되돌립니다."
+	zoom_reset.pressed.connect(_reset_preview_zoom)
+	zoom_row.add_child(zoom_reset)
+	var zoom_in := UiStyle.make_button("+", Vector2(42, 38), true)
+	zoom_in.tooltip_text = "캐릭터 미리보기 확대"
+	zoom_in.pressed.connect(_adjust_preview_zoom.bind(1.0 / (1.0 + PREVIEW_ZOOM_STEP)))
+	zoom_row.add_child(zoom_in)
 	preview_viewport = SubViewport.new()
-	preview_viewport.size = Vector2i(550, 670)
+	preview_viewport.size = Vector2i(int(preview_width), int(preview_height))
 	preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	preview_container.add_child(preview_viewport)
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.045, 0.07, 0.12)
+	environment.background_color = Color(0.055, 0.025, 0.025)
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.75, 0.82, 0.95)
+	environment.ambient_light_color = Color(0.96, 0.78, 0.58)
 	environment.ambient_light_energy = 0.9
 	var world_environment := WorldEnvironment.new()
 	world_environment.environment = environment
 	preview_viewport.add_child(world_environment)
 	var light := DirectionalLight3D.new()
-	light.rotation_degrees = Vector3(-45, -30, 0)
-	light.light_energy = 1.5
+	light.rotation_degrees = Vector3(-42, -28, 0)
+	light.light_color = Color(1.0, 0.77, 0.48)
+	light.light_energy = 1.35
 	preview_viewport.add_child(light)
 	var floor := MeshInstance3D.new()
 	var floor_mesh := PlaneMesh.new()
 	floor_mesh.size = Vector2(18, 18)
 	floor.mesh = floor_mesh
 	var floor_material := StandardMaterial3D.new()
-	floor_material.albedo_color = Color(0.11, 0.18, 0.23)
+	floor_material.albedo_color = Color(0.075, 0.045, 0.04)
 	floor.material_override = floor_material
 	preview_viewport.add_child(floor)
 	preview_player = PLAYER_SCENE.instantiate() as CharacterBody3D
@@ -491,6 +591,13 @@ func _build_preview(parent: VBoxContainer):
 	preview_player.set("is_combat_enabled", false)
 	preview_viewport.add_child(preview_player)
 	preview_visual = preview_player.get_node("VisualRoot")
+	preview_camera = preview_player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
+	if preview_camera != null:
+		preview_camera.set("camera_offset", preview_camera_base_offset)
+		preview_camera.call("snap_to_target")
+	var preview_animation := preview_player.get("model_animation_player") as AnimationPlayer
+	if preview_animation:
+		preview_animation.process_mode = Node.PROCESS_MODE_ALWAYS
 
 
 func _set_preview_class(class_id: String, character: Dictionary):
@@ -498,7 +605,14 @@ func _set_preview_class(class_id: String, character: Dictionary):
 		return
 	var fallback := GameData.get_class_template_data(class_id)
 	var color_value: Variant = character.get("color", fallback.get("color", Color(0.25, 0.55, 0.9)))
-	if class_id == GameData.FIGHTER_ID:
+	if preview_player.has_method("set_character_appearance"):
+		preview_player.call("set_character_appearance", class_id)
+		var selected_animation := preview_player.get("model_animation_player") as AnimationPlayer
+		if selected_animation:
+			selected_animation.process_mode = Node.PROCESS_MODE_ALWAYS
+	elif preview_player.has_method("set_character_2d_mode"):
+		preview_player.call("set_character_2d_mode", class_id == "fighter_2d")
+	if class_id in [GameData.FIGHTER_ID, "fighter_2d"]:
 		for mesh in preview_visual.find_children("*", "MeshInstance3D"):
 			(mesh as MeshInstance3D).material_override = null
 	else:
@@ -577,10 +691,32 @@ func _process(delta: float):
 	preview_visual.position.y = sin(_idle_time * 2.0) * 0.025
 
 
+func _adjust_preview_zoom(multiplier: float):
+	preview_zoom = clampf(preview_zoom * multiplier, PREVIEW_ZOOM_MIN, PREVIEW_ZOOM_MAX)
+	_apply_preview_zoom()
+
+
+func _reset_preview_zoom():
+	preview_zoom = 1.0
+	_apply_preview_zoom()
+
+
+func _apply_preview_zoom():
+	if preview_camera == null:
+		return
+	preview_camera.set("camera_offset", preview_camera_base_offset * preview_zoom)
+	preview_camera.call("snap_to_target")
+
+
 func _on_preview_input(event: InputEvent):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		_dragging = event.pressed
-		_last_drag_position = event.position
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_dragging = event.pressed
+			_last_drag_position = event.position
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_adjust_preview_zoom(1.0 / (1.0 + PREVIEW_ZOOM_STEP))
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_adjust_preview_zoom(1.0 + PREVIEW_ZOOM_STEP)
 	elif event is InputEventMouseMotion and _dragging:
 		_preview_rotation += (event.position.x - _last_drag_position.x) * 0.01
 		_last_drag_position = event.position

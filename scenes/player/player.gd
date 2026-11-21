@@ -1,3 +1,4 @@
+class_name PlayerCharacter
 extends CharacterBody3D
 
 signal hp_changed(current_hp, max_hp)
@@ -24,11 +25,16 @@ var level: int = 1
 var is_dead: bool = false
 var auto_attack_timer: float = 0.0
 var speed_boost_timer: float = 0.0
-var walk_cycle: float = 0.0
 var auto_attack_enabled: bool = true
 var touch_move_vector: Vector2 = Vector2.ZERO
+var current_move_input: Vector2 = Vector2.ZERO
+var _moving_by_input: bool = false
+var _previous_move_input: bool = false
+var _move_camera_right: Vector3 = Vector3.RIGHT
+var _move_camera_down: Vector3 = Vector3.BACK
 var manual_attack_cooldown: float = 0.0
 var _hp_regen_timer: float = 0.0
+var _time_since_last_damage: float = 0.0
 var _sp_signal_timer: float = 0.0
 var card_hit_bonuses: Dictionary = {}
 var card_sp_regen: float = 0.0
@@ -39,17 +45,24 @@ var revive_used: bool = false
 
 # References
 @onready var visual_root: Node3D = $VisualRoot
+@onready var character_model_root: Node3D = $VisualRoot/CharacterModelRoot
 @onready var slash_effect: Node3D = $VisualRoot/SlashEffect
-@onready var arm_l: Node3D = $VisualRoot.get_node_or_null("ArmL")
-@onready var arm_r: Node3D = $VisualRoot.get_node_or_null("ArmR")
-@onready var leg_l: Node3D = $VisualRoot.get_node_or_null("LegL")
-@onready var leg_r: Node3D = $VisualRoot.get_node_or_null("LegR")
+@onready var camera_node: Camera3D = $CameraPivot/SpringArm3D/Camera3D
+
+var model_animation_player: AnimationPlayer
+var model_clips: Dictionary = {}
+var character_model: Node3D
+var current_appearance := "fighter"
+var first_person_mode: bool = false
+var active_action_clip := ""
+var alternate_attack := false
 
 var damage_number_scene: PackedScene = preload("res://scenes/effects/damage_number.tscn")
 var stat_manager: StatManager = StatManager.new()
 
 func _ready():
 	add_to_group("player")
+	set_character_appearance(GameData.get_leader_id())
 	refresh_persistent_stats()
 	collision_layer = 1 # Layer 1: Player
 	collision_mask = 35 # Layer 1: Player, Layer 2: Enemies, Layer 6: Environment
@@ -89,25 +102,42 @@ func _physics_process(delta: float):
 func set_touch_move(value: Vector2):
 	touch_move_vector = value.limit_length(1.0)
 
+func has_camera_move_input() -> bool:
+	return _moving_by_input
+
 func _handle_movement(delta: float):
-	var input_vec = touch_move_vector
-	if Input.is_action_pressed("move_up"):
-		input_vec.y -= 1.0
-	if Input.is_action_pressed("move_down"):
-		input_vec.y += 1.0
-	if Input.is_action_pressed("move_left"):
-		input_vec.x -= 1.0
-	if Input.is_action_pressed("move_right"):
-		input_vec.x += 1.0
-	
+	# Mobile joystick and PC arrow keys share the same camera-relative movement path.
+	var input_vec: Vector2 = touch_move_vector
+	if input_vec == Vector2.ZERO:
+		if Input.is_action_pressed("move_up"):
+			input_vec.y -= 1.0
+		if Input.is_action_pressed("move_down"):
+			input_vec.y += 1.0
+		if Input.is_action_pressed("move_left"):
+			input_vec.x -= 1.0
+		if Input.is_action_pressed("move_right"):
+			input_vec.x += 1.0
 	input_vec = input_vec.limit_length(1.0)
+	current_move_input = input_vec
+	_moving_by_input = input_vec != Vector2.ZERO
+	if _moving_by_input and not _previous_move_input:
+		var start_right: Vector3 = camera_node.global_basis.x if camera_node != null else Vector3.RIGHT
+		var start_down: Vector3 = camera_node.global_basis.z if camera_node != null else Vector3.BACK
+		start_right.y = 0.0
+		start_down.y = 0.0
+		_move_camera_right = start_right.normalized()
+		_move_camera_down = start_down.normalized()
 	
 	var effective_speed = base_move_speed * GameData.move_speed_mult * (1.0 + GameData.get_survival_bonus("move_speed"))
+	if Input.is_key_pressed(KEY_SHIFT) and _moving_by_input:
+		effective_speed *= 1.45
 	if speed_boost_timer > 0.0:
 		effective_speed *= 1.5
 		speed_boost_timer -= delta
 	
-	var move_dir = Vector3(input_vec.x, 0.0, input_vec.y)
+	var move_dir := Vector3.ZERO
+	if _moving_by_input:
+		move_dir = (_move_camera_right * input_vec.x + _move_camera_down * input_vec.y).normalized()
 	
 	# Gravity
 	if not is_on_floor():
@@ -118,41 +148,58 @@ func _handle_movement(delta: float):
 	# Smooth acceleration and deceleration
 	var target_vel_x = move_dir.x * effective_speed
 	var target_vel_z = move_dir.z * effective_speed
-	velocity.x = lerp(velocity.x, target_vel_x, 15.0 * delta)
-	velocity.z = lerp(velocity.z, target_vel_z, 15.0 * delta)
+	var acceleration_weight: float = 1.0 - exp(-14.0 * delta)
+	velocity.x = lerpf(velocity.x, target_vel_x, acceleration_weight)
+	velocity.z = lerpf(velocity.z, target_vel_z, acceleration_weight)
 	
 	move_and_slide()
 	
 	var horizontal_speed = Vector2(velocity.x, velocity.z).length()
 	var is_moving = horizontal_speed > 0.2
 	
-	# Smooth rotation toward movement direction
-	if move_dir.length_squared() > 0.01:
-		var target_angle = atan2(move_dir.x, move_dir.z) + PI
-		visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_angle, 14.0 * delta)
-		visual_root.rotation.z = lerp(visual_root.rotation.z, -input_vec.x * 0.1, 10.0 * delta)
+	# Face the camera-relative movement direction without snapping.
+	if _moving_by_input:
+		var desired_angle: float = atan2(move_dir.x, move_dir.z)
+		var turn_error: float = wrapf(desired_angle - visual_root.rotation.y, -PI, PI)
+		if is_equal_approx(absf(turn_error), PI):
+			turn_error = PI if input_vec.x >= 0.0 else -PI
+		visual_root.rotation.y = wrapf(visual_root.rotation.y + turn_error * (1.0 - exp(-12.0 * delta)), -PI, PI)
+		visual_root.rotation.z = lerpf(visual_root.rotation.z, -input_vec.x * 0.1, 1.0 - exp(-10.0 * delta))
 	else:
-		visual_root.rotation.z = lerp(visual_root.rotation.z, 0.0, 10.0 * delta)
+		visual_root.rotation.z = lerpf(visual_root.rotation.z, 0.0, 1.0 - exp(-10.0 * delta))
 	
 	# Procedural Animation: Walk / Idle
 	_animate_character(delta, is_moving, horizontal_speed / base_move_speed)
+	_previous_move_input = _moving_by_input
 
-func _animate_character(delta: float, is_moving: bool, speed_ratio: float):
-	if is_moving:
-		walk_cycle += delta * 11.0 * clamp(speed_ratio, 0.5, 1.5)
-		var swing = sin(walk_cycle) * 0.65
-		if arm_l: arm_l.rotation.x = swing
-		if arm_r: arm_r.rotation.x = -swing
-		if leg_l: leg_l.rotation.x = -swing
-		if leg_r: leg_r.rotation.x = swing
-		visual_root.position.y = abs(sin(walk_cycle)) * 0.07
-	else:
-		walk_cycle = 0.0
-		if arm_l: arm_l.rotation.x = lerp_angle(arm_l.rotation.x, 0.0, 10.0 * delta)
-		if arm_r: arm_r.rotation.x = lerp_angle(arm_r.rotation.x, 0.0, 10.0 * delta)
-		if leg_l: leg_l.rotation.x = lerp_angle(leg_l.rotation.x, 0.0, 10.0 * delta)
-		if leg_r: leg_r.rotation.x = lerp_angle(leg_r.rotation.x, 0.0, 10.0 * delta)
-		visual_root.position.y = sin(Time.get_ticks_msec() * 0.003) * 0.03
+func _animate_character(_delta: float, is_moving: bool, speed_ratio: float):
+	var movement_clip := "Run" if speed_ratio > 1.15 else "Walk"
+	_play_model_animation(movement_clip if is_moving else "Idle")
+
+func set_character_appearance(character_id: String):
+	var definition := PlayerManager.get_definition(character_id)
+	if definition.is_empty():
+		push_warning("등록되지 않은 플레이어 ID입니다: %s" % character_id)
+		return
+	current_appearance = character_id
+	model_animation_player = null
+	model_clips.clear()
+	active_action_clip = ""
+	for child in character_model_root.get_children():
+		child.queue_free()
+	character_model = PlayerManager.create_model(character_id, character_model_root)
+	if character_model:
+		character_model.visible = not first_person_mode
+	if is_node_ready():
+		_setup_model_animations()
+
+func set_first_person_mode(enabled: bool) -> void:
+	first_person_mode = enabled
+	if character_model:
+		character_model.visible = not enabled
+
+func set_character_2d_mode(enabled: bool):
+	set_character_appearance("fighter_2d" if enabled else "fighter")
 
 func _handle_auto_attack(delta: float):
 	if not auto_attack_enabled:
@@ -200,7 +247,10 @@ func _find_closest_enemy(max_dist: float) -> Node3D:
 
 func _perform_auto_attack(target: Node3D):
 	var dir_to_target = (target.global_position - global_position).normalized()
-	visual_root.rotation.y = atan2(dir_to_target.x, dir_to_target.z) + PI
+	if not _moving_by_input:
+		visual_root.rotation.y = atan2(dir_to_target.x, dir_to_target.z)
+	_play_model_animation("AttackAlt" if alternate_attack else "Attack", true)
+	alternate_attack = not alternate_attack
 	_show_slash_effect()
 	if randf() * 100.0 >= stat_manager.hit_rate():
 		_show_damage_popup(0, false, false, "MISS")
@@ -208,7 +258,7 @@ func _perform_auto_attack(target: Node3D):
 	var is_critical := randf() * 100.0 < minf(80.0, stat_manager.crit_rate() + GameData.get_survival_bonus("crit_chance") * 100.0)
 	var dmg = base_attack_damage * GameData.attack_damage_mult * (1.0 + GameData.get_survival_bonus("damage") + GameData.get_survival_bonus("damage_reckless") + GameData.get_survival_bonus("physical_damage"))
 	var monster_target: BaseMonster = target as BaseMonster
-	if monster_target != null and monster_target.monster_id == "mutant_lord":
+	if monster_target != null and bool(MonsterManager.get_definition(monster_target.monster_id).get("is_boss", false)):
 		dmg *= 1.0 + GameData.get_survival_bonus("boss_damage")
 	if current_hp <= max_hp * 0.5:
 		dmg *= 1.0 + GameData.get_survival_bonus("low_hp_damage")
@@ -309,17 +359,23 @@ func gain_xp(amount: int):
 		return
 	current_xp += amount
 	var gained_level = false
+	var new_card_picks := 0
 	while current_xp >= xp_to_next_level:
 		current_xp -= xp_to_next_level
 		level += 1
 		xp_to_next_level = int(xp_to_next_level * 1.2) + 2
 		gained_level = true
+		if level % 5 == 0:
+			new_card_picks += 1
 	GameData.player_level = level
 	GameData.player_current_xp = current_xp
 	GameData.player_xp_to_next = xp_to_next_level
 	if gained_level:
 		emit_signal("leveled_up", level)
-		GameManager.enter_level_up()
+	if new_card_picks > 0:
+		GameManager.level_card_picks += new_card_picks
+		if GameManager.current_state == GameManager.GameState.PLAYING:
+			GameManager.enter_level_up()
 	
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 
@@ -357,12 +413,21 @@ func _update_hp_regeneration(delta: float):
 	if current_hp >= max_hp:
 		_hp_regen_timer = 0.0
 		return
+	_time_since_last_damage += delta
 	_hp_regen_timer += delta
-	if _hp_regen_timer < 1.0:
-		return
 	var elapsed := _hp_regen_timer
-	_hp_regen_timer = 0.0
-	current_hp = min(max_hp, current_hp + (stat_manager.hp_recovery_rate() + max_hp * GameData.get_survival_bonus("hp_regen")) * elapsed)
+	if _hp_regen_timer < 1.0:
+		elapsed = delta
+	else:
+		_hp_regen_timer = 0.0
+	var healing_rate := stat_manager.hp_recovery_rate() + max_hp * GameData.get_survival_bonus("hp_regen")
+	var skill_manager := get_node_or_null("SkillManager")
+	if skill_manager != null and skill_manager.has_method("get_passive_regen_amount"):
+		healing_rate += float(skill_manager.call("get_passive_regen_amount", elapsed)) / maxf(elapsed, 0.001)
+	if _hp_regen_timer == 0.0:
+		current_hp = minf(max_hp, current_hp + healing_rate * elapsed)
+	else:
+		return
 	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
 
@@ -414,6 +479,8 @@ func _apply_incoming_damage(amount: float, defense: float, is_magic: bool = fals
 	if current_hp <= max_hp * 0.3:
 		reduction += GameData.get_survival_bonus("low_hp_reduction")
 	var reduced_damage := amount * 100.0 / (100.0 + maxf(0.0, defense)) * (1.0 - clampf(reduction, -0.5, 0.75))
+	if reduced_damage > 0.0:
+		_time_since_last_damage = 0.0
 	var absorbed := minf(survival_shield, reduced_damage)
 	survival_shield -= absorbed
 	reduced_damage -= absorbed
@@ -428,6 +495,8 @@ func _apply_incoming_damage(amount: float, defense: float, is_magic: bool = fals
 	emit_signal("hp_changed", current_hp, max_hp)
 	_show_damage_popup(reduced_damage, false, false)
 	_flash_red()
+	if current_hp > 0.0:
+		_play_model_animation("Hit", true)
 	
 	if current_hp <= 0.0:
 		die()
@@ -456,7 +525,80 @@ func die():
 		return
 	is_dead = true
 	emit_signal("died")
-	
-	var tween = create_tween()
-	tween.tween_property(visual_root, "rotation:x", -PI / 2.0, 0.4)
-	tween.tween_callback(func(): GameManager.game_over())
+	if _play_model_animation("Death", true):
+		var death_wait := create_tween()
+		death_wait.tween_interval(2.0)
+		death_wait.tween_callback(func(): GameManager.game_over())
+	else:
+		var tween = create_tween()
+		tween.tween_property(visual_root, "rotation:x", -PI / 2.0, 0.4)
+		tween.tween_callback(func(): GameManager.game_over())
+
+
+func _setup_model_animations():
+	if character_model == null:
+		return
+	var players := character_model.find_children("*", "AnimationPlayer", true, false)
+	if players.is_empty():
+		return
+	model_animation_player = players[0] as AnimationPlayer
+	if model_animation_player == null:
+		return
+	model_clips.clear()
+	var animation_profile := PlayerManager.get_animation_profile(current_appearance)
+	if animation_profile == "char02":
+		_map_animation_alias("Idle", ["Idle_Sword_RT", "Idle"])
+		_map_animation_alias("Walk", ["Polearm_Run_RT", "Sword_Run_RT", "Run"])
+		_map_animation_alias("Run", ["Polearm_Run_RT", "Sword_Run_RT", "Run"])
+		_map_animation_alias("Attack", ["Sword_Regular_A_RT", "Sword_Attack_RT", "Sword_Attack_A_RT"])
+		_map_animation_alias("AttackAlt", ["Sword_Regular_B_RT", "Sword_Attack_B_RT", "Sword_Regular_A_RT"])
+		_map_animation_alias("Kick", ["Sword_Attack_RT", "Sword_Regular_A_RT"])
+	elif animation_profile == "fighter":
+		_map_animation_alias("Idle", ["Breathing_Idle_RT"])
+		_map_animation_alias("Walk", ["Run_Female_RT"])
+		_map_animation_alias("Run", ["Run_Female_RT"])
+		_map_animation_alias("Attack", ["Standing_1H_Magic_Attack_01_RT", "Standing_1H_Magic_Attack_03_RT"])
+		_map_animation_alias("AttackAlt", ["Standing_1H_Magic_Attack_03_RT", "Standing_1H_Magic_Attack_01_RT"])
+		_map_animation_alias("Kick", ["Standing_2H_Magic_Area_Attack_02_RT", "Standing_2H_Magic_Attack_01_RT"])
+		_map_animation_alias("Hit", ["Hit_Chest_RT"])
+		_map_animation_alias("Death", ["Livershot_Knockdown_RT"])
+		if not model_clips.has("Idle") and model_animation_player.has_animation("Armature|Armature|Armature|mixamo.com|Layer0"):
+			model_clips["Idle"] = "Armature|Armature|Armature|mixamo.com|Layer0"
+	for clip_key in ["Idle", "Walk", "Run"]:
+		if model_clips.has(clip_key):
+			var clip := model_animation_player.get_animation(model_clips[clip_key])
+			if clip:
+				clip.loop_mode = Animation.LOOP_LINEAR
+	if not model_animation_player.animation_finished.is_connected(_on_model_animation_finished):
+		model_animation_player.animation_finished.connect(_on_model_animation_finished)
+	_play_model_animation("Idle")
+
+func _map_animation_alias(alias: String, candidates: Array[String]):
+	for candidate in candidates:
+		if model_animation_player != null and model_animation_player.has_animation(candidate):
+			model_clips[alias] = candidate
+			return
+
+
+func _on_model_animation_finished(animation_name: StringName):
+	if str(animation_name) == active_action_clip:
+		active_action_clip = ""
+
+
+func _play_model_animation(clip_key: String, action: bool = false) -> bool:
+	if model_animation_player == null or not model_clips.has(clip_key):
+		return false
+	var clip_name := str(model_clips[clip_key])
+	if action:
+		active_action_clip = clip_name
+		model_animation_player.play(clip_name, 0.12)
+		return true
+	if not active_action_clip.is_empty() and model_animation_player.is_playing():
+		return true
+	if str(model_animation_player.current_animation) != clip_name or not model_animation_player.is_playing():
+		model_animation_player.play(clip_name, 0.16)
+	return true
+
+
+func play_skill_animation(skill_key: String):
+	_play_model_animation("Kick" if skill_key == "w" else "AttackAlt", true)

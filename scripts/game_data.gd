@@ -14,6 +14,7 @@ const SAVE_TEMP_PATH = "user://freesurvivor_save.tmp"
 const SAVE_BACKUP_PATH = "user://freesurvivor_save.backup.json"
 const SAVE_SCHEMA_VERSION = 3
 const FIGHTER_ID := "fighter"
+const CHARACTER_SKILL_DATABASE = preload("res://scripts/character_skill_database.gd")
 const CHARACTER_NAME_MAX_LENGTH = 20
 const DEFAULT_INVENTORY: Array[Dictionary] = [
 	{
@@ -52,10 +53,21 @@ const DEFAULT_INVENTORY: Array[Dictionary] = [
 	}
 ]
 const DEFAULT_EQUIPPED_GEAR := {
-	"fighter": {"weapon": "wpn_handwraps", "armor": "arm_leather", "accessory": null}
+	"fighter": {"weapon": "wpn_handwraps", "armor": "arm_leather", "accessory": null},
+	"fighter_2d": {"weapon": "wpn_handwraps", "armor": "arm_leather", "accessory": null},
+	"char02": {"weapon": "wpn_iron_sword", "armor": "arm_leather", "accessory": null}
 }
-const DEFAULT_CHARACTER_STATS := {"fighter": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0}}
-const DEFAULT_CHARACTER_NAMES := {"fighter": "무도가"}
+const DEFAULT_CHARACTER_STATS := {
+	"fighter": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0},
+	"fighter_2d": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0},
+	"char02": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0}
+}
+const DEFAULT_CHARACTER_NAMES := {"fighter": "무도가", "fighter_2d": "화염권객", "char02": "유랑 검사"}
+const PERMANENT_STAT_UPGRADE_CONFIG := {
+	"base_cost": 800,
+	"growth_rate": 1.18,
+	"round_to": 50
+}
 
 # -------------------------------------------------------------
 # SHOP CATALOG & BESTIARY
@@ -86,21 +98,13 @@ const SHOP_CONSUMABLES: Array[Dictionary] = [
 ]
 
 const MONSTER_BESTIARY: Dictionary = {
-	"zombie": {
-		"name": "좀비", "icon": "🧟", "grade": "일반",
-		"desc": "느리지만 끈질기게 몰려오는 언데드. 초원과 숲에서 가장 흔히 마주친다."
+	"infected": {
+		"name": "감염자", "icon": "🧟", "grade": "일반",
+		"desc": "스테이지에 무리를 지어 나타나는 감염자."
 	},
-	"skeleton": {
-		"name": "스켈레톤", "icon": "💀", "grade": "일반",
-		"desc": "멀리서 뼈 화살을 쏘는 원거리 언데드. 접근전으로 빠르게 처리하는 편이 좋다."
-	},
-	"mutant": {
-		"name": "뮤턴트", "icon": "👹", "grade": "정예",
-		"desc": "거대한 몸집과 강력한 한 방을 가진 돌연변이. 방어 장비가 필수다."
-	},
-	"mutant_lord": {
-		"name": "뮤턴트 군주", "icon": "🐲", "grade": "보스",
-		"desc": "심연의 문을 지키는 군주. 전투 후반부에 등장하는 최강의 적."
+	"infected_boss": {
+		"name": "거대 감염자", "icon": "🧟", "grade": "보스",
+		"desc": "전투 중 일정 시간이 지나면 나타나는 거대한 감염자."
 	}
 }
 
@@ -149,76 +153,8 @@ var skill_levels: Dictionary = {
 	"e": 1,
 	"r": 1
 }
-var skill_loadout: Dictionary = {"q": "q", "w": "w", "e": "e", "r": "r"}
-
-var skill_meta: Dictionary = {
-	"q": {
-		"name": "검기 방출",
-		"icon": "🗡️",
-		"desc": "전방으로 검기를 날려 일직선상의 모든 적을 관통 타격합니다.",
-		"base_cd": 2.5,
-		"base_dmg_ratio": 1.2,
-		"cd_step": 0.1,
-		"dmg_step": 0.15,
-		"cost_base": 100,
-		"sp_cost": 0,
-		"range": 12.0,
-		"unlock_level": 1,
-		"effect": "직선 관통"
-	},
-	"w": {
-		"name": "회전 베기",
-		"icon": "🌀",
-		"desc": "자신을 중심으로 360도 반경의 적들에게 강력한 회전 타격을 가합니다.",
-		"base_cd": 4.5,
-		"base_dmg_ratio": 1.6,
-		"cd_step": 0.15,
-		"dmg_step": 0.2,
-		"cost_base": 150,
-		"sp_cost": 0,
-		"range": 4.5,
-		"unlock_level": 1,
-		"effect": "주변 360도"
-	},
-	"e": {
-		"name": "화염 방사",
-		"icon": "🔥",
-		"desc": "전방 부채꼴 범위에 맹렬한 불길을 뿜어 다단 히트 피해를 입힙니다.",
-		"base_cd": 3.5,
-		"base_dmg_ratio": 1.4,
-		"cd_step": 0.12,
-		"dmg_step": 0.18,
-		"cost_base": 200,
-		"sp_cost": 0,
-		"range": 8.0,
-		"unlock_level": 1,
-		"effect": "전방 부채꼴"
-	},
-	"r": {
-		"name": "궁극: 대폭발",
-		"icon": "💥",
-		"desc": "지면에 성스러운 마력을 집중시켜 주변 적에게 폭발 피해를 줍니다.",
-		"base_cd": 8.0,
-		"base_dmg_ratio": 2.8,
-		"cd_step": 0.25,
-		"dmg_step": 0.35,
-		"cost_base": 350,
-		"sp_cost": 0,
-		"range": 8.5,
-		"unlock_level": 8,
-		"effect": "광역 폭발"
-	},
-	"volley": {
-		"name": "삼연 검기", "icon": "⚔", "desc": "전방으로 관통 검기 세 줄기를 부채꼴로 날립니다.",
-		"base_cd": 7.0, "sp_cost": 0, "range": 12.0, "unlock_level": 2,
-		"base_dmg_ratio": 0.65, "dmg_step": 0.0, "cd_step": 0.0, "effect": "세 방향 관통"
-	},
-	"renewal": {
-		"name": "수호의 기도", "icon": "✚", "desc": "최대 HP의 20%를 회복합니다. 자동 시전은 HP 70% 이하에서 발동합니다.",
-		"base_cd": 22.0, "sp_cost": 0, "range": 0.0, "unlock_level": 5,
-		"base_dmg_ratio": 1.0, "dmg_step": 0.0, "cd_step": 0.0, "effect": "자가 회복"
-	}
-}
+var skill_loadout: Dictionary = CHARACTER_SKILL_DATABASE.get_default_loadout(FIGHTER_ID)
+var skill_meta: Dictionary = CHARACTER_SKILL_DATABASE.get_skill_set(FIGHTER_ID)
 
 # --- Consumable Items Stock ---
 var item_counts: Dictionary = {
@@ -232,9 +168,29 @@ var characters: Dictionary = {
 	"fighter": {
 		"id": "fighter", "name": "무도가", "title": "권법 수련자", "role": "무도가",
 		"grade": "R", "icon": "🥋", "color": Color(0.85, 0.43, 0.2), "unlocked": true,
+		"model_scene": "res://assets/char/char05/char05_textured.glb", "model_scale": Vector3.ONE, "animation_profile": "fighter",
+		"base_attributes": {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3},
 		"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0, "base_spd": 6.8,
-		"signature_skill": "검기 방출", "weapon_name": "권갑", "combat_style": "기동성과 근접 타격",
+		"signature_skill": "쇄도 연권", "weapon_name": "권갑", "combat_style": "기동성과 근접 타격",
 		"desc": "권갑을 두른 두 주먹과 기공으로 싸우는 무도가."
+	},
+	"fighter_2d": {
+		"id": "fighter_2d", "name": "화염권객", "title": "2D 화염권 무도가", "role": "무도가 · 2D",
+		"grade": "R", "icon": "🔥", "color": Color(0.82, 0.32, 0.18), "unlocked": true,
+		"model_scene": "res://assets/char/char05/char05_textured.glb", "model_scale": Vector3.ONE, "animation_profile": "fighter",
+		"base_attributes": {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3},
+		"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0, "base_spd": 6.8,
+		"signature_skill": "쇄도 연권", "weapon_name": "권갑", "combat_style": "2D 스프라이트 · 기동성과 근접 타격",
+		"appearance": "2d_sprite", "desc": "불꽃 기운을 두른 2D 무도가. 기존 무도가와 같은 조작과 스킬을 사용합니다."
+	},
+	"char02": {
+		"id": "char02", "name": "유랑 검사", "title": "쌍검 방랑자", "role": "검사",
+		"grade": "R", "icon": "⚔️", "color": Color(0.3, 0.52, 0.72), "unlocked": true,
+		"model_scene": "res://assets/char/char02/char02.glb", "model_scale": Vector3.ONE, "animation_profile": "char02",
+		"base_attributes": {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3},
+		"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0, "base_spd": 6.8,
+		"signature_skill": "쇄도 연권", "weapon_name": "쌍검", "combat_style": "빠른 근접 전투",
+		"appearance": "char02", "desc": "새로 추가된 3D 캐릭터 모델을 사용하는 쌍검 검사."
 	}
 }
 
@@ -256,7 +212,7 @@ var stages: Dictionary = {
 		"level_req": 1,
 		"difficulty": "★☆☆☆☆",
 		"desc": "마을 북쪽 성문 밖 초원에 몬스터들이 출몰하기 시작했습니다. 성문 밖으로 나가 침략을 저지하세요.",
-		"monster_types": ["좀비", "스켈레톤", "뮤턴트 (보스)"],
+		"monster_types": ["감염자", "거대 감염자 (보스)"],
 		"rewards": {"gold": 400, "xp": 60, "items": ["강화석 x2", "치유 물약 x2"]},
 		"scene": "res://scenes/stages/stage_grassland.tscn",
 		"cleared": false
@@ -268,7 +224,7 @@ var stages: Dictionary = {
 		"level_req": 5,
 		"difficulty": "★★★☆☆",
 		"desc": "짙은 안개 속에서 고대의 언데드들이 끝없이 몰려옵니다. 강력한 화력과 방어 전략이 요구됩니다.",
-		"monster_types": ["무장 스켈레톤", "맹독 좀비", "고대 뮤턴트 거수"],
+		"monster_types": ["감염자", "거대 감염자 (보스)"],
 		"rewards": {"gold": 900, "xp": 140, "items": ["강화석 x5", "폭탄 x2", "작열의 검"]},
 		"scene": "res://scenes/stages/stage_grassland.tscn",
 		"cleared": false
@@ -280,7 +236,7 @@ var stages: Dictionary = {
 		"level_req": 10,
 		"difficulty": "★★★★★",
 		"desc": "봉인된 심연의 문에서 쏟아져 나오는 몬스터 군단. 수련한 무공으로 군단을 돌파하세요.",
-		"monster_types": ["해골 기사단", "파괴의 뮤턴트 군주"],
+		"monster_types": ["감염자", "거대 감염자 (보스)"],
 		"rewards": {"gold": 2500, "xp": 350, "items": ["기사단 판금 갑옷", "다이아몬드 x50"]},
 		"scene": "res://scenes/stages/stage_grassland.tscn",
 		"cleared": false
@@ -370,16 +326,25 @@ var active_character_id: String = ""
 var _default_runtime_template: Dictionary = {}
 var _profile_playtime_accumulator: float = 0.0
 var _save_in_progress := false
+var _direct_growth_migration_pending := false
 
 func _ready():
 	_migrate_character_attributes()
+	_migrate_direct_gold_growth()
 	_migrate_skill_loadout(skill_loadout)
+	_ensure_character_equipment_entries()
+	_set_character_skill_set(get_leader_id())
 	_default_runtime_template = _serialize_runtime_state()
 	add_child(character_slot_manager)
-	load_from_disk()
+	_direct_growth_migration_pending = false
+	var loaded_existing_save := load_from_disk()
 	_migrate_character_attributes()
+	_migrate_direct_gold_growth()
 	_migrate_skill_loadout(skill_loadout)
+	_ensure_character_equipment_entries()
 	recalculate_party_stats()
+	if loaded_existing_save and _direct_growth_migration_pending:
+		call_deferred("save_to_disk")
 
 func _process(delta: float):
 	if active_character_id.is_empty() or not character_profiles.has(active_character_id):
@@ -402,7 +367,7 @@ func _notification(what: int):
 func _migrate_character_attributes():
 	for char_id in characters:
 		var character: Dictionary = characters[char_id]
-		var defaults := StatManager.get_default_stats(str(char_id))
+		var defaults := StatManager.get_default_stats(str(char_id), character)
 		var attributes: Dictionary = character.get("attributes", {})
 		for stat_name in StatManager.STAT_KEYS:
 			attributes[stat_name] = max(1, int(attributes.get(stat_name, defaults[stat_name])))
@@ -415,6 +380,26 @@ func _migrate_character_attributes():
 			character["stat_points"] += max(0, int(character.get("level", 1)) - 1)
 			character["growth_migration_v2"] = true
 		character["level"] = 1
+
+func _migrate_direct_gold_growth():
+	for char_id in characters:
+		var character: Dictionary = characters[char_id]
+		if bool(character.get("direct_gold_growth_migration_v3", false)):
+			continue
+		var unused_points := maxi(0, int(character.get("stat_points", 0)))
+		var historical_spent := maxi(0, int(character.get("stat_points_spent", 0)))
+		var legacy_point_value := 100 + floori(float(historical_spent) / 12.0) * 100
+		if unused_points > 0:
+			player_gold += unused_points * legacy_point_value
+		character["stat_points"] = 0
+		var defaults := StatManager.get_default_stats(str(char_id), character)
+		var attributes: Dictionary = character.get("attributes", defaults)
+		var total_upgrades := 0
+		for stat_name in StatManager.STAT_KEYS:
+			total_upgrades += maxi(0, int(attributes.get(stat_name, defaults[stat_name])) - int(defaults[stat_name]))
+		character["stat_points_spent"] = total_upgrades
+		character["direct_gold_growth_migration_v3"] = true
+		_direct_growth_migration_pending = true
 
 # -------------------------------------------------------------
 # ACTIVE CHARACTER STATS
@@ -443,7 +428,7 @@ func recalculate_party_stats():
 		player.refresh_persistent_stats()
 
 func character_stat_delta(stats: StatManager, class_id: String) -> float:
-	var defaults := StatManager.get_default_stats(class_id)
+	var defaults := StatManager.get_default_stats(class_id, characters.get(class_id, {}))
 	var total := 0.0
 	for stat_name in StatManager.STAT_KEYS:
 		total += max(0, stats.get_stat(stat_name) - int(defaults[stat_name]))
@@ -458,30 +443,43 @@ func _get_inventory_item(item_id: String) -> Dictionary:
 func set_party_member(_slot_idx: int, _char_id: String) -> bool:
 	return false
 
-func level_up_character(char_id: String) -> bool:
-	if not characters.has(char_id):
+func get_direct_stat_upgrade_cost(char_id: String, stat_name: String) -> int:
+	if not characters.has(char_id) or not StatManager.STAT_KEYS.has(stat_name):
+		return 0
+	var stats := get_character_stat_manager(char_id)
+	var defaults := StatManager.get_default_stats(char_id, characters.get(char_id, {}))
+	var upgrade_count := maxi(0, stats.get_stat(stat_name) - int(defaults[stat_name]))
+	var base_cost := int(PERMANENT_STAT_UPGRADE_CONFIG.base_cost)
+	var growth_rate := float(PERMANENT_STAT_UPGRADE_CONFIG.growth_rate)
+	var round_to := int(PERMANENT_STAT_UPGRADE_CONFIG.round_to)
+	var raw_cost := float(base_cost) * pow(growth_rate, upgrade_count)
+	return ceili(raw_cost / float(round_to)) * round_to
+
+func upgrade_character_stat_with_gold(char_id: String, stat_name: String) -> bool:
+	if not characters.has(char_id) or not StatManager.STAT_KEYS.has(stat_name):
 		return false
-	var c = characters[char_id]
-	var cost := get_stat_point_gold_cost(char_id)
-	if player_gold < cost:
+	var cost := get_direct_stat_upgrade_cost(char_id, stat_name)
+	if cost <= 0 or player_gold < cost:
 		return false
+	var character: Dictionary = characters[char_id]
+	var attributes: Dictionary = character.get("attributes", StatManager.get_default_stats(char_id, character)).duplicate(true)
 	player_gold -= cost
-	currency_changed.emit(player_gold, player_gems)
-	c["stat_points"] = int(c.get("stat_points", 0)) + 1
+	attributes[stat_name] = int(attributes.get(stat_name, 1)) + 1
+	character["attributes"] = attributes
+	character["stat_points"] = 0
+	character["stat_points_spent"] = int(character.get("stat_points_spent", 0)) + 1
 	_update_quest_progress("q_upgrade_char", 1)
 	recalculate_party_stats()
+	currency_changed.emit(player_gold, player_gems)
 	data_updated.emit()
 	save_to_disk()
 	return true
 
-func get_stat_point_gold_cost(char_id: String) -> int:
-	if not characters.has(char_id):
-		return 1
-	return 100 + floori(float(characters[char_id].get("stat_points_spent", 0)) / 12.0) * 100
-
 func create_selected_character(char_id: String, character_name: String) -> bool:
 	var clean_name := character_name.strip_edges()
 	if not characters.has(char_id) or not characters[char_id].get("unlocked", false):
+		return false
+	if not PlayerManager.has_model_definition(char_id) or not CHARACTER_SKILL_DATABASE.has_skill_assignment(char_id):
 		return false
 	if clean_name.is_empty() or clean_name.length() > 20:
 		return false
@@ -497,42 +495,30 @@ func create_selected_character(char_id: String, character_name: String) -> bool:
 	save_to_disk()
 	return true
 
-func allocate_character_stat(char_id: String, stat_name: String) -> bool:
-	if not characters.has(char_id) or not StatManager.STAT_KEYS.has(stat_name):
-		return false
-	var character: Dictionary = characters[char_id]
-	if int(character.get("stat_points", 0)) <= 0:
-		return false
-	var attributes: Dictionary = character.get("attributes", StatManager.get_default_stats(char_id))
-	attributes[stat_name] = int(attributes.get(stat_name, 1)) + 1
-	character["attributes"] = attributes
-	character["stat_points"] = int(character.get("stat_points", 0)) - 1
-	character["stat_points_spent"] = int(character.get("stat_points_spent", 0)) + 1
-	recalculate_party_stats()
-	data_updated.emit()
-	save_to_disk()
-	return true
-
-func reset_character_stats(char_id: String) -> bool:
-	if not characters.has(char_id):
-		return false
-	var character: Dictionary = characters[char_id]
-	var spent := int(character.get("stat_points_spent", 0))
-	if spent <= 0:
-		return false
-	character["attributes"] = StatManager.get_default_stats(char_id)
-	character["stat_points"] = int(character.get("stat_points", 0)) + spent
-	character["stat_points_spent"] = 0
-	recalculate_party_stats()
-	data_updated.emit()
-	save_to_disk()
-	return true
-
 func get_character_stat_manager(char_id: String) -> StatManager:
 	var stats := StatManager.new()
 	if characters.has(char_id):
 		stats.setup_from_class(char_id, characters[char_id])
 	return stats
+
+
+func _ensure_character_equipment_entries() -> void:
+	for character_id in characters:
+		if equipped_gear.has(character_id):
+			continue
+		var default_gear: Dictionary = {"weapon": null, "armor": null, "accessory": null}
+		var starting_gear: Variant = characters[character_id].get("starting_gear", {})
+		if starting_gear is Dictionary:
+			default_gear.merge(starting_gear, true)
+		equipped_gear[character_id] = default_gear
+
+func _set_character_skill_set(character_class_id: String):
+	skill_meta = CHARACTER_SKILL_DATABASE.get_skill_set(character_class_id)
+	skill_levels = CHARACTER_SKILL_DATABASE.get_default_levels(character_class_id)
+	skill_loadout = CHARACTER_SKILL_DATABASE.get_default_loadout(character_class_id)
+	skill_cooldowns.clear()
+	for skill_id in skill_meta:
+		skill_cooldowns[skill_id] = float(skill_meta[skill_id].get("base_cd", 1.0))
 
 func level_up_skill(skill_key: String) -> bool:
 	if not skill_levels.has(skill_key) or not skill_meta.get(skill_key, {}).has("cost_base"):
@@ -559,18 +545,16 @@ func level_up_skill(skill_key: String) -> bool:
 	return true
 
 func get_equipped_skill(slot: String) -> String:
-	if slot == "a":
-		return "volley"
-	if slot == "s":
-		return "renewal"
 	return str(skill_loadout.get(slot, ""))
 
 func is_survival_skill_unlocked(skill_id: String) -> bool:
 	return skill_meta.has(skill_id) and player_level >= int(skill_meta[skill_id].unlock_level)
 
 func equip_skill(slot: String, skill_id: String) -> bool:
-	var slots: Array[String] = ["q", "w", "e", "r"]
-	if not slots.has(slot) or not slots.has(skill_id):
+	var slots: Array[String] = ["q", "w", "e", "r", "a", "s"]
+	if not slots.has(slot) or not skill_meta.has(skill_id):
+		return false
+	if str(skill_meta[skill_id].get("cast_type", "passive")) == "passive":
 		return false
 	if GameManager.current_location == GameManager.Location.BATTLE:
 		return false
@@ -589,21 +573,25 @@ func equip_skill(slot: String, skill_id: String) -> bool:
 	return true
 
 func _migrate_skill_loadout(saved_loadout: Dictionary):
-	var slots: Array[String] = ["q", "w", "e", "r"]
+	var slots: Array[String] = ["q", "w", "e", "r", "a", "s"]
+	var defaults := CHARACTER_SKILL_DATABASE.get_default_loadout(get_leader_id())
 	var migrated: Dictionary = {}
 	var assigned: Dictionary = {}
 	for slot in slots:
 		var skill_id := str(saved_loadout.get(slot, ""))
-		if slots.has(skill_id) and not assigned.has(skill_id):
+		if skill_meta.has(skill_id) and str(skill_meta[skill_id].get("cast_type", "passive")) != "passive" and not assigned.has(skill_id):
 			migrated[slot] = skill_id
 			assigned[skill_id] = true
-		else:
-			migrated[slot] = ""
 	for slot in slots:
-		if migrated[slot] != "":
+		if migrated.has(slot):
 			continue
-		for skill_id in slots:
-			if not assigned.has(skill_id):
+		var current_skill := str(defaults.get(slot, ""))
+		if skill_meta.has(current_skill) and not assigned.has(current_skill):
+			migrated[slot] = current_skill
+			assigned[current_skill] = true
+			continue
+		for skill_id in skill_meta:
+			if str(skill_meta[skill_id].get("cast_type", "passive")) != "passive" and not assigned.has(skill_id):
 				migrated[slot] = skill_id
 				assigned[skill_id] = true
 				break
@@ -615,7 +603,7 @@ func get_skill_damage_multiplier(skill_key: String) -> float:
 	var meta = skill_meta[skill_key]
 	var level = skill_levels.get(skill_key, 1)
 	var current_ratio = meta.base_dmg_ratio + meta.dmg_step * (level - 1)
-	return current_ratio / meta.base_dmg_ratio
+	return current_ratio
 
 # -------------------------------------------------------------
 # BATTLE RESULT & REWARDS
@@ -626,7 +614,7 @@ func record_battle_result(won: bool, time_sec: float, kills: int) -> Dictionary:
 	var first_clear = won and not stage.get("cleared", false)
 
 	var base_gold = int(round((kills * 12 + int(time_sec * 3.0)) * (1.0 + get_survival_bonus("gold"))))
-	var growth_earned: int = int(kills / 10) + int(int(time_sec) / 60)
+	var growth_earned: int = int(kills / 10.0) + int(time_sec / 60.0)
 	var earned_items: Array[String] = []
 	var earned_cards: Array[String] = []
 
@@ -691,6 +679,30 @@ func record_battle_result(won: bool, time_sec: float, kills: int) -> Dictionary:
 	tutorial_flags["first_battle_done"] = true
 	tutorial_flags["post_battle_pending"] = true
 
+	currency_changed.emit(player_gold, player_gems)
+	data_updated.emit()
+	save_to_disk()
+	return last_battle_result
+
+func record_infinite_dungeon_result(time_sec: float, kills: int, paid_gold: int, returned_to_town: bool) -> Dictionary:
+	var previous_best := 0.0
+	var previous_level := 1
+	if not active_character_id.is_empty() and character_profiles.has(active_character_id):
+		var profile: Dictionary = character_profiles[active_character_id]
+		previous_best = float(profile.get("best_survival_time", 0.0))
+		previous_level = int(profile.get("best_survival_level", 1))
+		profile["best_survival_time"] = maxf(previous_best, time_sec)
+		profile["best_survival_level"] = maxi(previous_level, player_level)
+	player_gold += paid_gold
+	last_battle_result = {
+		"won": returned_to_town, "returned": returned_to_town, "time": time_sec,
+		"kills": kills, "survival_level": player_level, "gold_earned": paid_gold,
+		"gold_found": GameManager.dungeon_gold, "growth_currency_earned": 0,
+		"cards_earned": [], "items_earned": [], "stage_name": "무한 던전",
+		"new_best_time": time_sec > previous_best, "new_best_level": player_level > previous_level
+	}
+	_update_quest_progress("q_first_battle", kills)
+	_update_quest_progress("q_slay_50", kills)
 	currency_changed.emit(player_gold, player_gems)
 	data_updated.emit()
 	save_to_disk()
@@ -1022,6 +1034,7 @@ func _apply_runtime_state(data: Dictionary):
 
 	party_slots.assign([str(data.get("class_id", FIGHTER_ID))])
 	leader_index = 0
+	_set_character_skill_set(get_leader_id())
 
 	if data.has("skill_loadout") and data["skill_loadout"] is Dictionary:
 		skill_loadout = data["skill_loadout"].duplicate(true)
@@ -1036,11 +1049,17 @@ func _apply_runtime_state(data: Dictionary):
 			if characters.has(character_id) and data["characters"][character_id] is Dictionary:
 				if not data["characters"][character_id].has("growth_migration_v2"):
 					characters[character_id].erase("growth_migration_v2")
+				if not data["characters"][character_id].has("direct_gold_growth_migration_v3"):
+					characters[character_id].erase("direct_gold_growth_migration_v3")
 				characters[character_id].merge(data["characters"][character_id], true)
 	if data.has("inventory") and data["inventory"] is Array:
 		inventory = Array(data["inventory"], TYPE_DICTIONARY, &"", null)
+	equipped_gear = DEFAULT_EQUIPPED_GEAR.duplicate(true)
 	if data.has("equipped_gear") and data["equipped_gear"] is Dictionary:
-		equipped_gear = data["equipped_gear"].duplicate(true)
+		for character_id in data["equipped_gear"]:
+			if data["equipped_gear"][character_id] is Dictionary:
+				equipped_gear[character_id] = data["equipped_gear"][character_id].duplicate(true)
+	_ensure_character_equipment_entries()
 
 	if data.has("quests") and data["quests"] is Array:
 		var loaded_quests: Array = data["quests"]
@@ -1063,6 +1082,7 @@ func _apply_runtime_state(data: Dictionary):
 		monster_kill_counts = data["monster_kill_counts"].duplicate(true)
 	_apply_auxiliary_profile_state(data)
 	_migrate_character_attributes()
+	_migrate_direct_gold_growth()
 	_migrate_skill_loadout(skill_loadout)
 	recalculate_party_stats()
 
@@ -1157,12 +1177,20 @@ func create_character_profile(slot_index: int, class_id: String, character_name:
 		return ""
 	if not characters.has(class_id) or not bool(characters[class_id].get("unlocked", false)):
 		return ""
+	if not PlayerManager.has_model_definition(class_id):
+		push_warning("캐릭터 모델이 등록되지 않았습니다: %s" % class_id)
+		return ""
+	if not CHARACTER_SKILL_DATABASE.has_skill_assignment(class_id):
+		push_warning("캐릭터 스킬 배정이 등록되지 않았습니다: %s" % class_id)
+		return ""
 	var clean_name := character_name.strip_edges()
 	if not get_character_name_error(clean_name).is_empty():
 		return ""
 	_commit_active_profile()
 	_apply_runtime_state(_default_runtime_template.duplicate(true))
 	party_slots.assign([class_id])
+	_set_character_skill_set(class_id)
+	_ensure_character_equipment_entries()
 	characters[class_id]["name"] = clean_name
 	player_current_hp = get_max_player_hp()
 	var character_id := _generate_character_id()
@@ -1208,6 +1236,7 @@ func activate_character_profile(character_id: String) -> bool:
 	_apply_runtime_state(state.duplicate(true))
 	var class_id := str(profile.get("class_id", FIGHTER_ID))
 	party_slots.assign([class_id])
+	_set_character_skill_set(class_id)
 	active_character_id = character_id
 	last_selected_character_id = character_id
 	profile["last_played_at"] = Time.get_datetime_string_from_system(false, true)
@@ -1380,6 +1409,7 @@ func _migrate_to_fighter(state: Dictionary, old_class: String, saved_name: Strin
 	hero.name = saved_name
 	hero.stat_points = int(old_hero.get("stat_points", 0))
 	hero.stat_points_spent = int(old_hero.get("stat_points_spent", 0))
+	hero.erase("direct_gold_growth_migration_v3")
 	if not bool(old_hero.get("growth_migration_v2", false)):
 		hero.stat_points += maxi(0, int(old_hero.get("level", 1)) - 1)
 	var old_base: Dictionary = StatManager.LEGACY_STATS.get(old_class, StatManager.FIGHTER_STATS)
@@ -1443,18 +1473,17 @@ func reset_save():
 	max_hp_bonus = 0.0
 	party_slots.assign([get_leader_id()])
 	leader_index = 0
-	skill_levels = {"q": 1, "w": 1, "e": 1, "r": 1}
-	skill_loadout = {"q": "q", "w": "w", "e": "e", "r": "r"}
-	for key in skill_meta:
-		skill_cooldowns[key] = skill_meta[key].base_cd
+	_set_character_skill_set(get_leader_id())
+	skill_loadout = CHARACTER_SKILL_DATABASE.get_default_loadout(get_leader_id())
 	item_counts = {1: 3, 2: 1, 3: 2}
 	inventory = DEFAULT_INVENTORY.duplicate(true)
 	equipped_gear = DEFAULT_EQUIPPED_GEAR.duplicate(true)
+	_ensure_character_equipment_entries()
 	for char_id in characters:
 		characters[char_id]["level"] = 1
-		characters[char_id].merge(DEFAULT_CHARACTER_STATS[char_id], true)
-		characters[char_id]["name"] = DEFAULT_CHARACTER_NAMES[char_id]
-		characters[char_id]["attributes"] = StatManager.get_default_stats(char_id)
+		characters[char_id].merge(DEFAULT_CHARACTER_STATS.get(char_id, {}), true)
+		characters[char_id]["name"] = DEFAULT_CHARACTER_NAMES.get(char_id, characters[char_id].get("name", str(char_id)))
+		characters[char_id]["attributes"] = StatManager.get_default_stats(str(char_id), characters[char_id])
 		characters[char_id]["stat_points"] = 0
 		characters[char_id]["stat_points_spent"] = 0
 		characters[char_id]["growth_migration_v2"] = true

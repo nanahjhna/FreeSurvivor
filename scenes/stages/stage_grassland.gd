@@ -1,14 +1,31 @@
 extends Node3D
 
+const BATTLE_CAMERA_FOV: float = 60.0
+
 func _ready():
 	GameManager.current_location = GameManager.Location.BATTLE
-	# LevelUpPanel opens the five-card starting draft from its _ready().
+	# LevelUpPanel opens the ten-pick starting draft from its _ready().
 	# Do not overwrite its LEVEL_UP state while that draft is active.
 	if GameManager.starting_draft_picks <= 0:
 		GameManager.current_state = GameManager.GameState.PLAYING
 	var player = find_child("Player", true, false)
 	if player:
 		player.is_combat_enabled = true
+		var player_visual := player.get_node_or_null("VisualRoot") as Node3D
+		if player_visual:
+			player_visual.rotation.y = PI
+		if player.has_method("set_first_person_mode"):
+			player.call("set_first_person_mode", false)
+		var camera := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
+		if camera:
+			camera.set("quarter_view_enabled", true)
+			camera.set("quarter_distance", 16.0)
+			camera.set("quarter_elevation_degrees", 45.0)
+			camera.set("quarter_azimuth_degrees", 45.0)
+			camera.set("back_view_enabled", false)
+			camera.set("first_person_enabled", false)
+			camera.fov = BATTLE_CAMERA_FOV
+			camera.call("snap_to_target")
 	_generate_environment()
 
 func _generate_environment():

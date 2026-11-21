@@ -12,13 +12,30 @@ signal closed()
 
 var _input_mode_option: OptionButton
 var _key_list: VBoxContainer
+var _advanced_box: VBoxContainer
+var _advanced_button: Button
+var _portrait_layout := false
 var _awaiting_action: String = ""
 var _awaiting_button: Button = null
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
-	panel.custom_minimum_size = Vector2(660, 760)
+	panel.add_theme_stylebox_override("panel", UiStyle.panel_style())
+	$Backdrop.color = Color(0.015, 0.025, 0.05, 0.55)
+	var viewport_size := get_viewport().get_visible_rect().size
+	var portrait := viewport_size.y >= viewport_size.x
+	_portrait_layout = portrait
+	panel.custom_minimum_size = Vector2(
+		minf(viewport_size.x - 32.0, 660.0) if portrait else 660.0,
+		minf(viewport_size.y - 48.0, 500.0) if portrait else 760.0
+	)
+	var margin := get_node_or_null("CenterContainer/Panel/Margin") as MarginContainer
+	if margin and portrait:
+		for side in ["margin_left", "margin_right"]:
+			margin.add_theme_constant_override(side, 16)
+		for side in ["margin_top", "margin_bottom"]:
+			margin.add_theme_constant_override(side, 18)
 	if master_slider:
 		master_slider.value = 80
 	if bgm_slider:
@@ -26,28 +43,46 @@ func _ready():
 	if sfx_slider:
 		sfx_slider.value = 85
 	_build_controls_section()
-	var close_btn = get_node_or_null("CenterContainer/Panel/Margin/VBox/Header/CloseBtn")
+	_build_hud_section()
+	if portrait:
+		fullscreen_check.visible = false
+	var close_btn := get_node_or_null("CenterContainer/Panel/Margin/VBox/Header/CloseBtn") as Button
 	if close_btn:
-		close_btn.text = "← 닫기 [ESC]"
-		close_btn.custom_minimum_size = Vector2(130, 36)
+		close_btn.text = "✕"
+		close_btn.custom_minimum_size = Vector2(52, 48)
 		UiStyle.apply_button(close_btn)
-	var confirm_btn = get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ConfirmBtn")
+	var confirm_btn := get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ConfirmBtn") as Button
 	if confirm_btn:
 		UiStyle.apply_button(confirm_btn, true)
-	var reset_btn = get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ResetSaveBtn")
+		confirm_btn.text = "완료"
+	var reset_btn := get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ResetSaveBtn") as Button
 	if reset_btn:
 		UiStyle.apply_button(reset_btn)
+		reset_btn.get_parent().remove_child(reset_btn)
+		_advanced_box.add_child(reset_btn)
+		reset_btn.custom_minimum_size = Vector2(0, 48)
+		reset_btn.text = "저장 데이터 초기화"
+	if confirm_btn:
+		confirm_btn.custom_minimum_size = Vector2(0, 56 if portrait else 46)
+		confirm_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_set_advanced_open(not portrait)
+	_advanced_button.visible = portrait
 	GameActions.bindings_changed.connect(_refresh_key_list)
 	GameActions.input_mode_changed.connect(_refresh_input_mode)
 
 func _build_controls_section():
 	if key_guide:
-		key_guide.text = "• 이동: 방향키 전용 (PC)\n• 스킬: Q, W, E, R\n• 아이템: 1, 2, 3\n• 메뉴: C, P, I, K, J, B, O, M\n• 상호작용: E / 일시정지: ESC\n• 모바일: 화면 방향키와 버튼 사용"
+		key_guide.text = "이동과 스킬은 게임 화면의 터치 버튼을 사용합니다." if _portrait_layout else "• 이동: 방향키 (PC)\n• 스킬: Q, W, E, R\n• 아이템: 1, 2, 3\n• 메뉴: C, P, I, K, J, B, O, M\n• 상호작용: E / 일시정지: ESC"
 
 	var sep := HSeparator.new()
 	content_box.add_child(sep)
 
+	_advanced_button = UiStyle.make_button("PC 단축키 · 고급 설정 보기", Vector2(0, 52))
+	_advanced_button.pressed.connect(func(): _set_advanced_open(not _advanced_box.visible))
+	content_box.add_child(_advanced_button)
+
 	var input_box := VBoxContainer.new()
+	_advanced_box = input_box
 	input_box.add_theme_constant_override("separation", 10)
 	content_box.add_child(input_box)
 
@@ -85,6 +120,34 @@ func _build_controls_section():
 
 	_refresh_input_mode()
 	_refresh_key_list()
+
+func _build_hud_section():
+	var sep := HSeparator.new()
+	content_box.add_child(sep)
+	var title := UiStyle.make_label("전투 HUD 배치", 16, Color(0.9, 0.94, 1.0))
+	content_box.add_child(title)
+	var edit_button := UiStyle.make_button("HUD 위치·크기 편집", Vector2(0, 48))
+	edit_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	edit_button.pressed.connect(_open_hud_editor)
+	content_box.add_child(edit_button)
+
+func _open_hud_editor():
+	var hud := get_tree().current_scene.find_child("HUD", true, false)
+	if hud and hud.has_method("begin_hud_edit"):
+		close()
+		hud.begin_hud_edit()
+	else:
+		UiFeedback.show_info("전투 중 일시정지 메뉴에서 HUD 편집을 열어주세요.")
+
+
+func _set_advanced_open(is_open: bool):
+	if _advanced_box == null:
+		return
+	_advanced_box.visible = is_open
+	_advanced_button.text = "PC 단축키 · 고급 설정 닫기" if is_open else "PC 단축키 · 고급 설정 보기"
+	if _portrait_layout:
+		var viewport_height := get_viewport().get_visible_rect().size.y
+		panel.custom_minimum_size.y = minf(viewport_height - 48.0, 900.0 if is_open else 500.0)
 
 func _refresh_input_mode():
 	if _input_mode_option == null:
@@ -165,6 +228,8 @@ func _end_capture():
 
 func open():
 	visible = true
+	if _portrait_layout:
+		_set_advanced_open(false)
 	_refresh_key_list()
 	_refresh_input_mode()
 

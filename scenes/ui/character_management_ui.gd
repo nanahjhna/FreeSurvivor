@@ -19,26 +19,35 @@ signal closed()
 @onready var skill_title: Label = $Panel/Margin/VBox/Body/RightDetail/Content/SkillBox/SkillTitle
 @onready var desc_label: Label = $Panel/Margin/VBox/Body/RightDetail/Content/DescLabel
 @onready var detail_content: VBoxContainer = $Panel/Margin/VBox/Body/RightDetail/Content
-
-@onready var levelup_btn: Button = $Panel/Margin/VBox/Body/RightDetail/Content/Actions/LevelUpBtn
-@onready var levelup_cost_label: Label = $Panel/Margin/VBox/Body/RightDetail/Content/Actions/CostLabel
 @onready var feedback_label: Label = $Panel/Margin/VBox/Body/RightDetail/Content/Actions/FeedbackLabel
 
 var selected_char_id := GameData.FIGHTER_ID
-var attribute_points_label: Label
 var attribute_buttons: GridContainer
-var reset_attributes_button: Button
-var combat_stats_label: Label
+var gold_label: Label
+var detail_toggle_button: Button
+var stat_value_labels: Dictionary = {}
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
+	var portrait := UiStyle.fit_modal($Panel, Vector2(680, 1080))
+	$Panel.add_theme_stylebox_override("panel", UiStyle.panel_style())
+	detail_panel.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
+	UiStyle.apply_button($Panel/Margin/VBox/Header/CloseBtn as Button)
+	if portrait:
+		var margin := $Panel/Margin as MarginContainer
+		margin.add_theme_constant_override("margin_left", 16)
+		margin.add_theme_constant_override("margin_right", 16)
+		$Panel/Margin/VBox/Body.add_theme_constant_override("separation", 8)
+		$Panel/Margin/VBox/Header/CloseBtn.custom_minimum_size = Vector2(52, 48)
 	_wrap_detail_in_scroll()
+	_prepare_simple_layout()
 	_build_stat_controls()
 	GameData.data_updated.connect(_refresh_ui)
 
 func open():
 	visible = true
+	feedback_label.text = ""
 	_refresh_ui()
 
 func close():
@@ -58,85 +67,121 @@ func _update_detail(cid: String):
 	title_label.text = c.get("title", "")
 	grade_badge.text = " " + c.get("grade", "R") + " • " + c.get("role", "") + " "
 	icon_label.text = c.get("icon", "⚔️")
+	gold_label.text = "💰 %d 골드" % GameData.player_gold
 	
-	level_label.text = "영구 성장"
 	hp_label.text = str(int(stats.max_hp()))
 	atk_label.text = str(int(stats.phys_atk()))
 	def_label.text = str(int(stats.phys_def()))
-	spd_label.text = "%.1f" % (stats.base_spd * stats.move_speed_multiplier())
-	combat_stats_label.text = (
-		"마법 공격 %.1f  ·  공격 속도 %.2f/s\n명중 %.0f%%  ·  회피 %.1f%%  ·  크리티컬 %.1f%%\n물리 방어 %.1f  ·  마법 방어 %.1f  ·  HP 회복 %.2f/s"
-		% [stats.mag_atk(), 1.2 * stats.attack_speed(), stats.hit_rate(),
-			stats.evasion(), stats.crit_rate(), stats.phys_def(), stats.mag_def(), stats.hp_recovery_rate()]
-	)
 	_refresh_attribute_controls(c, stats)
 	
 	skill_title.text = "대표 스킬: " + c.get("signature_skill", "")
 	desc_label.text = c.get("desc", "")
 	
-	var cost := GameData.get_stat_point_gold_cost(cid)
-	levelup_cost_label.text = "보유 골드: %d · 포인트 구매 비용: %d 골드" % [GameData.player_gold, cost]
-	levelup_btn.disabled = GameData.player_gold < cost
-	levelup_btn.text = "＋ 영구 능력치 포인트 획득"
-	if GameData.player_gold < cost:
-		feedback_label.text = "⛔ 골드가 %d 더 필요합니다." % (cost - GameData.player_gold)
-		feedback_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.5))
-	else:
-		feedback_label.text = ""
 
-func _on_level_up_pressed():
-	if GameData.level_up_character(selected_char_id):
-		feedback_label.text = "🎉 영구 능력치 포인트를 1개 획득했습니다."
-		feedback_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.4))
-	else:
-		feedback_label.text = "❌ 골드가 부족합니다!"
-		feedback_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
-	_update_detail(selected_char_id)
+func _prepare_simple_layout():
+	var top_row := name_label.get_parent() as HBoxContainer
+	gold_label = Label.new()
+	gold_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	gold_label.add_theme_color_override("font_color", Color(1.0, 0.83, 0.3))
+	gold_label.add_theme_font_size_override("font_size", 16)
+	top_row.add_child(gold_label)
+	var stats_grid := hp_label.get_parent() as GridContainer
+	stats_grid.columns = 2
+	detail_content.get_node("StatsGrid/LevelLbl").visible = false
+	level_label.visible = false
+	detail_content.get_node("StatsGrid/SPDLbl").visible = false
+	spd_label.visible = false
+	detail_content.get_node("Spacer").visible = false
+	detail_content.get_node("Actions").visible = false
+	detail_content.get_node("SkillBox").visible = false
+	desc_label.visible = false
 
 func _build_stat_controls():
-	combat_stats_label = Label.new()
-	combat_stats_label.add_theme_font_size_override("font_size", 12)
-	combat_stats_label.add_theme_color_override("font_color", Color(0.75, 0.88, 1.0))
-	combat_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_content.add_child(combat_stats_label)
-
 	var section := VBoxContainer.new()
-	section.add_theme_constant_override("separation", 6)
-	attribute_points_label = Label.new()
-	attribute_points_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
-	section.add_child(attribute_points_label)
+	section.name = "DirectStatGrowth"
+	section.add_theme_constant_override("separation", 8)
+	var section_title := Label.new()
+	section_title.text = "능력치 강화"
+	section_title.add_theme_font_size_override("font_size", 18)
+	section_title.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
+	section.add_child(section_title)
 	attribute_buttons = GridContainer.new()
-	attribute_buttons.columns = 3
-	attribute_buttons.add_theme_constant_override("h_separation", 6)
-	attribute_buttons.add_theme_constant_override("v_separation", 4)
+	attribute_buttons.columns = 1
+	attribute_buttons.add_theme_constant_override("h_separation", 10)
+	attribute_buttons.add_theme_constant_override("v_separation", 8)
 	section.add_child(attribute_buttons)
-	reset_attributes_button = Button.new()
-	reset_attributes_button.text = "↺ 능력치 투자 초기화"
-	reset_attributes_button.custom_minimum_size = Vector2(0, 34)
-	reset_attributes_button.pressed.connect(_on_reset_attributes_pressed)
-	section.add_child(reset_attributes_button)
+	feedback_label.get_parent().remove_child(feedback_label)
+	feedback_label.custom_minimum_size = Vector2(0, 24)
+	section.add_child(feedback_label)
 	detail_content.add_child(section)
-
-	var skill_box_index := detail_content.get_node("SkillBox").get_index()
-	detail_content.move_child(combat_stats_label, skill_box_index)
 	detail_content.move_child(section, detail_content.get_node("SkillBox").get_index())
+	detail_toggle_button = Button.new()
+	detail_toggle_button.text = "상세 정보 보기"
+	detail_toggle_button.custom_minimum_size = Vector2(0, 42)
+	UiStyle.apply_button(detail_toggle_button)
+	detail_toggle_button.pressed.connect(_toggle_character_details)
+	detail_content.add_child(detail_toggle_button)
+	detail_content.move_child(detail_toggle_button, detail_content.get_node("SkillBox").get_index())
 
 func _refresh_attribute_controls(character: Dictionary, stats: StatManager):
-	attribute_points_label.text = "능력치 투자 포인트: %d" % int(character.get("stat_points", 0))
+	stat_value_labels.clear()
 	for child in attribute_buttons.get_children():
 		child.queue_free()
 	for stat_name in StatManager.STAT_KEYS:
 		var value := stats.get_stat(stat_name)
-		var button := Button.new()
-		button.text = "%s %d  +" % [stat_name, value]
-		button.custom_minimum_size = Vector2(104, 38)
-		button.disabled = int(character.get("stat_points", 0)) <= 0
+		var row_panel := PanelContainer.new()
+		row_panel.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
+		row_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		attribute_buttons.add_child(row_panel)
+		var row_margin := UiStyle.make_margin(row_panel, 8)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		row_margin.add_child(row)
+		var identity := VBoxContainer.new()
+		identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		identity.add_theme_constant_override("separation", 2)
+		row.add_child(identity)
+		var stat_label := UiStyle.make_label(stat_name, 17, Color(0.96, 0.97, 1.0))
+		identity.add_child(stat_label)
+		var effect_label := UiStyle.make_label(_get_stat_short_effect(stat_name), 12, Color(0.68, 0.78, 0.85))
+		effect_label.clip_text = true
+		effect_label.tooltip_text = _get_stat_effect(stat_name)
+		identity.add_child(effect_label)
+		var value_label := UiStyle.make_label(str(value), 19, UiStyle.GOLD_BRIGHT)
+		value_label.text = str(value)
+		value_label.custom_minimum_size = Vector2(32, 48)
+		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(value_label)
+		stat_value_labels[stat_name] = value_label
+		var cost := GameData.get_direct_stat_upgrade_cost(selected_char_id, stat_name)
+		var button := UiStyle.make_button("+1 · %d G" % cost, Vector2(112, 48))
+		button.add_theme_font_size_override("font_size", 13)
+		button.disabled = GameData.player_gold < cost
 		button.tooltip_text = _get_stat_preview(character, stats, stat_name)
-		button.pressed.connect(_on_attribute_invested.bind(stat_name))
-		attribute_buttons.add_child(button)
-	var invested := int(character.get("stat_points_spent", 0))
-	reset_attributes_button.disabled = invested <= 0
-	reset_attributes_button.tooltip_text = "사용한 포인트 %d개를 돌려받고 직업 기본 능력치로 초기화합니다." % invested
+		button.pressed.connect(_on_direct_stat_upgrade.bind(stat_name))
+		row.add_child(button)
+
+func _get_stat_effect(stat_name: String) -> String:
+	match stat_name:
+		"STR": return "근접 공격력, HP, 소지 한계"
+		"AGI": return "공격 속도, 이동 속도, 회피"
+		"VIT": return "최대 HP, HP 회복, 물리·마법 방어"
+		"INT": return "마법 공격력과 마법 방어"
+		"DEX": return "공격력, 명중률과 공격 속도"
+		"LUK": return "크리티컬, 완전 회피와 명중률"
+	return ""
+
+func _get_stat_short_effect(stat_name: String) -> String:
+	match stat_name:
+		"STR": return "공격 · 체력"
+		"AGI": return "공속 · 이동"
+		"VIT": return "체력 · 방어"
+		"INT": return "마법 · 방어"
+		"DEX": return "명중 · 공격"
+		"LUK": return "치명 · 회피"
+	return ""
 
 func _get_stat_preview(character: Dictionary, stats: StatManager, stat_name: String) -> String:
 	var projected_data: Dictionary = character.duplicate(true)
@@ -145,27 +190,36 @@ func _get_stat_preview(character: Dictionary, stats: StatManager, stat_name: Str
 	projected_data["attributes"] = attributes
 	var projected := StatManager.new()
 	projected.setup_from_class(selected_char_id, projected_data)
-	var effect := ""
-	match stat_name:
-		"STR": effect = "근접 공격력, HP, 소지 한계"
-		"AGI": effect = "공격 속도, 이동 속도, 회피"
-		"VIT": effect = "최대 HP, HP 회복, 물리·마법 방어"
-		"INT": effect = "마법 공격력, SP, 마법 방어"
-		"DEX": effect = "공격력, 명중, 공격 속도, 마법 공격"
-		"LUK": effect = "크리티컬, 완전 회피, 명중"
+	var effect := _get_stat_effect(stat_name)
 	return "%s %d → %d\n%s\n상승 후: HP %d · 공격 %.1f · 마법 %.1f · 공격 속도 %.2f/s · 회피 %.1f%% · 크리티컬 %.1f%%" % [
 		stat_name, stats.get_stat(stat_name), stats.get_stat(stat_name) + 1, effect,
 		projected.max_hp(), projected.phys_atk(), projected.mag_atk(),
 		1.2 * projected.attack_speed(), projected.evasion(), projected.crit_rate()
 	]
 
-func _on_attribute_invested(stat_name: String):
-	if not GameData.allocate_character_stat(selected_char_id, stat_name):
-		UiFeedback.show_error("능력치 포인트가 없거나 올바른 능력치를 선택하지 않았습니다.")
+func _on_direct_stat_upgrade(stat_name: String):
+	if not GameData.upgrade_character_stat_with_gold(selected_char_id, stat_name):
+		feedback_label.text = "골드가 부족합니다."
+		feedback_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.4))
+		return
+	feedback_label.text = "%s +1 강화 완료" % stat_name
+	feedback_label.add_theme_color_override("font_color", Color(0.35, 1.0, 0.55))
+	var value_label := stat_value_labels.get(stat_name) as Label
+	if value_label:
+		value_label.pivot_offset = value_label.size * 0.5
+		value_label.scale = Vector2(1.22, 1.22)
+		value_label.modulate = Color(0.45, 1.0, 0.58)
+		var tween := create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(value_label, "scale", Vector2.ONE, 0.22)
+		tween.tween_property(value_label, "modulate", Color.WHITE, 0.22)
 
-func _on_reset_attributes_pressed():
-	if not GameData.reset_character_stats(selected_char_id):
-		UiFeedback.show_info("초기화할 능력치 포인트가 없습니다.")
+func _toggle_character_details():
+	var skill_box := detail_content.get_node("SkillBox") as VBoxContainer
+	var detail_visible := not skill_box.visible
+	skill_box.visible = detail_visible
+	desc_label.visible = detail_visible
+	detail_toggle_button.text = "상세 정보 닫기" if detail_visible else "상세 정보 보기"
 
 func _wrap_detail_in_scroll():
 	var parent := detail_content.get_parent()

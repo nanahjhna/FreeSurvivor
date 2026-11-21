@@ -31,10 +31,10 @@ func _build_ui():
 	root.add_child(center)
 
 	var panel := UiStyle.make_panel()
-	panel.custom_minimum_size = Vector2(980, 700)
 	center.add_child(panel)
+	var portrait := UiStyle.fit_modal(panel, Vector2(980, 1120))
 
-	var margin := UiStyle.make_margin(panel, 24)
+	var margin := UiStyle.make_margin(panel, 16 if portrait else 24)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)
 	margin.add_child(vbox)
@@ -46,7 +46,7 @@ func _build_ui():
 	header.add_child(title)
 	_gold_label = UiStyle.make_label("", 17, Color(1.0, 0.87, 0.42))
 	header.add_child(_gold_label)
-	var close := UiStyle.make_button("← 닫기 [ESC]", Vector2(150, 42))
+	var close := UiStyle.make_button("✕", Vector2(52, 48))
 	close.pressed.connect(close_screen)
 	header.add_child(close)
 
@@ -69,7 +69,7 @@ func _build_ui():
 	vbox.add_child(scroll)
 
 	_list = GridContainer.new()
-	_list.columns = 3
+	_list.columns = 2 if portrait and get_viewport().get_visible_rect().size.x >= 700 else (1 if portrait else 3)
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_list.add_theme_constant_override("h_separation", 12)
 	_list.add_theme_constant_override("v_separation", 12)
@@ -165,7 +165,8 @@ func _make_item_card(
 	price: int, button_text: String, reason: String, on_buy: Callable, owned: bool
 ) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(300, 230)
+	panel.custom_minimum_size = Vector2(minf(300.0, get_viewport().get_visible_rect().size.x - 80.0), 230)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
 
 	var margin := UiStyle.make_margin(panel, 14)

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/ui/virtual_dpad.gd" id="1_dpad"]
 
-[node name="VirtualDPad" type="CanvasLayer"]
+[node name="VirtualJoystick" type="CanvasLayer"]
 process_mode = 3
 layer = 20
 script = ExtResource("1_dpad")

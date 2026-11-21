@@ -60,7 +60,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_font_sizes/font_size = 26
-text = "⚙️ 환경 설정"
+text = "⚙️ 설정"
 
 [node name="CloseBtn" type="Button" parent="CenterContainer/Panel/Margin/VBox/Header"]
 custom_minimum_size = Vector2(40, 36)
@@ -134,7 +134,7 @@ theme_override_constants/separation = 10
 [node name="DispTitle" type="Label" parent="CenterContainer/Panel/Margin/VBox/Content/DisplayBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "🖥️ 화면 및 조작"
+text = "🎮 조작 안내"
 
 [node name="FullscreenCheck" type="CheckBox" parent="CenterContainer/Panel/Margin/VBox/Content/DisplayBox"]
 layout_mode = 2

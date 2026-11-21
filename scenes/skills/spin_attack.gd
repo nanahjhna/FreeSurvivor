@@ -1,4 +1,4 @@
-extends Area3D
+extends "res://scenes/skills/skill_effect_base.gd"
 
 @export var damage: float = 26.0
 var hit_targets: Array[Node] = []
@@ -6,6 +6,9 @@ var duration: float = 0.45
 var player_ref: Node3D = null
 
 @onready var mesh: MeshInstance3D = $MeshInstance3D
+
+func cast(caster: Node3D, _target: Node3D, _direction: Vector3, damage_multiplier: float, _definition: Dictionary) -> void:
+	setup(caster, damage_multiplier)
 
 func setup(player: Node3D, dmg_mult: float):
 	player_ref = player

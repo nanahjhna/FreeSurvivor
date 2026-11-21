@@ -9,6 +9,11 @@ var interactables: Array[Dictionary] = []
 var nearest_interaction: Dictionary = {}
 var _last_prompt_id: String = ""
 var _highlighted_interactable: Node3D = null
+var _auto_move_entry: Dictionary = {}
+var _auto_move_last_input := Vector2.ZERO
+var _auto_move_waypoints: Array[Vector3] = []
+const VILLAGE_ASSET_ROOT := "res://assets/map/Medieval Village MegaKit[Standard]/glTF/"
+var _village_asset_cache: Dictionary = {}
 
 func _ready():
 	GameManager.current_location = GameManager.Location.LOBBY
@@ -18,17 +23,28 @@ func _ready():
 	if player:
 		# Disable combat features in town
 		player.is_combat_enabled = false
+		if player.has_method("set_first_person_mode"):
+			player.call("set_first_person_mode", false)
 		# Set player at town central plaza
 		player.global_position = Vector3(0, 0.2, 5.0)
-		# Zoom out camera in village
-		var cam = player.get_node_or_null("Camera3D")
+		# Use the same third-person back view while exploring the village.
+		var cam := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 		if cam:
-			cam.camera_offset = Vector3(0.0, 14.0, 12.0)
+			cam.set("quarter_view_enabled", true)
+			cam.set("quarter_distance", 16.0)
+			cam.set("quarter_elevation_degrees", 45.0)
+			cam.set("quarter_azimuth_degrees", 45.0)
+			cam.set("back_view_enabled", false)
+			cam.set("first_person_enabled", false)
+			cam.fov = 60.0
+			cam.call("snap_to_target")
 	
 	_build_village_environment()
 	_register_interactable(battle_portal, "battle_start", "성문으로 이동하여 전투 준비", 8.0)
 
 func _on_battle_requested():
+	if is_auto_moving():
+		cancel_auto_move()
 	if GameManager.current_location == GameManager.Location.LOBBY:
 		battle_prep_ui.call("open", GameData.current_selected_stage_id)
 
@@ -57,6 +73,7 @@ func _process(_delta: float):
 		return
 	if player == null or not is_instance_valid(player):
 		return
+	_process_auto_move(_delta)
 
 	var best: Dictionary = {}
 	var best_dist := INF
@@ -221,6 +238,84 @@ func _find_interactable_from_collider(collider) -> Dictionary:
 		current = current.get_parent()
 	return {}
 
+func start_auto_move_to(interaction_id: String) -> bool:
+	if player == null or not is_instance_valid(player):
+		return false
+	var closest: Dictionary = {}
+	var closest_distance := INF
+	for entry in interactables:
+		if str(entry.get("id", "")) != interaction_id:
+			continue
+		var target := entry.get("node") as Node3D
+		if target == null or not is_instance_valid(target):
+			continue
+		var distance := player.global_position.distance_to(target.global_position)
+		if distance < closest_distance:
+			closest = entry
+			closest_distance = distance
+	if closest.is_empty():
+		return false
+	_auto_move_entry = closest
+	_auto_move_last_input = Vector2.ZERO
+	_auto_move_waypoints.clear()
+	if interaction_id == "card_dungeon":
+		# Approach the portal north of the residential building, then cross to it.
+		_auto_move_waypoints = [Vector3(-9.0, player.global_position.y, 12.0), Vector3(-12.0, player.global_position.y, 26.0)]
+	return true
+
+func is_auto_moving() -> bool:
+	return not _auto_move_entry.is_empty()
+
+func cancel_auto_move():
+	if player and is_instance_valid(player) and player.touch_move_vector.distance_to(_auto_move_last_input) < 0.15:
+		player.touch_move_vector = Vector2.ZERO
+	_auto_move_entry.clear()
+	_auto_move_last_input = Vector2.ZERO
+	_auto_move_waypoints.clear()
+	if hud and hud.has_method("clear_interaction_prompt"):
+		hud.call("clear_interaction_prompt")
+
+func _process_auto_move(delta: float):
+	if _auto_move_entry.is_empty():
+		return
+	if get_tree().paused:
+		return
+	if Input.is_action_pressed("move_up") or Input.is_action_pressed("move_down") or Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"):
+		cancel_auto_move()
+		return
+	var target := _auto_move_entry.get("node") as Node3D
+	if target == null or not is_instance_valid(target):
+		cancel_auto_move()
+		return
+	var current_input: Vector2 = player.touch_move_vector
+	if current_input.length() > 0.1 and current_input.distance_to(_auto_move_last_input) > 0.2:
+		cancel_auto_move()
+		return
+	while not _auto_move_waypoints.is_empty() and player.global_position.distance_to(_auto_move_waypoints[0]) <= 2.0:
+		_auto_move_waypoints.pop_front()
+	var movement_target := _auto_move_waypoints[0] if not _auto_move_waypoints.is_empty() else target.global_position
+	var target_delta := movement_target - player.global_position
+	target_delta.y = 0.0
+	var arrival_distance := maxf(1.5, float(_auto_move_entry.get("radius", 5.0)) * 0.68)
+	if _auto_move_waypoints.is_empty() and target_delta.length() <= arrival_distance:
+		var arrived_entry := _auto_move_entry
+		player.touch_move_vector = Vector2.ZERO
+		_auto_move_entry.clear()
+		_auto_move_last_input = Vector2.ZERO
+		_interact(arrived_entry)
+		return
+	var direction := target_delta.normalized()
+	var camera := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
+	var screen_right := camera.global_basis.x if camera else Vector3.RIGHT
+	var screen_down := camera.global_basis.z if camera else Vector3.BACK
+	screen_right.y = 0.0
+	screen_down.y = 0.0
+	screen_right = screen_right.normalized()
+	screen_down = screen_down.normalized()
+	var movement_input := Vector2(direction.dot(screen_right), direction.dot(screen_down)).limit_length(1.0)
+	player.touch_move_vector = movement_input
+	_auto_move_last_input = movement_input
+
 func _build_village_environment():
 	var root = Node3D.new()
 	root.name = "VillageProps"
@@ -274,6 +369,12 @@ func _build_village_environment():
 	
 	# 12. Trees & Flowers along roads
 	_populate_nature(root)
+	_add_map_asset(root, "Prop_Wagon", Vector3(-30, 0, 14), PI * 0.5, Vector3.ONE)
+	_add_map_asset(root, "Prop_Crate", Vector3(-14, 0, -7), 0.2, Vector3.ONE)
+	_add_map_asset(root, "Prop_Crate", Vector3(-12.8, 0, -7.1), -0.15, Vector3(0.9, 0.9, 0.9))
+	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-34, 0, 22), PI * 0.5, Vector3(1.4, 1.0, 1.0))
+	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-34, 0, 20), PI * 0.5, Vector3(1.4, 1.0, 1.0))
+	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-34, 0, 18), PI * 0.5, Vector3(1.4, 1.0, 1.0))
 	
 	# 13. Spawn NPCs
 	_spawn_npcs()
@@ -308,6 +409,59 @@ func _create_boundary_segment(parent: Node3D, position_value: Vector3, size_valu
 	collision.shape = shape
 	body.add_child(collision)
 	parent.add_child(body)
+
+func _add_map_asset(parent: Node3D, asset_name: String, position_value: Vector3, rotation_y: float = 0.0, scale_value: Vector3 = Vector3.ONE) -> Node3D:
+	var packed: PackedScene = _village_asset_cache.get(asset_name) as PackedScene
+	if packed == null:
+		var loaded: Resource = load(VILLAGE_ASSET_ROOT + asset_name + ".gltf")
+		packed = loaded as PackedScene
+		if packed == null:
+			push_warning("마을 에셋을 불러오지 못했습니다: " + asset_name)
+			return null
+		_village_asset_cache[asset_name] = packed
+	var instance := packed.instantiate() as Node3D
+	if instance == null:
+		return null
+	instance.position = position_value
+	instance.rotation.y = rotation_y
+	instance.scale = scale_value
+	parent.add_child(instance)
+	return instance
+
+func _build_modular_building_shell(parent: Node3D, size: Vector3):
+	var front_count := maxi(3, roundi(size.x / 2.0))
+	var side_count := maxi(3, roundi(size.z / 2.0))
+	var front_spacing := size.x / float(front_count)
+	var side_spacing := size.z / float(side_count)
+	for side in [0, 1, 2, 3]:
+		var count := front_count if side < 2 else side_count
+		var spacing := front_spacing if side < 2 else side_spacing
+		for index in range(count):
+			var piece := "Wall_Plaster_Straight"
+			if side == 0 and index == count / 2:
+				piece = "Wall_Plaster_Door_Round"
+			elif side == 0 and (index == 1 or index == count - 2):
+				piece = "Wall_Plaster_Window_Wide_Round"
+			elif side >= 2 and index == count / 2:
+				piece = "Wall_Plaster_Window_Wide_Round"
+			var piece_position := Vector3.ZERO
+			var rotation_y := 0.0
+			var piece_scale := Vector3(spacing * 0.5, 1.0, 1.0)
+			match side:
+				0:
+					piece_position = Vector3(-size.x * 0.5 + spacing * (float(index) + 0.5), 0.0, size.z * 0.5)
+				1:
+					piece_position = Vector3(size.x * 0.5 - spacing * (float(index) + 0.5), 0.0, -size.z * 0.5)
+					rotation_y = PI
+				2:
+					piece_position = Vector3(size.x * 0.5, 0.0, size.z * 0.5 - spacing * (float(index) + 0.5))
+					rotation_y = PI * 0.5
+				3:
+					piece_position = Vector3(-size.x * 0.5, 0.0, -size.z * 0.5 + spacing * (float(index) + 0.5))
+					rotation_y = -PI * 0.5
+					piece_scale.x = spacing * 0.5
+			_add_map_asset(parent, piece, piece_position, rotation_y, piece_scale)
+	_add_map_asset(parent, "Roof_RoundTiles_8x8", Vector3(0, 3.7, 0), 0.0, Vector3(size.x / 9.9, 0.7, size.z / 9.9))
 
 # ----------------- BUILDINGS & STRUCTURES -----------------
 
@@ -388,40 +542,7 @@ func _create_building(parent: Node3D, pos: Vector3, size: Vector3, wall_color: C
 	b.collision_layer = 32
 	b.collision_mask = 3
 	
-	# Walls
-	var walls = MeshInstance3D.new()
-	var w_mesh = BoxMesh.new()
-	w_mesh.size = size
-	walls.mesh = w_mesh
-	var w_mat = StandardMaterial3D.new()
-	w_mat.albedo_color = wall_color
-	w_mat.roughness = 0.8
-	walls.material_override = w_mat
-	walls.position.y = size.y * 0.5
-	b.add_child(walls)
-	
-	# Roof (Prism / Pyramid / Box)
-	var roof = MeshInstance3D.new()
-	var r_mesh = BoxMesh.new()
-	r_mesh.size = Vector3(size.x + 0.8, 1.6, size.z + 0.8)
-	roof.mesh = r_mesh
-	var r_mat = StandardMaterial3D.new()
-	r_mat.albedo_color = roof_color
-	r_mat.roughness = 0.7
-	roof.material_override = r_mat
-	roof.position.y = size.y + 0.8
-	b.add_child(roof)
-	
-	# Door & Windows
-	var door = MeshInstance3D.new()
-	var d_mesh = BoxMesh.new()
-	d_mesh.size = Vector3(1.6, 2.4, 0.2)
-	door.mesh = d_mesh
-	var d_mat = StandardMaterial3D.new()
-	d_mat.albedo_color = Color(0.3, 0.2, 0.1)
-	door.material_override = d_mat
-	door.position = Vector3(0, 1.2, size.z * 0.5 + 0.05)
-	b.add_child(door)
+	_build_modular_building_shell(b, size)
 	
 	# Signboard with 3D Text
 	var sign_lbl = Label3D.new()
@@ -435,16 +556,7 @@ func _create_building(parent: Node3D, pos: Vector3, size: Vector3, wall_color: C
 	b.add_child(sign_lbl)
 	
 	if is_forge:
-		# Chimney
-		var chim = MeshInstance3D.new()
-		var ch_mesh = BoxMesh.new()
-		ch_mesh.size = Vector3(1.2, size.y + 2.5, 1.2)
-		chim.mesh = ch_mesh
-		var ch_mat = StandardMaterial3D.new()
-		ch_mat.albedo_color = Color(0.3, 0.3, 0.32)
-		chim.material_override = ch_mat
-		chim.position = Vector3(-size.x * 0.35, (size.y + 2.5) * 0.5, -size.z * 0.3)
-		b.add_child(chim)
+		_add_map_asset(b, "Prop_Chimney", Vector3(-size.x * 0.32, 3.5, -size.z * 0.25), 0.0, Vector3.ONE)
 		
 		# Anvil
 		var anvil = MeshInstance3D.new()
@@ -776,6 +888,8 @@ func _create_card_dungeon_portal(parent: Node3D, pos: Vector3) -> Area3D:
 
 func _on_card_portal_body_entered(body: Node3D):
 	if body.is_in_group("player") and GameManager.current_location == GameManager.Location.LOBBY:
+		if is_auto_moving():
+			cancel_auto_move()
 		GameManager.go_to_deck_builder()
 
 func _create_crate_stack(parent: Node3D, pos: Vector3):

@@ -5,6 +5,7 @@ extends CanvasLayer
 @onready var exp_bar: ProgressBar = $TopLeft/Bars/EXPBar
 @onready var level_label: Label = $TopLeft/PortraitPanel/LevelLabel
 @onready var time_label: Label = $TopCenter/TimeLabel
+@onready var stage_label: Label = $TopCenter/StageLabel
 @onready var kill_label: Label = $TopRight/KillContainer/KillLabel
 
 # Items
@@ -17,15 +18,38 @@ extends CanvasLayer
 @onready var pause_button: Button = $TopRight/PauseButton
 
 var player_node: Node3D = null
-var camera_node: Camera3D = null
 var skill_manager: Node = null
 var dpad: CanvasLayer = null
 
 var auto_battle_button: Button
+var dungeon_gold_label: Label
+var top_status_panel: PanelContainer
+var action_dock: PanelContainer
+var bottom_stats_panel: PanelContainer
+var camera_zoom_control: HBoxContainer
+var encounter_strip: HBoxContainer
+var encounter_label: Label
+var boss_target: Node3D
+var _boss_scan_timer := 0.0
 var _indicator_update_timer: float = 0.0
+var _hud_editor: PanelContainer
+var _hud_target: Control
+var _hud_controls: Dictionary = {}
+var _hud_defaults: Dictionary = {}
+var _hud_before_edit: Dictionary = {}
+var _hud_dragging := false
+var _hud_drag_offset := Vector2.ZERO
+var _hud_old_layer := 0
+var _hud_preset := 0
+var _hud_size_slider: HSlider
+var _hud_alpha_slider: HSlider
+var _hud_visible_check: CheckButton
+var _hud_overlap_label: Label
+const HUD_CONFIG_PATH := "user://hud_layout.cfg"
 
 var _skill_panels: Dictionary = {}
 var _item_panels: Dictionary = {}
+var boss_choice_dialog: ConfirmationDialog
 
 const VIRTUAL_DPAD: PackedScene = preload("res://scenes/ui/virtual_dpad.tscn")
 
@@ -34,10 +58,16 @@ func _ready():
 	$TopLeft/Bars/SPBar.visible = false
 	_connect_signals()
 	_style_action_panels()
+	_build_infinite_dungeon_controls()
+	_build_encounter_strip()
 	_build_battle_action_bar()
+	_build_boss_choice_dialog()
 	_build_mobile_dpad()
+	_register_hud_controls()
+	_load_active_hud_layout()
 	GameActions.action_requested.connect(_on_action_requested)
 	GameActions.input_mode_changed.connect(_build_mobile_dpad)
+	GameManager.boss_defeated.connect(_on_boss_defeated)
 	_update_item_counts()
 	_update_skill_slot_labels()
 
@@ -65,6 +95,7 @@ func _setup_player(p: Node3D):
 		p.leveled_up.connect(_on_leveled_up)
 
 func _process(delta: float):
+	_boss_scan_timer = maxf(0.0, _boss_scan_timer - delta)
 	if player_node == null:
 		player_node = get_tree().get_first_node_in_group("player")
 		if player_node:
@@ -73,13 +104,263 @@ func _process(delta: float):
 	if skill_manager == null or not is_instance_valid(skill_manager):
 		skill_manager = get_tree().root.find_child("SkillManager", true, false)
 
-	if camera_node == null:
-		camera_node = get_viewport().get_camera_3d()
-
 	_indicator_update_timer += delta
 	if _indicator_update_timer >= 0.12:
 		_indicator_update_timer = 0.0
 		indicator_overlay.queue_redraw()
+		_update_encounter_strip()
+	if dungeon_gold_label:
+		dungeon_gold_label.text = "💰 %d" % GameManager.dungeon_gold
+
+func _build_infinite_dungeon_controls():
+	dungeon_gold_label = Label.new()
+	dungeon_gold_label.name = "DungeonGoldLabel"
+	dungeon_gold_label.add_theme_font_size_override("font_size", 14)
+	dungeon_gold_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.28))
+	dungeon_gold_label.text = "💰 0"
+	add_child(dungeon_gold_label)
+
+func _register_hud_controls():
+	_hud_controls.clear()
+	_hud_defaults.clear()
+	_hud_controls["상단 상태 HUD"] = top_status_panel
+	_hud_controls["보스 진행"] = encounter_strip
+	_hud_controls["미니맵"] = $MinimapContainer
+	_hud_controls["카메라 확대"] = camera_zoom_control
+	_hud_controls["우측 스킬"] = action_dock
+	_hud_controls["하단 처치·골드"] = bottom_stats_panel
+	for control_name in _hud_controls:
+		var control: Control = _hud_controls[control_name]
+		_hud_defaults[control_name] = _capture_hud_control(control)
+
+func _capture_hud_control(control: Control) -> Dictionary:
+	return {"position": control.position, "size": control.size, "scale": control.scale, "modulate": control.modulate, "visible": control.visible, "mouse_filter": control.mouse_filter, "anchors": [control.anchor_left, control.anchor_top, control.anchor_right, control.anchor_bottom], "offsets": [control.offset_left, control.offset_top, control.offset_right, control.offset_bottom]}
+
+func begin_hud_edit():
+	_hud_before_edit.clear()
+	for key in _hud_controls:
+		_hud_before_edit[key] = _capture_hud_control(_hud_controls[key])
+	if _hud_editor:
+		_hud_old_layer = layer
+		layer = 30
+		get_tree().paused = true
+		_hud_editor.visible = true
+		return
+	_hud_old_layer = layer
+	layer = 30
+	get_tree().paused = true
+	_hud_editor = PanelContainer.new()
+	_hud_editor.name = "HudLayoutEditor"
+	_hud_editor.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_hud_editor.position = Vector2(16, 150)
+	_hud_editor.custom_minimum_size = Vector2(300, 420)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	_hud_editor.add_child(box)
+	box.add_child(UiStyle.make_label("HUD 배치 편집 · 요소를 드래그하세요", 16, Color(1, 0.85, 0.35)))
+	var select := OptionButton.new()
+	for name in _hud_controls.keys(): select.add_item(str(name))
+	select.item_selected.connect(_on_hud_target_selected)
+	box.add_child(select)
+	_hud_size_slider = _make_hud_slider(box, "크기", 0.6, 1.6, 1.0)
+	_hud_size_slider.value_changed.connect(_on_hud_size_changed)
+	_hud_alpha_slider = _make_hud_slider(box, "투명도", 0.2, 1.0, 1.0)
+	_hud_alpha_slider.value_changed.connect(_on_hud_alpha_changed)
+	_hud_visible_check = CheckButton.new()
+	_hud_visible_check.text = "선택한 요소 표시"
+	_hud_visible_check.button_pressed = true
+	_hud_visible_check.toggled.connect(_on_hud_visibility_changed)
+	box.add_child(_hud_visible_check)
+	var presets := HBoxContainer.new()
+	box.add_child(presets)
+	for i in range(4):
+		var b := Button.new()
+		b.text = "기본" if i == 0 else "프리셋 %d" % i
+		b.pressed.connect(_select_hud_preset.bind(i))
+		presets.add_child(b)
+	var actions := HBoxContainer.new()
+	box.add_child(actions)
+	var save_button := Button.new()
+	save_button.text = "저장"
+	save_button.pressed.connect(_save_hud_preset)
+	actions.add_child(save_button)
+	var reset_button := Button.new()
+	reset_button.text = "기본 배치"
+	reset_button.pressed.connect(_reset_hud_layout)
+	actions.add_child(reset_button)
+	var cancel_button := Button.new()
+	cancel_button.text = "취소"
+	cancel_button.pressed.connect(_cancel_hud_edit)
+	actions.add_child(cancel_button)
+	_hud_overlap_label = UiStyle.make_label("겹침 확인 중", 12, Color(1, 0.7, 0.5))
+	box.add_child(_hud_overlap_label)
+	add_child(_hud_editor)
+	select.select(0)
+	_on_hud_target_selected(0)
+	_update_hud_overlap_warning()
+
+func _make_hud_slider(parent: VBoxContainer, caption: String, minimum: float, maximum: float, initial: float) -> HSlider:
+	parent.add_child(UiStyle.make_label(caption, 13))
+	var slider := HSlider.new()
+	slider.min_value = minimum
+	slider.max_value = maximum
+	slider.step = 0.05
+	slider.value = initial
+	parent.add_child(slider)
+	return slider
+
+func _on_hud_target_selected(index: int):
+	if index < 0 or index >= _hud_controls.size(): return
+	var key: String = _hud_controls.keys()[index]
+	_hud_target = _hud_controls[key]
+	_hud_target.mouse_filter = Control.MOUSE_FILTER_STOP
+	_hud_size_slider.value = _hud_target.scale.x
+	_hud_alpha_slider.value = _hud_target.modulate.a
+	_hud_visible_check.button_pressed = _hud_target.visible
+
+func _move_hud_target(position: Vector2):
+	var screen := get_viewport().get_visible_rect().size
+	var scaled_size := _hud_target.size * _hud_target.scale
+	_hud_target.global_position = Vector2(clampf(position.x, 0.0, maxf(0.0, screen.x - scaled_size.x)), clampf(position.y, 0.0, maxf(0.0, screen.y - scaled_size.y)))
+	_hud_target.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_update_hud_overlap_warning()
+
+func _input(event: InputEvent):
+	if _hud_editor == null or not _hud_editor.visible or _hud_target == null:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var mouse := get_viewport().get_mouse_position()
+		if event.pressed and not _hud_editor.get_global_rect().has_point(mouse) and _hud_target.get_global_rect().has_point(mouse):
+			_hud_dragging = true
+			_hud_drag_offset = mouse - _hud_target.global_position
+		elif not event.pressed:
+			_hud_dragging = false
+	elif event is InputEventMouseMotion and _hud_dragging:
+		_move_hud_target(get_viewport().get_mouse_position() - _hud_drag_offset)
+	elif event is InputEventScreenTouch:
+		if event.pressed and not _hud_editor.get_global_rect().has_point(event.position) and _hud_target.get_global_rect().has_point(event.position):
+			_hud_dragging = true
+			_hud_drag_offset = event.position - _hud_target.global_position
+		else:
+			_hud_dragging = false
+	elif event is InputEventScreenDrag and _hud_dragging:
+		_move_hud_target(event.position - _hud_drag_offset)
+
+func _on_hud_size_changed(value: float):
+	if _hud_target: _hud_target.scale = Vector2.ONE * value
+	_update_hud_overlap_warning()
+
+func _on_hud_alpha_changed(value: float):
+	if _hud_target: _hud_target.modulate.a = value
+
+func _on_hud_visibility_changed(value: bool):
+	if _hud_target: _hud_target.visible = value
+
+func _select_hud_preset(index: int):
+	_hud_preset = index
+	if index == 0:
+		_reset_hud_layout()
+	else:
+		_load_hud_layout(index)
+
+func _save_hud_preset():
+	var config := ConfigFile.new()
+	config.load(HUD_CONFIG_PATH)
+	config.set_value("meta", "active_preset", _hud_preset)
+	if _hud_preset == 0:
+		config.save(HUD_CONFIG_PATH)
+		_hud_editor.visible = false
+		_restore_hud_mouse_filters()
+		layer = _hud_old_layer
+		return
+	for key in _hud_controls:
+		var c: Control = _hud_controls[key]
+		var screen := get_viewport().get_visible_rect().size
+		config.set_value("preset_%d" % _hud_preset, str(key), {"x": c.global_position.x / screen.x, "y": c.global_position.y / screen.y, "scale": c.scale.x, "alpha": c.modulate.a, "visible": c.visible})
+	config.save(HUD_CONFIG_PATH)
+	_hud_editor.visible = false
+	_restore_hud_mouse_filters()
+	layer = _hud_old_layer
+
+func _load_active_hud_layout():
+	var config := ConfigFile.new()
+	if config.load(HUD_CONFIG_PATH) != OK:
+		return
+	_hud_preset = clampi(int(config.get_value("meta", "active_preset", 0)), 0, 3)
+	if _hud_preset > 0:
+		_load_hud_layout(_hud_preset)
+
+func _load_hud_layout(index: int):
+	var config := ConfigFile.new()
+	if config.load(HUD_CONFIG_PATH) != OK: return
+	var section := "preset_%d" % index
+	var screen := get_viewport().get_visible_rect().size
+	var has_group_layout := config.has_section_key(section, "상단 상태 HUD") or config.has_section_key(section, "우측 스킬") or config.has_section_key(section, "하단 처치·골드")
+	for key in _hud_controls:
+		var value: Variant = config.get_value(section, str(key), {})
+		if value is Dictionary and not value.is_empty():
+			var c: Control = _hud_controls[key]
+			c.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			c.position = Vector2(float(value.get("x", 0.0)) * screen.x, float(value.get("y", 0.0)) * screen.y)
+			c.scale = Vector2.ONE * float(value.get("scale", 1.0))
+			c.modulate.a = float(value.get("alpha", 1.0))
+			c.visible = bool(value.get("visible", true))
+	if not has_group_layout:
+		_load_legacy_hud_layout(config, section, screen)
+
+func _load_legacy_hud_layout(config: ConfigFile, section: String, screen: Vector2):
+	var legacy_map := {
+			"TopLeft": "상단 상태 HUD",
+		"MinimapContainer": "미니맵",
+		"BottomCenter": "우측 스킬"
+	}
+	for legacy_key in legacy_map:
+		var value: Variant = config.get_value(section, legacy_key, {})
+		if not (value is Dictionary) or value.is_empty():
+			continue
+		var control: Control = _hud_controls[legacy_map[legacy_key]]
+		control.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		control.position = Vector2(float(value.get("x", 0.0)) * screen.x, float(value.get("y", 0.0)) * screen.y)
+		control.scale = Vector2.ONE * float(value.get("scale", 1.0))
+		control.modulate.a = float(value.get("alpha", 1.0))
+		control.visible = bool(value.get("visible", true))
+
+func _reset_hud_layout():
+	for key in _hud_controls:
+		var c: Control = _hud_controls[key]
+		var d: Dictionary = _hud_defaults[key]
+		c.anchor_left = d.anchors[0]; c.anchor_top = d.anchors[1]; c.anchor_right = d.anchors[2]; c.anchor_bottom = d.anchors[3]
+		c.offset_left = d.offsets[0]; c.offset_top = d.offsets[1]; c.offset_right = d.offsets[2]; c.offset_bottom = d.offsets[3]
+		c.scale = d.scale; c.modulate = d.modulate; c.visible = d.visible
+		c.mouse_filter = d.mouse_filter
+	_update_hud_overlap_warning()
+
+func _cancel_hud_edit():
+	for key in _hud_controls:
+		var c: Control = _hud_controls[key]
+		var d: Dictionary = _hud_before_edit[key]
+		c.anchor_left = d.anchors[0]; c.anchor_top = d.anchors[1]; c.anchor_right = d.anchors[2]; c.anchor_bottom = d.anchors[3]
+		c.offset_left = d.offsets[0]; c.offset_top = d.offsets[1]; c.offset_right = d.offsets[2]; c.offset_bottom = d.offsets[3]
+		c.scale = d.scale; c.modulate = d.modulate; c.visible = d.visible; c.mouse_filter = d.mouse_filter
+	_hud_editor.queue_free()
+	_hud_editor = null
+	layer = _hud_old_layer
+
+func _restore_hud_mouse_filters():
+	for key in _hud_controls:
+		_hud_controls[key].mouse_filter = _hud_defaults[key].mouse_filter
+
+func _update_hud_overlap_warning():
+	if _hud_overlap_label == null: return
+	var overlap := false
+	for a in _hud_controls.values():
+		if not a.visible: continue
+		for b in _hud_controls.values():
+			if a == b or not b.visible: continue
+			if a.is_ancestor_of(b) or b.is_ancestor_of(a): continue
+			if Rect2(a.global_position, a.size * a.scale).intersects(Rect2(b.global_position, b.size * b.scale)):
+				overlap = true
+	_hud_overlap_label.text = "⚠ HUD 요소가 겹칩니다" if overlap else "배치 정상"
 
 # ------------------------------------------------------------
 # ACTION BUTTONS (skills / items / combat controls)
@@ -90,31 +371,58 @@ func _style_action_panels():
 		"q": $BottomCenter/SkillContainer/SkillQ,
 		"w": $BottomCenter/SkillContainer/SkillW,
 		"e": $BottomCenter/SkillContainer/SkillE,
-		"r": $BottomCenter/SkillContainer/SkillR
+		"r": $BottomCenter/SkillContainer/SkillR,
+		"a": _create_runtime_skill_panel("a"),
+		"s": _create_runtime_skill_panel("s")
 	}
-	var container := $BottomCenter/SkillContainer
-	for slot in ["a", "s"]:
-		var panel := container.get_node("SkillR").duplicate() as Panel
-		panel.name = "Skill" + str(slot).to_upper()
-		container.add_child(panel)
-		container.move_child(panel, container.get_node("SkillR").get_index())
-		_skill_panels[slot] = panel
 	_item_panels = {
 		1: $BottomRight/ItemContainer/Item1,
 		2: $BottomRight/ItemContainer/Item2,
 		3: $BottomRight/ItemContainer/Item3
 	}
 	for key in _skill_panels:
+		var skill_panel := _skill_panels[key] as Control
+		skill_panel.custom_minimum_size = Vector2(48, 48) if str(key) in ["a", "s"] else Vector2(56, 56)
+		if skill_panel is Panel:
+			skill_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.045, 0.03, 0.028, 0.96), Color(0.65, 0.44, 0.23, 0.86), 1, 8))
 		var action_id: String = "skill_" + str(key)
-		_setup_panel(_skill_panels[key], action_id, func(): _cast_skill(str(key)), func(): _skill_tooltip(str(key)))
+		_setup_panel(skill_panel, action_id, func(): _cast_skill(str(key)), _skill_tooltip.bind(str(key)))
 	for slot in _item_panels:
 		var s: int = slot
-		_setup_panel(_item_panels[slot], "item_%d" % s, func(): _use_item(s), func(): _item_tooltip(s))
+		var item_panel := _item_panels[slot] as Panel
+		item_panel.custom_minimum_size = Vector2(52, 52)
+		item_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.045, 0.03, 0.028, 0.92), Color(0.55, 0.38, 0.22, 0.78), 1, 6))
+		_setup_panel(_item_panels[slot], "item_%d" % s, func(): _use_item(s), _item_tooltip.bind(s))
 
 	if pause_button:
 		UiStyle.apply_button(pause_button)
 		pause_button.text = "⏸"
 		pause_button.tooltip_text = "전투 일시정지 [ESC]"
+
+func _create_runtime_skill_panel(key: String) -> Panel:
+	var panel := Panel.new()
+	panel.name = "Skill" + key.to_upper()
+	panel.custom_minimum_size = Vector2(48, 48)
+	panel.add_theme_stylebox_override("panel", _flat_style(Color(0.045, 0.03, 0.028, 0.96), Color(0.65, 0.44, 0.23, 0.86), 1, 8))
+	var stack := VBoxContainer.new()
+	stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stack.add_theme_constant_override("separation", 0)
+	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(stack)
+	var icon := Label.new()
+	icon.name = "Icon"
+	icon.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon.add_theme_font_size_override("font_size", 20)
+	stack.add_child(icon)
+	var key_label := Label.new()
+	key_label.name = "KeyLabel"
+	key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	key_label.add_theme_font_size_override("font_size", 10)
+	stack.add_child(key_label)
+	$BottomCenter/SkillContainer.add_child(panel)
+	return panel
 
 func _setup_panel(panel: Control, action_id: String, on_activate: Callable, tooltip_builder: Callable):
 	if panel == null:
@@ -130,7 +438,8 @@ func _setup_panel(panel: Control, action_id: String, on_activate: Callable, tool
 	hold_timer.wait_time = 0.55
 	hold_timer.timeout.connect(func():
 		panel.set_meta("long_pressed", true)
-		var info: Dictionary = tooltip_builder.call()
+		var info_value: Variant = tooltip_builder.call()
+		var info: Dictionary = info_value if info_value is Dictionary else {}
 		UiFeedback.show_tooltip(str(info.get("title", "")), str(info.get("body", "")), panel.get_global_rect().position + Vector2(0, panel.size.y + 8))
 	)
 	panel.add_child(hold_timer)
@@ -155,43 +464,335 @@ func _setup_panel(panel: Control, action_id: String, on_activate: Callable, tool
 			UiFeedback.hide_tooltip()
 	)
 	panel.mouse_entered.connect(func():
-		var info: Dictionary = tooltip_builder.call()
+		var info_value: Variant = tooltip_builder.call()
+		var info: Dictionary = info_value if info_value is Dictionary else {}
 		UiFeedback.show_tooltip(str(info.get("title", "")), str(info.get("body", "")), panel.get_global_rect().position + Vector2(0, panel.size.y + 8))
 	)
 	panel.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
 	panel.set_meta("action_id", action_id)
 
 func _build_battle_action_bar():
-	var bar := PanelContainer.new()
-	bar.anchor_left = 1.0
-	bar.anchor_top = 1.0
-	bar.anchor_right = 1.0
-	bar.anchor_bottom = 1.0
-	bar.offset_left = -340.0
-	bar.offset_top = -258.0
-	bar.offset_right = -24.0
-	bar.offset_bottom = -150.0
-	bar.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.05, 0.07, 0.11, 0.88), Color(0.35, 0.55, 0.85, 0.9), 1))
-	add_child(bar)
-
-	var margin := UiStyle.make_margin(bar, 8)
-	var flow := HFlowContainer.new()
-	flow.add_theme_constant_override("h_separation", 6)
-	flow.add_theme_constant_override("v_separation", 6)
-	flow.alignment = FlowContainer.ALIGNMENT_END
-	margin.add_child(flow)
-
-	bar.offset_left = -186.0
-	bar.offset_top = -76.0
-	bar.offset_right = -24.0
-	bar.offset_bottom = -24.0
-	auto_battle_button = UiStyle.make_button("", Vector2(146, 40))
+	_build_top_status_panel()
+	_build_bottom_stats_panel()
+	action_dock = PanelContainer.new()
+	action_dock.name = "ActionDock"
+	action_dock.anchor_left = 1.0
+	action_dock.anchor_top = 0.5
+	action_dock.anchor_right = 1.0
+	action_dock.anchor_bottom = 0.5
+	action_dock.offset_left = -96.0
+	action_dock.offset_top = -174.0
+	action_dock.offset_right = -8.0
+	action_dock.offset_bottom = 174.0
+	action_dock.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	add_child(action_dock)
+	var controls := VBoxContainer.new()
+	controls.add_theme_constant_override("separation", 4)
+	controls.alignment = BoxContainer.ALIGNMENT_CENTER
+	action_dock.add_child(controls)
+	var skill_list := VBoxContainer.new()
+	skill_list.name = "SkillList"
+	skill_list.add_theme_constant_override("separation", 4)
+	skill_list.alignment = BoxContainer.ALIGNMENT_CENTER
+	controls.add_child(skill_list)
+	for skill_panel in _skill_panels.values():
+		_reparent_control(skill_panel as Control, skill_list)
+	auto_battle_button = Button.new()
+	auto_battle_button.name = "AutoBattleButton"
+	auto_battle_button.custom_minimum_size = Vector2(84, 34)
+	auto_battle_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	auto_battle_button.toggle_mode = true
-	_update_auto_battle_label()
 	auto_battle_button.pressed.connect(_toggle_auto_battle)
 	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 스킬 시전", "사거리 안의 적에게 습득한 스킬을 시전합니다.\n체력이 40% 이하이면 자동으로 물약을 사용합니다.", auto_battle_button.global_position + Vector2(0, 46)))
 	auto_battle_button.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
-	flow.add_child(auto_battle_button)
+	controls.add_child(auto_battle_button)
+	$BottomRight.visible = false
+	var old_containers: Array[Control] = [$TopLeft, $TopRight, $BottomCenter, $BottomRight]
+	for old_container in old_containers:
+		old_container.visible = false
+	_style_hud_buttons()
+	auto_battle_button.add_theme_font_size_override("font_size", 11)
+	_update_auto_battle_label()
+	_layout_minimap()
+	_build_camera_zoom_control()
+	_layout_encounter_strip()
+	_layout_dungeon_gold()
+
+func _build_camera_zoom_control():
+	camera_zoom_control = HBoxContainer.new()
+	camera_zoom_control.name = "CameraZoomControl"
+	camera_zoom_control.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	camera_zoom_control.offset_left = -190.0
+	camera_zoom_control.offset_top = 184.0
+	camera_zoom_control.offset_right = -16.0
+	camera_zoom_control.offset_bottom = 222.0
+	camera_zoom_control.add_theme_constant_override("separation", 4)
+	camera_zoom_control.alignment = BoxContainer.ALIGNMENT_END
+	camera_zoom_control.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	var caption := UiStyle.make_label("시점", 12, UiStyle.IVORY)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	camera_zoom_control.add_child(caption)
+	var zoom_out := UiStyle.make_button("−", Vector2(36, 34))
+	zoom_out.tooltip_text = "카메라 축소"
+	zoom_out.pressed.connect(_adjust_game_camera_zoom.bind(-1))
+	camera_zoom_control.add_child(zoom_out)
+	var zoom_reset := UiStyle.make_button("기본", Vector2(48, 34))
+	zoom_reset.tooltip_text = "카메라 시점을 기본 거리로 되돌립니다."
+	zoom_reset.pressed.connect(_reset_game_camera_zoom)
+	camera_zoom_control.add_child(zoom_reset)
+	var zoom_in := UiStyle.make_button("+", Vector2(36, 34))
+	zoom_in.tooltip_text = "카메라 확대"
+	zoom_in.pressed.connect(_adjust_game_camera_zoom.bind(1))
+	camera_zoom_control.add_child(zoom_in)
+	add_child(camera_zoom_control)
+
+func _adjust_game_camera_zoom(steps: int):
+	if player_node == null or not is_instance_valid(player_node):
+		player_node = get_tree().get_first_node_in_group("player")
+	if player_node == null:
+		return
+	var camera := player_node.get_node_or_null("CameraPivot/SpringArm3D/Camera3D")
+	if camera and camera.has_method("adjust_zoom"):
+		camera.call("adjust_zoom", steps)
+
+func _reset_game_camera_zoom():
+	if player_node == null or not is_instance_valid(player_node):
+		player_node = get_tree().get_first_node_in_group("player")
+	if player_node == null:
+		return
+	var camera := player_node.get_node_or_null("CameraPivot/SpringArm3D/Camera3D")
+	if camera and camera.has_method("reset_zoom"):
+		camera.call("reset_zoom")
+
+func _build_top_status_panel():
+	top_status_panel = PanelContainer.new()
+	top_status_panel.name = "TopStatusPanel"
+	top_status_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_status_panel.offset_left = 16.0
+	top_status_panel.offset_top = 16.0
+	top_status_panel.offset_right = -16.0
+	top_status_panel.offset_bottom = 88.0
+	top_status_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	top_status_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(top_status_panel)
+	var margin := MarginContainer.new()
+	for side in ["margin_left", "margin_right"]:
+		margin.add_theme_constant_override(side, 8)
+	for side in ["margin_top", "margin_bottom"]:
+		margin.add_theme_constant_override(side, 5)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_status_panel.add_child(margin)
+	var status_stack := VBoxContainer.new()
+	status_stack.add_theme_constant_override("separation", 4)
+	status_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin.add_child(status_stack)
+	var first_row := HBoxContainer.new()
+	first_row.add_theme_constant_override("separation", 7)
+	first_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status_stack.add_child(first_row)
+	var portrait_panel := $TopLeft/PortraitPanel as Panel
+	_reparent_control(portrait_panel, first_row)
+	portrait_panel.custom_minimum_size = Vector2(178, 46)
+	portrait_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.055, 0.035, 0.03, 0.92), Color(0.62, 0.42, 0.23, 0.8), 1, 6))
+	portrait_panel.get_node("IconLabel").visible = false
+	var summary_margin := MarginContainer.new()
+	summary_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for side in ["margin_left", "margin_right"]:
+		summary_margin.add_theme_constant_override(side, 5)
+	for side in ["margin_top", "margin_bottom"]:
+		summary_margin.add_theme_constant_override(side, 2)
+	portrait_panel.add_child(summary_margin)
+	var player_summary := HBoxContainer.new()
+	player_summary.add_theme_constant_override("separation", 8)
+	player_summary.alignment = BoxContainer.ALIGNMENT_CENTER
+	summary_margin.add_child(player_summary)
+	_reparent_control(level_label, player_summary)
+	level_label.custom_minimum_size = Vector2(48, 38)
+	level_label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	level_label.add_theme_font_size_override("font_size", 15)
+	level_label.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
+	var player_bars := VBoxContainer.new()
+	player_bars.add_theme_constant_override("separation", 3)
+	player_bars.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	player_summary.add_child(player_bars)
+	_reparent_control(hp_bar, player_bars)
+	hp_bar.custom_minimum_size = Vector2(108, 10)
+	hp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hp_bar.show_percentage = false
+	hp_label.add_theme_font_size_override("font_size", 9)
+	_reparent_control(exp_bar, player_bars)
+	exp_bar.custom_minimum_size = Vector2(108, 7)
+	exp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var right_gap := Control.new()
+	right_gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	first_row.add_child(right_gap)
+	pause_button.custom_minimum_size = Vector2(34, 30)
+	exp_bar.show_percentage = false
+	$TopCenter.visible = false
+	exp_bar.add_theme_stylebox_override("background", _flat_style(Color(0.08, 0.12, 0.17, 0.92), Color.TRANSPARENT, 0, 4))
+	exp_bar.add_theme_stylebox_override("fill", _flat_style(Color(0.12, 0.72, 0.82), Color.TRANSPARENT, 0, 4))
+
+func _build_bottom_stats_panel():
+	bottom_stats_panel = PanelContainer.new()
+	bottom_stats_panel.name = "BottomKillGoldPanel"
+	bottom_stats_panel.anchor_left = 0.5
+	bottom_stats_panel.anchor_top = 1.0
+	bottom_stats_panel.anchor_right = 0.5
+	bottom_stats_panel.anchor_bottom = 1.0
+	bottom_stats_panel.offset_left = -132.0
+	bottom_stats_panel.offset_top = -68.0
+	bottom_stats_panel.offset_right = 132.0
+	bottom_stats_panel.offset_bottom = -18.0
+	bottom_stats_panel.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.035, 0.025, 0.023, 0.82), Color(0.48, 0.34, 0.22, 0.66), 1))
+	add_child(bottom_stats_panel)
+	var margin := UiStyle.make_margin(bottom_stats_panel, 7)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(row)
+	var kill_container := $TopRight/KillContainer as HBoxContainer
+	_reparent_control(kill_container, row)
+	_reparent_control(dungeon_gold_label, row)
+	_reparent_control(pause_button, row)
+	dungeon_gold_label.custom_minimum_size = Vector2(72, 30)
+	dungeon_gold_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	dungeon_gold_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+func _layout_dungeon_gold():
+	if dungeon_gold_label:
+		dungeon_gold_label.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
+
+func _build_boss_choice_dialog():
+	boss_choice_dialog = ConfirmationDialog.new()
+	boss_choice_dialog.name = "BossContinueDialog"
+	boss_choice_dialog.process_mode = Node.PROCESS_MODE_ALWAYS
+	boss_choice_dialog.title = "보스 처치!"
+	boss_choice_dialog.ok_button_text = "다음 보스 도전"
+	boss_choice_dialog.cancel_button_text = "마을로 귀환"
+	boss_choice_dialog.confirmed.connect(GameManager.continue_boss_chain)
+	boss_choice_dialog.canceled.connect(GameManager.decline_boss_chain)
+	add_child(boss_choice_dialog)
+
+func _on_boss_defeated(defeated_count: int, next_reward_multiplier: float):
+	if boss_choice_dialog == null:
+		_build_boss_choice_dialog()
+	boss_choice_dialog.dialog_text = "보스 %d마리를 처치했습니다.\n\n다음 보스를 쓰러뜨리면 보상이 %.1f배로 증가합니다.\n계속 도전할까요?" % [defeated_count, next_reward_multiplier]
+	boss_choice_dialog.popup_centered(Vector2i(440, 220))
+
+func _build_encounter_strip():
+	encounter_strip = HBoxContainer.new()
+	encounter_strip.name = "EncounterStrip"
+	encounter_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	encounter_strip.add_theme_constant_override("separation", 22)
+	encounter_strip.alignment = BoxContainer.ALIGNMENT_CENTER
+	add_child(encounter_strip)
+	var survival_timer := VBoxContainer.new()
+	survival_timer.alignment = BoxContainer.ALIGNMENT_CENTER
+	survival_timer.add_theme_constant_override("separation", 0)
+	survival_timer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	encounter_strip.add_child(survival_timer)
+	var survival_caption := UiStyle.make_label("생존 시간", 11, Color(0.78, 0.73, 0.67))
+	survival_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	survival_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	survival_timer.add_child(survival_caption)
+	_reparent_control(time_label, survival_timer)
+	time_label.custom_minimum_size = Vector2(88, 25)
+	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	time_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	time_label.add_theme_font_size_override("font_size", 21)
+	time_label.add_theme_color_override("font_color", Color.WHITE)
+	_reparent_control(stage_label, survival_timer)
+	stage_label.custom_minimum_size = Vector2(88, 13)
+	stage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stage_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stage_label.add_theme_font_size_override("font_size", 10)
+	stage_label.add_theme_color_override("font_color", Color(0.82, 0.75, 0.64))
+	var boss_timer := VBoxContainer.new()
+	boss_timer.alignment = BoxContainer.ALIGNMENT_CENTER
+	boss_timer.add_theme_constant_override("separation", 0)
+	boss_timer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	encounter_strip.add_child(boss_timer)
+	var boss_caption := UiStyle.make_label("다음 보스", 11, Color(0.78, 0.73, 0.67))
+	boss_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_timer.add_child(boss_caption)
+	encounter_label = UiStyle.make_label("03:00", 21, Color(0.94, 0.82, 0.58))
+	encounter_label.custom_minimum_size = Vector2(88, 25)
+	encounter_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	encounter_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	encounter_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	boss_timer.add_child(encounter_label)
+	_update_encounter_strip()
+
+func _layout_encounter_strip():
+	if encounter_strip:
+		encounter_strip.anchor_left = 0.5
+		encounter_strip.anchor_right = 0.5
+		encounter_strip.anchor_top = 0.0
+		encounter_strip.anchor_bottom = 0.0
+		encounter_strip.offset_left = -110.0
+		encounter_strip.offset_right = 110.0
+		encounter_strip.offset_top = 16.0
+		encounter_strip.offset_bottom = 70.0
+
+func _update_encounter_strip():
+	if (boss_target == null or not is_instance_valid(boss_target) or bool(boss_target.get("is_dead"))) and _boss_scan_timer <= 0.0:
+		boss_target = null
+		_boss_scan_timer = 0.6
+		if GameManager.battle_time >= maxf(0.0, GameManager.next_boss_time - 1.0):
+			for enemy in get_tree().get_nodes_in_group("enemies"):
+				if not is_instance_valid(enemy) or bool(enemy.get("is_dead")):
+					continue
+				var monster_id := str(enemy.get("monster_id"))
+				if bool(MonsterManager.get_definition(monster_id).get("is_boss", false)):
+					boss_target = enemy as Node3D
+					break
+	var remaining := int(ceilf(maxf(0.0, GameManager.next_boss_time - GameManager.battle_time)))
+	encounter_label.text = "%02d:%02d" % [int(remaining / 60.0), remaining % 60]
+	var boss_is_active := boss_target != null and is_instance_valid(boss_target)
+	var boss_is_due := boss_is_active or GameManager.boss_decision_pending or remaining == 0
+	encounter_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.38) if boss_is_due else Color(0.94, 0.82, 0.58))
+
+func _layout_minimap():
+	var minimap_container := $MinimapContainer as Control
+	minimap_container.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	minimap_container.offset_left = -176.0
+	minimap_container.offset_top = 20.0
+	minimap_container.offset_right = -16.0
+	minimap_container.offset_bottom = 180.0
+
+func _style_hud_buttons():
+	var normal := UiStyle.button_style(Color(0.075, 0.04, 0.035, 0.92), Color(0.68, 0.47, 0.25, 0.82))
+	var hover := UiStyle.button_style(Color(0.24, 0.045, 0.028, 0.98), Color(1.0, 0.8, 0.4, 0.96))
+	var hud_buttons: Array[Button] = [pause_button, auto_battle_button]
+	for button in hud_buttons:
+		button.add_theme_stylebox_override("normal", normal)
+		button.add_theme_stylebox_override("hover", hover)
+		button.add_theme_stylebox_override("pressed", hover)
+		button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		button.add_theme_font_size_override("font_size", 14)
+		button.add_theme_color_override("font_color", UiStyle.IVORY)
+
+func _flat_style(bg: Color, border: Color, border_width: int, radius: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.border_color = border
+	style.border_width_left = border_width
+	style.border_width_top = border_width
+	style.border_width_right = border_width
+	style.border_width_bottom = border_width
+	style.corner_radius_top_left = radius
+	style.corner_radius_top_right = radius
+	style.corner_radius_bottom_left = radius
+	style.corner_radius_bottom_right = radius
+	return style
+
+func _reparent_control(control: Control, new_parent: Control):
+	var old_parent := control.get_parent()
+	if old_parent:
+		old_parent.remove_child(control)
+	new_parent.add_child(control)
 
 
 func _build_mobile_dpad():
@@ -232,7 +833,9 @@ func _toggle_auto_battle():
 func _update_auto_battle_label():
 	var enabled := bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
 	auto_battle_button.set_pressed_no_signal(enabled)
-	auto_battle_button.text = "자동 스킬 %s %s" % ["ON" if enabled else "OFF", GameActions.get_shortcut_text("auto_battle")]
+	auto_battle_button.text = "자동 %s %s" % ["ON" if enabled else "OFF", GameActions.get_shortcut_text("auto_battle")]
+	auto_battle_button.add_theme_color_override("font_color", Color(0.48, 0.90, 1.0) if enabled else Color(0.65, 0.68, 0.74))
+	auto_battle_button.add_theme_stylebox_override("normal", _flat_style(Color(0.08, 0.27, 0.40, 0.96) if enabled else Color(0.09, 0.11, 0.15, 0.94), Color(0.22, 0.68, 0.92, 0.9) if enabled else Color(0.24, 0.28, 0.34, 0.75), 1, 10))
 
 func _on_action_requested(action_id: String):
 	match action_id:
@@ -262,8 +865,8 @@ func _skill_tooltip(key: String) -> Dictionary:
 	var cd := float(GameData.skill_cooldowns.get(skill_id, meta.get("base_cd", 1.0)))
 	var dmg := float(meta.get("base_dmg_ratio", 1.0)) + float(meta.get("dmg_step", 0.0)) * (level - 1)
 	var body := "%s\n쿨타임 %.1f초" % [meta.desc, cd]
-	if skill_id != "renewal":
-		body += "\n위력 x%.2f · 범위 %.1f" % [dmg, float(meta.range)]
+	if str(meta.get("cast_type", "")) != "heal" and str(meta.get("cast_type", "")) != "passive":
+		body += "\n피해 계수 x%.2f · 범위 %.1f" % [dmg, float(meta.get("range", 0.0))]
 	if not GameData.is_survival_skill_unlocked(skill_id):
 		body += "\n서바이벌 Lv.%d에 습득" % int(meta.unlock_level)
 	var current := 0.0
@@ -278,11 +881,12 @@ func _update_skill_slot_labels():
 		var panel: Control = _skill_panels[slot]
 		var skill_id := GameData.get_equipped_skill(str(slot))
 		var meta: Dictionary = GameData.skill_meta.get(skill_id, {})
-		var icon := panel.get_node_or_null("Icon") as Label
+		var icon := panel.find_child("Icon", true, false) as Label
 		if icon:
 			icon.text = str(meta.get("icon", "—"))
-		var key_label := panel.get_node("KeyLabel") as Label
-		key_label.text = GameActions.get_key_name("skill_" + str(slot)) if GameData.is_survival_skill_unlocked(skill_id) else "Lv.%d" % int(meta.unlock_level)
+		var key_label := panel.find_child("KeyLabel", true, false) as Label
+		if key_label:
+			key_label.text = GameActions.get_key_name("skill_" + str(slot)) if GameData.is_survival_skill_unlocked(skill_id) else "Lv.%d" % int(meta.get("unlock_level", 1))
 		panel.tooltip_text = str(meta.get("name", "빈 스킬 슬롯"))
 	_update_skill_availability()
 
@@ -339,9 +943,11 @@ func _on_leveled_up(lvl: int):
 	_update_skill_slot_labels()
 
 func _on_time_updated(time_sec: float):
-	var mins = int(time_sec) / 60
+	var mins := int(time_sec / 60.0)
 	var secs = int(time_sec) % 60
+	var difficulty := 1 + int(floor(time_sec / 180.0))
 	time_label.text = "%02d:%02d" % [mins, secs]
+	stage_label.text = "난이도 %d" % difficulty
 
 func _on_kill_count_changed(count: int):
 	kill_label.text = str(count)

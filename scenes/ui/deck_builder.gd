@@ -10,6 +10,10 @@ var start_button: Button
 var search_edit: LineEdit
 var type_filter: OptionButton
 var deck_name_edit: LineEdit
+var owned_panel: VBoxContainer
+var deck_panel: VBoxContainer
+var owned_tab: Button
+var deck_tab: Button
 
 func _ready():
 	GameManager.current_location = GameManager.Location.CARD_DECK
@@ -20,6 +24,8 @@ func _ready():
 	_refresh()
 
 func _build_ui():
+	var viewport_size := get_viewport_rect().size
+	var portrait := viewport_size.y >= viewport_size.x
 	var bg := ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.color = Color(0.025, 0.04, 0.07)
@@ -27,7 +33,7 @@ func _build_ui():
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
-		margin.add_theme_constant_override(side, 28)
+		margin.add_theme_constant_override(side, 16 if portrait else 28)
 	add_child(margin)
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 14)
@@ -35,7 +41,7 @@ func _build_ui():
 	var header := HBoxContainer.new()
 	root.add_child(header)
 	var profile := GameData.get_character_profile(GameData.active_character_id)
-	var title := UiStyle.make_title("🃏 카드 덱 관리 · %s" % profile.get("name", "모험가"), 28)
+	var title := UiStyle.make_title("🃏 카드 덱 · %s" % profile.get("name", "모험가"), 23 if portrait else 28)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	deck_name_edit = LineEdit.new()
@@ -43,63 +49,115 @@ func _build_ui():
 	deck_name_edit.max_length = 20
 	deck_name_edit.text = GameManager.deck_manager.deck_name
 	deck_name_edit.placeholder_text = "덱 이름"
-	header.add_child(deck_name_edit)
-	var back := UiStyle.make_button("← 마을", Vector2(150, 46))
+	if not portrait:
+		header.add_child(deck_name_edit)
+	var back := UiStyle.make_button("← 마을", Vector2(100 if portrait else 150, 48))
 	back.pressed.connect(GameManager.go_to_lobby)
 	header.add_child(back)
-	var filters := HBoxContainer.new()
+	if portrait:
+		deck_name_edit.custom_minimum_size = Vector2(0, 48)
+		root.add_child(deck_name_edit)
+	var filters: Container = VBoxContainer.new() if portrait else HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 10)
 	root.add_child(filters)
 	search_edit = LineEdit.new()
 	search_edit.placeholder_text = "🔎 카드 이름 검색"
-	search_edit.custom_minimum_size = Vector2(360, 44)
+	search_edit.custom_minimum_size = Vector2(0 if portrait else 360, 44)
+	search_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	search_edit.text_changed.connect(func(_text): _refresh())
 	filters.add_child(search_edit)
 	type_filter = OptionButton.new()
 	type_filter.custom_minimum_size = Vector2(220, 44)
 	for item in ["전체 유형", "공격", "방어", "상태/연계", "버프/특수"]: type_filter.add_item(item)
 	type_filter.item_selected.connect(func(_index): _refresh())
-	filters.add_child(type_filter)
-	var auto_button := UiStyle.make_button("✨ 자동 추천 미리보기", Vector2(240, 44))
-	auto_button.tooltip_text = "공격·방어·상태 연계와 에너지 분포를 고려해 12장을 추천합니다. 확인 전에는 기존 덱을 바꾸지 않습니다."
-	auto_button.pressed.connect(_preview_auto_deck)
-	filters.add_child(auto_button)
-	var body := HBoxContainer.new()
+	if portrait:
+		var filter_row := HBoxContainer.new()
+		filter_row.add_theme_constant_override("separation", 8)
+		filters.add_child(filter_row)
+		filter_row.add_child(type_filter)
+		var auto_button := UiStyle.make_button("✨ 자동 추천", Vector2(0, 48))
+		auto_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		auto_button.pressed.connect(_preview_auto_deck)
+		filter_row.add_child(auto_button)
+	else:
+		filters.add_child(type_filter)
+		var auto_button := UiStyle.make_button("✨ 자동 추천 미리보기", Vector2(240, 44))
+		auto_button.tooltip_text = "공격·방어·상태 연계와 에너지 분포를 고려해 12장을 추천합니다. 확인 전에는 기존 덱을 바꾸지 않습니다."
+		auto_button.pressed.connect(_preview_auto_deck)
+		filters.add_child(auto_button)
+	var body: Container = VBoxContainer.new() if portrait else HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 18)
 	root.add_child(body)
-	owned_list = _make_list_panel(body, "보유 카드 (클릭하여 추가)", 610)
+	if portrait:
+		var tabs := HBoxContainer.new()
+		tabs.add_theme_constant_override("separation", 8)
+		body.add_child(tabs)
+		owned_tab = UiStyle.make_button("보유 카드", Vector2(0, 50))
+		deck_tab = UiStyle.make_button("현재 덱", Vector2(0, 50))
+		for tab in [owned_tab, deck_tab]:
+			tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			tabs.add_child(tab)
+		owned_tab.pressed.connect(func(): _set_deck_view(false))
+		deck_tab.pressed.connect(func(): _set_deck_view(true))
+	owned_list = _make_list_panel(body, "보유 카드 · 눌러서 추가", 610)
+	owned_panel = owned_list.get_parent().get_parent() as VBoxContainer
 	var center := VBoxContainer.new()
-	center.custom_minimum_size = Vector2(390, 0)
+	center.custom_minimum_size = Vector2(0 if portrait else 390, 80 if portrait else 0)
 	center.add_child(UiStyle.make_label("카드 상세", 18, Color(1, 0.86, 0.4)))
 	detail_label = UiStyle.make_label("카드를 선택하세요.", 16)
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	center.add_child(detail_label)
-	body.add_child(center)
-	deck_list = _make_list_panel(body, "현재 덱 (클릭하여 제거)", 610)
-	var footer := HBoxContainer.new()
+	if not portrait:
+		body.add_child(center)
+	deck_list = _make_list_panel(body, "현재 덱 · 눌러서 제거", 610)
+	deck_panel = deck_list.get_parent().get_parent() as VBoxContainer
+	if portrait:
+		body.add_child(center)
+		_set_deck_view(false)
+	var footer: Container = VBoxContainer.new() if portrait else HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 10)
 	root.add_child(footer)
 	count_label = UiStyle.make_label("", 18, Color(1, 0.86, 0.4))
 	count_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	footer.add_child(count_label)
-	var reset := UiStyle.make_button("초기 덱", Vector2(150, 48))
+	var footer_buttons: Container = HBoxContainer.new() if portrait else footer
+	if portrait:
+		footer_buttons.add_theme_constant_override("separation", 8)
+		footer.add_child(footer_buttons)
+	var reset := UiStyle.make_button("초기 덱", Vector2(0 if portrait else 150, 52 if portrait else 48))
 	reset.pressed.connect(_reset_deck)
-	footer.add_child(reset)
-	var save := UiStyle.make_button("덱 저장", Vector2(150, 48))
+	footer_buttons.add_child(reset)
+	var save := UiStyle.make_button("덱 저장", Vector2(0 if portrait else 150, 52 if portrait else 48))
 	save.pressed.connect(_save_deck)
-	footer.add_child(save)
-	start_button = UiStyle.make_button("던전 입장", Vector2(190, 48), true)
+	footer_buttons.add_child(save)
+	start_button = UiStyle.make_button("던전 입장", Vector2(0 if portrait else 190, 52 if portrait else 48), true)
 	start_button.pressed.connect(_start_dungeon)
-	footer.add_child(start_button)
+	footer_buttons.add_child(start_button)
+	if portrait:
+		for button in footer_buttons.get_children():
+			if button is Button:
+				button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	feedback_label = UiStyle.make_label("저장한 12장으로 카드 던전에 도전하고, 서바이벌 레벨업 때마다 강화 카드를 뽑습니다.", 14, Color(0.75, 0.84, 0.95))
 	feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	feedback_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(feedback_label)
 
-func _make_list_panel(parent: HBoxContainer, heading: String, width: float) -> VBoxContainer:
+func _set_deck_view(show_deck: bool):
+	if owned_panel == null or deck_panel == null:
+		return
+	owned_panel.visible = not show_deck
+	deck_panel.visible = show_deck
+	owned_tab.disabled = not show_deck
+	deck_tab.disabled = show_deck
+
+func _make_list_panel(parent: Container, heading: String, width: float) -> VBoxContainer:
 	var panel := VBoxContainer.new()
-	panel.custom_minimum_size = Vector2(width, 0)
+	var portrait := get_viewport_rect().size.y >= get_viewport_rect().size.x
+	panel.custom_minimum_size = Vector2(0 if portrait else width, 0)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	panel.add_child(UiStyle.make_label(heading, 18, Color(1, 0.86, 0.4)))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -157,11 +215,14 @@ func _show_detail(card_id: String):
 	detail_label.text = "%s  [%s]\n\n카드 던전 · 에너지 %d\n%s\n\n서바이벌 · 레벨업 강화\n%s" % [card.name, card.grade, card.cost, card.desc, CardDatabase.SURVIVAL_EFFECTS[card_id].description]
 
 func _add_card(card_id: String):
+	_show_detail(card_id)
 	working_deck.append(card_id)
 	_refresh()
 
 func _remove_card(index: int):
-	if index >= 0 and index < working_deck.size(): working_deck.remove_at(index)
+	if index >= 0 and index < working_deck.size():
+		_show_detail(working_deck[index])
+		working_deck.remove_at(index)
 	_refresh()
 
 func _reset_deck():

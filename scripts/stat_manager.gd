@@ -13,7 +13,7 @@ const LEGACY_STATS: Dictionary = {
 
 const FIGHTER_STATS := {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3}
 
-const CLASS_DEFAULTS := {"fighter": FIGHTER_STATS}
+const CLASS_DEFAULTS := {"fighter": FIGHTER_STATS, "fighter_2d": FIGHTER_STATS, "char02": FIGHTER_STATS}
 
 var class_id: String = "fighter"
 var base_stats: Dictionary = FIGHTER_STATS.duplicate(true)
@@ -24,13 +24,20 @@ var base_def: float = 10.0
 var base_spd: float = 6.8
 
 
-static func get_default_stats(cls: String) -> Dictionary:
+static func get_default_stats(cls: String, character_data: Dictionary = {}) -> Dictionary:
+	var registered: Variant = character_data.get("base_attributes", {})
+	if registered is Dictionary and not registered.is_empty():
+		var normalized: Dictionary = {}
+		var fallback: Dictionary = CLASS_DEFAULTS.get(cls, FIGHTER_STATS)
+		for stat_name in STAT_KEYS:
+			normalized[stat_name] = int(registered.get(stat_name, fallback.get(stat_name, 1)))
+		return normalized
 	return CLASS_DEFAULTS.get(cls, FIGHTER_STATS).duplicate(true)
 
 
 func setup_from_class(cls: String, character_data: Dictionary = {}):
 	class_id = cls
-	base_stats = get_default_stats(class_id)
+	base_stats = get_default_stats(class_id, character_data)
 	var stored_stats: Dictionary = character_data.get("attributes", {})
 	attributes.clear()
 	for stat_name in STAT_KEYS:

@@ -1,10 +1,14 @@
-extends Area3D
+extends "res://scenes/skills/skill_effect_base.gd"
 
 @export var damage: float = 30.0
 @export var speed: float = 18.0
 var direction: Vector3 = Vector3.FORWARD
 var hit_targets: Array[Node] = []
 var lifetime: float = 1.2
+
+func cast(caster: Node3D, _target: Node3D, cast_direction: Vector3, damage_multiplier: float, _definition: Dictionary) -> void:
+	global_position = caster.global_position + Vector3(0.0, 0.8, 0.0) + cast_direction * 0.5
+	setup(cast_direction, damage_multiplier)
 
 func setup(dir: Vector3, dmg_mult: float):
 	direction = dir.normalized()

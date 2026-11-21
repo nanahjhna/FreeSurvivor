@@ -7,46 +7,6 @@
 radius = 0.4
 height = 1.7
 
-[sub_resource type="BoxMesh" id="BoxMesh_body"]
-size = Vector3(0.65, 0.7, 0.4)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
-albedo_color = Color(0.85, 0.51, 0.19, 1)
-metallic = 0.0
-roughness = 0.4
-
-[sub_resource type="BoxMesh" id="BoxMesh_head"]
-size = Vector3(0.46, 0.46, 0.46)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
-albedo_color = Color(0.82, 0.56, 0.38, 1)
-roughness = 0.8
-
-[sub_resource type="BoxMesh" id="BoxMesh_visor"]
-size = Vector3(0.47, 0.095, 0.47)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_visor"]
-albedo_color = Color(0.1, 0.12, 0.15, 1)
-roughness = 0.1
-
-[sub_resource type="BoxMesh" id="BoxMesh_limb"]
-size = Vector3(0.2, 0.55, 0.2)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_limbs"]
-albedo_color = Color(0.21, 0.17, 0.14, 1)
-roughness = 0.5
-
-[sub_resource type="BoxMesh" id="BoxMesh_wrap"]
-size = Vector3(0.28, 0.24, 0.31)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wrap"]
-albedo_color = Color(0.9, 0.95, 1, 1)
-metallic = 0.0
-roughness = 0.1
-emission_enabled = true
-emission = Color(0.3, 0.6, 1, 1)
-emission_energy_multiplier = 0.5
-
 [sub_resource type="TorusMesh" id="TorusMesh_slash"]
 inner_radius = 1.2
 outer_radius = 1.8
@@ -60,6 +20,9 @@ emission_enabled = true
 emission = Color(0.4, 0.85, 1, 1)
 emission_energy_multiplier = 2.0
 
+[sub_resource type="SphereShape3D" id="SphereShape3D_camera"]
+radius = 0.25
+
 [node name="Player" type="CharacterBody3D"]
 collision_layer = 1
 collision_mask = 34
@@ -71,50 +34,7 @@ shape = SubResource("CapsuleShape3D_player")
 
 [node name="VisualRoot" type="Node3D" parent="."]
 
-[node name="Body" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
-mesh = SubResource("BoxMesh_body")
-surface_material_override/0 = SubResource("StandardMaterial3D_body")
-
-[node name="Head" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 0)
-mesh = SubResource("BoxMesh_head")
-surface_material_override/0 = SubResource("StandardMaterial3D_head")
-
-[node name="Headband" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56, 0)
-mesh = SubResource("BoxMesh_visor")
-surface_material_override/0 = SubResource("StandardMaterial3D_visor")
-
-[node name="ArmL" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.46, 0.85, 0)
-mesh = SubResource("BoxMesh_limb")
-surface_material_override/0 = SubResource("StandardMaterial3D_limbs")
-
-[node name="ArmR" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.46, 0.85, 0)
-mesh = SubResource("BoxMesh_limb")
-surface_material_override/0 = SubResource("StandardMaterial3D_limbs")
-
-[node name="RightWrap" type="MeshInstance3D" parent="VisualRoot/ArmR"]
-position = Vector3(0, -0.24, -0.08)
-mesh = SubResource("BoxMesh_wrap")
-surface_material_override/0 = SubResource("StandardMaterial3D_wrap")
-
-[node name="LeftWrap" type="MeshInstance3D" parent="VisualRoot/ArmL"]
-position = Vector3(0, -0.24, -0.08)
-mesh = SubResource("BoxMesh_wrap")
-surface_material_override/0 = SubResource("StandardMaterial3D_wrap")
-
-[node name="LegL" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.28, 0)
-mesh = SubResource("BoxMesh_limb")
-surface_material_override/0 = SubResource("StandardMaterial3D_limbs")
-
-[node name="LegR" type="MeshInstance3D" parent="VisualRoot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.28, 0)
-mesh = SubResource("BoxMesh_limb")
-surface_material_override/0 = SubResource("StandardMaterial3D_limbs")
+[node name="CharacterModelRoot" type="Node3D" parent="VisualRoot"]
 
 [node name="SlashEffect" type="MeshInstance3D" parent="VisualRoot"]
 transform = Transform3D(1, 0, 0, 0, 0.2, 0, 0, 0, 1, 0, 0.8, -0.8)
@@ -122,8 +42,15 @@ visible = false
 mesh = SubResource("TorusMesh_slash")
 surface_material_override/0 = SubResource("StandardMaterial3D_slash")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 12, 10)
+[node name="CameraPivot" type="Node3D" parent="."]
+
+[node name="SpringArm3D" type="SpringArm3D" parent="CameraPivot"]
+spring_length = 5.5
+margin = 0.3
+shape = SubResource("SphereShape3D_camera")
+collision_mask = 32
+
+[node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D"]
 current = true
-fov = 38.0
+fov = 60.0
 script = ExtResource("2_cam")

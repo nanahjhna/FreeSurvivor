@@ -10,6 +10,8 @@ signal died(monster)
 @export var attack_interval: float = 1.0
 @export var xp_value: int = 1
 @export var monster_id: String = "zombie"
+@export var death_visual_duration: float = 0.4
+@export var model_faces_negative_z: bool = false
 
 const DAMAGE_NUMBER_SCENE: PackedScene = preload("res://scenes/effects/damage_number.tscn")
 
@@ -82,7 +84,7 @@ func _update_movement(delta: float):
 	var dist = to_target.length()
 	
 	if dist > 0.1:
-		var target_rot = atan2(-to_target.x, to_target.z)
+		var target_rot: float = atan2(to_target.x, to_target.z) + (PI if model_faces_negative_z else 0.0)
 		if visual_root:
 			visual_root.rotation.y = lerp_angle(visual_root.rotation.y, target_rot, 8.0 * delta)
 		else:
@@ -140,9 +142,10 @@ func _flash_hit():
 		return
 	hit_flash_cooldown = 0.10
 	if visual_root:
+		var rest_scale := visual_root.scale
 		var tween = create_tween()
-		tween.tween_property(visual_root, "scale", Vector3(1.2, 0.8, 1.2), 0.06)
-		tween.tween_property(visual_root, "scale", Vector3.ONE, 0.1)
+		tween.tween_property(visual_root, "scale", rest_scale * Vector3(1.2, 0.8, 1.2), 0.06)
+		tween.tween_property(visual_root, "scale", rest_scale, 0.1)
 
 func _show_damage_popup(amount: float, is_crit: bool = false):
 	if damage_popup_cooldown > 0.0:
@@ -169,17 +172,25 @@ func die():
 	
 	# Add Kill count to GameManager
 	GameManager.add_kill()
+	var monster_definition := MonsterManager.get_definition(monster_id)
+	var is_boss := bool(monster_definition.get("is_boss", false))
+	var boss_reward_multiplier := float(get_meta("boss_reward_multiplier", 1.0)) if is_boss else 1.0
+	var gold_drop := int(monster_definition.get("gold", 25))
+	GameManager.add_dungeon_gold(int(round(gold_drop * (1.0 + GameData.get_survival_bonus("gold")) * boss_reward_multiplier)))
 	GameData.record_monster_kill(monster_id)
 	var player := get_tree().get_first_node_in_group("player")
 	if player and player.has_method("on_monster_killed"):
 		player.on_monster_killed(self)
+	if is_boss:
+		GameManager.register_boss_defeat()
 	
-	# Death animation: fall and shrink
+	# Keep the imported death animation visible before removing the monster.
 	if visual_root:
 		var tween = create_tween()
 		tween.set_parallel(true)
-		tween.tween_property(visual_root, "rotation:x", PI * 0.5, 0.25)
-		tween.tween_property(visual_root, "scale", Vector3.ZERO, 0.3).set_delay(0.1)
+		if bool(monster_definition.get("fall_on_death", true)):
+			tween.tween_property(visual_root, "rotation:x", PI * 0.5, 0.25)
+		tween.tween_property(visual_root, "scale", Vector3.ZERO, 0.2).set_delay(death_visual_duration - 0.2)
 		tween.set_parallel(false)
 		tween.tween_callback(queue_free)
 	else:
@@ -188,22 +199,47 @@ func die():
 func _spawn_xp_gem():
 	var gem_scene = load("res://scenes/effects/xp_gem.tscn")
 	if gem_scene:
-		var gem = gem_scene.instantiate()
-		var boss_bonus := 1.0 + GameData.get_survival_bonus("boss_xp") if monster_id == "mutant_lord" else 1.0
+		var monster_definition := MonsterManager.get_definition(monster_id)
+		var is_boss := bool(monster_definition.get("is_boss", false))
+		var gem := gem_scene.instantiate() as PickupGem
+		var boss_bonus := 1.0 + GameData.get_survival_bonus("boss_xp") if is_boss else 1.0
+		if is_boss:
+			boss_bonus *= float(get_meta("boss_reward_multiplier", 1.0))
 		gem.xp_value = int(round(xp_value * 8 * boss_bonus))
-		gem.gold_reward = randi_range(20, 40) if monster_id != "mutant_lord" else 500
-		gem.potion_reward = 1 if monster_id == "mutant_lord" or randf() < 0.50 else 0
+		gem.gold_reward = 0
 		gem.lifetime_seconds = 45.0
-		var existing_pickups := get_tree().get_nodes_in_group("xp_gems")
-		if existing_pickups.size() >= 120:
+		_place_pickup(gem, Vector3(0.0, 0.5, 0.0))
+		if is_boss or randf() < float(monster_definition.get("potion_chance", 0.0)):
+			var potion := gem_scene.instantiate() as PickupGem
+			potion.reward_type = "치유 물약"
+			potion.reward_value = 1
+			potion.lifetime_seconds = 45.0
+			_place_pickup(potion, Vector3(0.7, 0.5, 0.0))
+
+func _place_pickup(new_pickup: PickupGem, offset: Vector3):
+	var existing_pickups := get_tree().get_nodes_in_group("xp_gems")
+	if existing_pickups.size() >= 120:
+		for existing in existing_pickups:
+			var pickup := existing as PickupGem
+			if not is_instance_valid(pickup) or pickup.is_queued_for_deletion():
+				continue
+			if str(pickup.get("reward_type")) != str(new_pickup.get("reward_type")):
+				continue
+			if new_pickup.get("reward_type") == "경험치":
+				pickup.xp_value += new_pickup.xp_value
+				pickup.gold_reward += new_pickup.gold_reward
+			else:
+				pickup.reward_value += new_pickup.reward_value
+			new_pickup.free()
+			return
+		# Keep a potion reward even when the pickup cap is full of experience gems.
+		if new_pickup.get("reward_type") == "치유 물약":
 			for existing in existing_pickups:
-				var pickup := existing as Area3D
-				if not is_instance_valid(pickup) or pickup.is_queued_for_deletion():
-					continue
-				pickup.set("xp_value", int(pickup.get("xp_value")) + int(gem.xp_value))
-				pickup.set("gold_reward", int(pickup.get("gold_reward")) + int(gem.gold_reward))
-				pickup.set("potion_reward", int(pickup.get("potion_reward")) + int(gem.potion_reward))
-				gem.free()
-				return
-		get_tree().current_scene.add_child(gem)
-		gem.global_position = global_position + Vector3(0, 0.5, 0)
+				var pickup := existing as PickupGem
+				if is_instance_valid(pickup) and not pickup.is_queued_for_deletion() and pickup.reward_type == "경험치":
+					pickup.potion_reward += new_pickup.reward_value
+					pickup.refresh_label()
+					new_pickup.free()
+					return
+	get_tree().current_scene.add_child(new_pickup)
+	new_pickup.global_position = global_position + offset

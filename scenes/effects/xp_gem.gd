@@ -1,4 +1,5 @@
 extends Area3D
+class_name PickupGem
 
 @export var xp_value: int = 1
 @export_enum("경험치", "골드", "치유 물약") var reward_type: String = "경험치"
@@ -17,6 +18,7 @@ var _collected: bool = false
 static var _pickup_stream: AudioStreamWAV
 
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
+var pickup_label: Label3D
 
 
 func _ready():
@@ -27,24 +29,37 @@ func _ready():
 	bob_offset = randf() * TAU
 	base_y = position.y
 	body_entered.connect(_on_body_entered)
+	pickup_label = Label3D.new()
+	pickup_label.position = Vector3(0.0, 0.65, 0.0)
+	pickup_label.font_size = 36
+	pickup_label.pixel_size = 0.009
+	pickup_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	pickup_label.no_depth_test = true
+	add_child(pickup_label)
 	if reward_type != "경험치":
 		var material := mesh_instance.get_active_material(0).duplicate() as StandardMaterial3D
 		mesh_instance.material_override = material
 		mesh_instance.mesh = SphereMesh.new()
 		if reward_type == "골드":
+			pickup_label.text = "GOLD"
+			pickup_label.modulate = Color(1.0, 0.82, 0.2)
 			material.albedo_color = Color(1.0, 0.72, 0.12)
 			material.emission = Color(1.0, 0.54, 0.05)
 			material.emission_enabled = true
 		else:
+			pickup_label.text = "HP 물약"
+			pickup_label.modulate = Color(1.0, 0.48, 0.48)
 			mesh_instance.mesh = CylinderMesh.new()
 			material.albedo_color = Color(0.9, 0.15, 0.18)
 			material.emission = Color(0.65, 0.04, 0.06)
 			material.emission_enabled = true
-	elif gold_reward > 0:
-		var material := mesh_instance.get_active_material(0).duplicate() as StandardMaterial3D
-		material.albedo_color = Color(0.72, 0.9, 0.28)
-		material.emission = Color(0.85, 0.8, 0.12)
-		mesh_instance.material_override = material
+	else:
+		refresh_label()
+		pickup_label.modulate = Color(0.45, 1.0, 0.7)
+
+func refresh_label():
+	if pickup_label and reward_type == "경험치":
+		pickup_label.text = "EXP + HP" if potion_reward > 0 else "EXP"
 
 
 func _physics_process(delta: float):
@@ -53,7 +68,25 @@ func _physics_process(delta: float):
 		if _remaining_lifetime <= 0.0:
 			queue_free()
 			return
-	# Bobbing and rotating idle animation only (no magnet/auto-attract)
+	if player == null or not is_instance_valid(player):
+		player = get_tree().get_first_node_in_group("player") as Node3D
+	var magnet_range := 0.0
+	if reward_type == "경험치":
+		magnet_range = GameData.get_survival_bonus("xp_magnet_range")
+	elif reward_type == "치유 물약":
+		magnet_range = GameData.get_survival_bonus("potion_magnet_range")
+	if player and magnet_range > 0.0:
+		var target_position := player.global_position + Vector3(0.0, 0.55, 0.0)
+		if global_position.distance_to(target_position) <= magnet_range:
+			is_attracted = true
+			magnet_speed = move_toward(magnet_speed, max_magnet_speed, 48.0 * delta)
+			global_position = global_position.move_toward(target_position, magnet_speed * delta)
+			if global_position.distance_to(target_position) <= 0.7:
+				collect()
+			return
+	is_attracted = false
+	magnet_speed = 0.0
+	# Idle pickups bob and rotate until a matching magnet card attracts them.
 	mesh_instance.rotate_y(3.0 * delta)
 	position.y = base_y + sin(Time.get_ticks_msec() * 0.005 + bob_offset) * 0.15
 
@@ -84,7 +117,7 @@ func collect():
 			GameData.player_gold += int(round(reward_value * (1.0 + GameData.get_survival_bonus("gold"))))
 			GameData.currency_changed.emit(GameData.player_gold, GameData.player_gems)
 		else:
-			GameData.item_counts[1] = int(GameData.item_counts.get(1, 0)) + 1
+			GameData.item_counts[1] = int(GameData.item_counts.get(1, 0)) + maxi(1, reward_value)
 			GameData.data_updated.emit()
 	_play_pickup_sound()
 

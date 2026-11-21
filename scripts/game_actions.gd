@@ -74,26 +74,26 @@ const ACTIONS := {
 	},
 	"skill_q": {
 		"label": "Q 스킬", "icon": "🗡️", "key": KEY_Q, "input_action": "skill_q",
-		"context": "battle", "rebindable": true, "desc": "검기 방출 스킬을 사용합니다."
+		"context": "battle", "rebindable": true, "desc": "쇄도 연권 스킬을 사용합니다."
 	},
 	"skill_w": {
 		"label": "W 스킬", "icon": "🌀", "key": KEY_W, "input_action": "skill_w",
-		"context": "battle", "rebindable": true, "desc": "회전 베기 스킬을 사용합니다."
+		"context": "battle", "rebindable": true, "desc": "선풍각 스킬을 사용합니다."
 	},
 	"skill_e": {
 		"label": "E 스킬", "icon": "🔥", "key": KEY_E, "input_action": "skill_e",
-		"context": "battle", "rebindable": true, "desc": "화염 방사 스킬을 사용합니다."
+		"context": "battle", "rebindable": true, "desc": "홍련권 스킬을 사용합니다."
 	},
 	"skill_r": {
 		"label": "R 스킬", "icon": "💥", "key": KEY_R, "input_action": "skill_r",
 		"context": "battle", "rebindable": true, "desc": "궁극기 대폭발을 사용합니다."
 	},
 	"skill_a": {
-		"label": "삼연 검기", "icon": "⚔", "key": KEY_A, "input_action": "skill_a",
+		"label": "삼연 기공탄", "icon": "✴️", "key": KEY_A, "input_action": "skill_a",
 		"context": "battle", "rebindable": true, "desc": "서바이벌 Lv.2에 배우는 관통 검기입니다."
 	},
 	"skill_s": {
-		"label": "수호의 기도", "icon": "✚", "key": KEY_S, "input_action": "skill_s",
+		"label": "기혈 회복", "icon": "✚", "key": KEY_S, "input_action": "skill_s",
 		"context": "battle", "rebindable": true, "desc": "서바이벌 Lv.5에 배우는 회복 기술입니다."
 	},
 	"item_1": {
@@ -116,7 +116,7 @@ const ACTIONS := {
 		"label": "자동 스킬 시전", "icon": "🤖", "key": KEY_T, "input_action": "toggle_auto_battle",
 		"context": "battle", "rebindable": true, "desc": "스킬을 자동으로 사용합니다."
 	},
-	# Fixed movement bindings: arrow keys only, on every platform.
+	# Fixed movement bindings: PC uses arrow keys; mobile uses the virtual joystick.
 	"move_up": {
 		"label": "위로 이동", "icon": "↑", "key": KEY_UP, "input_action": "move_up",
 		"context": "fixed", "rebindable": false, "desc": "방향키 위로 이동합니다."
@@ -152,6 +152,17 @@ func _load_bindings():
 			if not ACTIONS[id].rebindable:
 				continue
 			bindings[id] = int(cfg.get_value("bindings", id, bindings[id]))
+	# Move saved shortcuts off arrow keys, which control movement.
+	var migrated := false
+	var movement_keys: Array[int] = [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
+	for action_id in ACTIONS:
+		if not ACTIONS[action_id].rebindable:
+			continue
+		if movement_keys.has(int(bindings.get(action_id, 0))):
+			bindings[action_id] = int(ACTIONS[action_id].key)
+			migrated = true
+	if migrated:
+		_save_bindings()
 
 func _save_bindings():
 	var cfg := ConfigFile.new()
@@ -236,9 +247,9 @@ func get_rebindable_actions(context: String = "") -> Array[String]:
 
 func is_key_used(keycode: int, ignore_action: String = "") -> bool:
 	for id in ACTIONS:
-		if id == ignore_action or not ACTIONS[id].rebindable:
+		if id == ignore_action:
 			continue
-		if int(bindings[id]) == keycode:
+		if int(bindings[id]) == keycode and (ACTIONS[id].rebindable or ACTIONS[id].context == "fixed"):
 			return true
 	return false
 

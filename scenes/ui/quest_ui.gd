@@ -27,10 +27,10 @@ func _build_ui():
 	root.add_child(center)
 
 	var panel := UiStyle.make_panel()
-	panel.custom_minimum_size = Vector2(880, 660)
 	center.add_child(panel)
+	var portrait := UiStyle.fit_modal(panel, Vector2(880, 1120))
 
-	var margin := UiStyle.make_margin(panel, 24)
+	var margin := UiStyle.make_margin(panel, 16 if portrait else 24)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)
 	margin.add_child(vbox)
@@ -40,7 +40,7 @@ func _build_ui():
 	var title := UiStyle.make_title("📜 퀘스트", 28)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	var close := UiStyle.make_button("← 닫기 [ESC]", Vector2(150, 42))
+	var close := UiStyle.make_button("✕", Vector2(52, 48))
 	close.pressed.connect(close_screen)
 	header.add_child(close)
 

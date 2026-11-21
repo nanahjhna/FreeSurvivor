@@ -81,7 +81,9 @@ const CARD_ROWS: Array = [
 	["097", "성장의 축복", "희귀", "즉시 경험치 획득", "instant_xp", 0.50],
 	["098", "운명의 선택", "희귀", "레벨업 선택지 추가", "extra_offer", 1.0],
 	["099", "초월 성장", "영웅", "획득 경험치 +35%", "xp", 0.35],
-	["100", "운명의 지배자", "영웅", "레벨업 선택지 새로고침", "free_reroll", 1.0]
+	["100", "운명의 지배자", "영웅", "레벨업 선택지 새로고침", "free_reroll", 1.0],
+	["101", "경험 구슬 자석", "일반", "주변 경험치 구슬을 끌어당깁니다", "xp_magnet_range", 8.0],
+	["102", "생명의 부름", "희귀", "주변 HP 물약을 끌어당깁니다", "potion_magnet_range", 10.0]
 ]
 
 const RARITY_WEIGHTS := {"일반": 55, "희귀": 30, "영웅": 12, "전설": 3}
@@ -98,6 +100,23 @@ static func get_card(card_id: String) -> Dictionary:
 		if str(row[0]) == card_id:
 			return {"id": row[0], "name": row[1], "grade": row[2], "description": row[3], "type": "survival_bonus", "stat": row[4], "value": row[5]}
 	return {}
+
+static func get_recommendation(card: Dictionary, class_id: String) -> Dictionary:
+	var stat := str(card.get("stat", ""))
+	var card_id := str(card.get("id", ""))
+	if class_id == "fighter":
+		if card_id in ["013", "018", "081", "082", "083", "085", "086", "089", "090"]:
+			return {"score": 1, "reason": "원거리 중심"}
+		if stat in ["physical_damage", "attack_speed", "extra_attack", "crit_chance", "crit_damage", "lifesteal", "skill_damage", "cooldown", "area_damage", "kill_explosion"]:
+			return {"score": 5, "reason": "무도가 핵심 전투 강화"}
+		if stat in ["magic_damage", "fire_damage", "lightning_proc", "chain_lightning", "magic_reduction"]:
+			return {"score": 2, "reason": "무도가와 시너지가 낮음"}
+		if stat in ["max_hp_percent", "hp_regen", "kill_heal", "damage_reduction", "low_hp_reduction", "last_stand", "revive", "xp_magnet_range", "potion_magnet_range"]:
+			return {"score": 4, "reason": "생존·수집에 유용"}
+		if stat in ["xp", "instant_xp", "boss_xp", "gold", "move_speed", "dodge", "attack_range", "rare_weight"]:
+			return {"score": 3, "reason": "전투 진행에 도움"}
+		return {"score": 3, "reason": "무난한 범용 강화"}
+	return {"score": 3, "reason": "범용 강화"}
 
 static func draw_offers(count: int, picked: Dictionary, rare_bonus: float = 0.0) -> Array[Dictionary]:
 	var available: Array[Dictionary] = []

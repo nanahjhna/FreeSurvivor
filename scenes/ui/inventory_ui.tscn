@@ -111,7 +111,7 @@ custom_minimum_size = Vector2(100, 36)
 layout_mode = 2
 text = "재료/소모품"
 
-[node name="Body" type="HBoxContainer" parent="Panel/Margin/VBox"]
+[node name="Body" type="VBoxContainer" parent="Panel/Margin/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 20

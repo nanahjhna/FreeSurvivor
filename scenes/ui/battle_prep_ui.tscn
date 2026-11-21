@@ -169,7 +169,7 @@ text = "마을 북쪽 성문 밖 초원에 몬스터들이 출몰하기 시작�
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 12
-text = "출현 몬스터: 좀비, 스켈레톤, 뮤턴트 (보스)"
+text = "출현 몬스터: 감염자, 거대 감염자 (보스)"
 
 [node name="FighterPreview" type="VBoxContainer" parent="Panel/Margin/VBox/Body"]
 layout_mode = 2

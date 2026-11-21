@@ -2,11 +2,6 @@ extends Node
 
 signal skill_cooldown_updated(skill_key: String, current_cd: float, max_cd: float)
 
-var sword_wave_scene: PackedScene = preload("res://scenes/skills/sword_wave.tscn")
-var spin_attack_scene: PackedScene = preload("res://scenes/skills/spin_attack.tscn")
-var flame_attack_scene: PackedScene = preload("res://scenes/skills/flame_attack.tscn")
-var explosion_scene: PackedScene = preload("res://scenes/skills/explosion.tscn")
-
 var cooldowns: Dictionary = {
 	"q": 0.0,
 	"w": 0.0,
@@ -67,7 +62,7 @@ func press_skill(key: String):
 		if cd > 0.05:
 			UiFeedback.show_info("%s 스킬 쿨타임이 %.1f초 남았습니다." % [key.to_upper(), cd])
 		elif player and is_instance_valid(player):
-			if skill == "renewal" and player.current_hp >= player.max_hp:
+			if str(GameData.skill_meta.get(skill, {}).get("cast_type", "")) == "heal" and player.current_hp >= player.max_hp:
 				UiFeedback.show_info("체력이 가득 찼습니다.")
 
 func try_cast(skill_key: String, target: Node3D = null) -> bool:
@@ -86,30 +81,73 @@ func try_cast(skill_key: String, target: Node3D = null) -> bool:
 		return false
 	if cooldowns[skill_key] > 0.0:
 		return false
-	if ability_id == "renewal" and player.current_hp >= player.max_hp:
+	if str(GameData.skill_meta.get(ability_id, {}).get("cast_type", "")) == "heal" and player.current_hp >= player.max_hp:
 		return false
 	var meta: Dictionary = GameData.skill_meta[ability_id]
+	var cast_type := str(meta.get("cast_type", ""))
+	if cast_type != "heal" and str(meta.get("effect_scene", "")).is_empty():
+		push_warning("스킬 효과 씬이 등록되지 않았습니다: %s" % ability_id)
+		return false
 	cooldowns[skill_key] = float(GameData.skill_cooldowns.get(ability_id, meta.get("base_cd", 1.0)))
 	emit_signal("skill_cooldown_updated", skill_key, cooldowns[skill_key], get_max_cooldown(skill_key))
-	match ability_id:
-		"q":
-			_launch_wave(_get_cast_direction(target), GameData.get_skill_damage_multiplier("q") * _get_survival_skill_multiplier())
-		"w":
-			_cast_w()
-		"e":
-			_cast_e(_get_cast_direction(target))
-		"r":
-			_cast_r()
-		"volley":
-			var facing := _get_cast_direction(target)
-			for angle in [-0.32, 0.0, 0.32]:
-				_launch_wave(facing.rotated(Vector3.UP, angle), float(meta.base_dmg_ratio) * _get_survival_skill_multiplier())
-		"renewal":
-			player.heal(player.max_hp * 0.2)
+	if player.has_method("play_skill_animation"):
+		player.play_skill_animation(skill_key)
+	var skill_power := GameData.get_skill_damage_multiplier(ability_id)
+	if cast_type == "heal":
+		player.heal(player.max_hp * float(meta.get("heal_ratio", 0.2)))
+	else:
+		var damage_multiplier := GameData.attack_damage_mult * skill_power * _get_survival_skill_multiplier(ability_id)
+		if bool(meta.get("uses_magic_power", false)):
+			damage_multiplier *= _get_magic_power_multiplier()
+		_spawn_registered_effect(ability_id, meta, target, _get_cast_direction(target), damage_multiplier)
 	return true
+
+
+func _spawn_registered_effect(
+	skill_id: String,
+	definition: Dictionary,
+	target: Node3D,
+	direction: Vector3,
+	damage_multiplier: float
+) -> void:
+	var scene_path := str(definition.get("effect_scene", ""))
+	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
+		push_warning("등록된 스킬 효과 씬을 찾을 수 없습니다: %s (%s)" % [skill_id, scene_path])
+		return
+	var effect_scene := load(scene_path) as PackedScene
+	if effect_scene == null:
+		push_warning("스킬 효과 씬을 불러오지 못했습니다: %s" % scene_path)
+		return
+	var count := 1
+	if str(definition.get("cast_pattern", "")) == "fan":
+		count = maxi(1, int(definition.get("projectile_count", 3)))
+	var spread := float(definition.get("spread_radians", 0.0))
+	for index in range(count):
+		var angle := (float(index) - float(count - 1) * 0.5) * spread
+		var effect := effect_scene.instantiate() as SkillEffectBase
+		if effect == null:
+			push_warning("효과 씬은 SkillEffectBase를 상속해야 합니다: %s" % scene_path)
+			return
+		get_tree().current_scene.add_child(effect)
+		effect.cast(player, target, direction.rotated(Vector3.UP, angle), damage_multiplier, definition)
 
 func get_cooldown(skill_key: String) -> float:
 	return float(cooldowns.get(skill_key, 0.0))
+
+func get_passive_regen_amount(elapsed: float) -> float:
+	if player == null or not is_instance_valid(player):
+		return 0.0
+	var total := 0.0
+	for skill_id in GameData.skill_meta:
+		var meta: Dictionary = GameData.skill_meta[skill_id]
+		if str(meta.get("cast_type", "")) != "passive":
+			continue
+		if GameData.player_level < int(meta.get("unlock_level", 1)):
+			continue
+		if str(meta.get("passive_handler", "")) == "regen_after_damage":
+			if float(player.get("_time_since_last_damage")) >= float(meta.get("regen_delay", 0.0)):
+				total += player.max_hp * float(meta.get("hp_regen_ratio", 0.0)) * elapsed
+	return total
 
 func get_max_cooldown(skill_key: String) -> float:
 	var ability_id := GameData.get_equipped_skill(skill_key)
@@ -177,31 +215,11 @@ func _get_magic_power_multiplier() -> float:
 
 func _get_survival_skill_multiplier(skill_id: String = "") -> float:
 	var multiplier := 1.0 + GameData.get_survival_bonus("damage") + GameData.get_survival_bonus("damage_reckless") + GameData.get_survival_bonus("skill_damage") + GameData.get_survival_bonus("magic_damage")
-	if skill_id == "e":
+	var skill_meta: Dictionary = GameData.skill_meta.get(skill_id, {})
+	var bonus_type := str(skill_meta.get("bonus_type", ""))
+	if bonus_type == "fire":
 		multiplier += GameData.get_survival_bonus("fire_damage")
-	if skill_id in ["w", "r"]:
+	if bonus_type == "area":
 		multiplier += GameData.get_survival_bonus("area_damage")
 	return multiplier
 
-func _launch_wave(facing: Vector3, power: float):
-	var wave = sword_wave_scene.instantiate()
-	get_tree().current_scene.add_child(wave)
-	wave.global_position = player.global_position + Vector3(0, 0.8, 0) + facing * 0.5
-	wave.setup(facing, GameData.attack_damage_mult * power)
-
-func _cast_w():
-	var spin = spin_attack_scene.instantiate()
-	get_tree().current_scene.add_child(spin)
-	spin.setup(player, GameData.attack_damage_mult * GameData.get_skill_damage_multiplier("w") * _get_survival_skill_multiplier("w"))
-
-func _cast_e(facing: Vector3):
-	var flame = flame_attack_scene.instantiate()
-	get_tree().current_scene.add_child(flame)
-	var damage_multiplier = GameData.attack_damage_mult * GameData.get_skill_damage_multiplier("e") * _get_magic_power_multiplier() * _get_survival_skill_multiplier("e")
-	flame.setup(player.global_position, facing, damage_multiplier)
-
-func _cast_r():
-	var boom = explosion_scene.instantiate()
-	get_tree().current_scene.add_child(boom)
-	var damage_multiplier = GameData.attack_damage_mult * GameData.get_skill_damage_multiplier("r") * _get_magic_power_multiplier() * _get_survival_skill_multiplier("r")
-	boom.setup(player.global_position, damage_multiplier)

@@ -103,7 +103,7 @@ func _refresh():
 func _render_characters():
 	for cid in GameData.characters:
 		var c: Dictionary = GameData.characters[cid]
-		var attributes: Dictionary = c.get("attributes", StatManager.get_default_stats(str(cid)))
+		var attributes: Dictionary = c.get("attributes", StatManager.get_default_stats(str(cid), c))
 		var card := _make_card(
 			str(c.get("icon", "⚔️")),
 			"%s [%s]" % [c.get("name", ""), c.get("grade", "")],

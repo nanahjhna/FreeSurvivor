@@ -3,41 +3,51 @@
 [ext_resource type="Script" path="res://scenes/ui/minimap.gd" id="1_mmap"]
 
 [node name="Minimap" type="Control"]
-custom_minimum_size = Vector2(170, 160)
+custom_minimum_size = Vector2(160, 184)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 170.0
-offset_bottom = 160.0
+offset_right = 160.0
+offset_bottom = 184.0
 script = ExtResource("1_mmap")
 
 [node name="ZoomIn" type="Button" parent="."]
-custom_minimum_size = Vector2(42, 42)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 0
-offset_left = 128.0
-offset_top = 30.0
-offset_right = 170.0
-offset_bottom = 72.0
+offset_left = 116.0
+offset_top = 12.0
+offset_right = 152.0
+offset_bottom = 48.0
 tooltip_text = "미니맵 확대"
 text = "+"
 
 [node name="ZoomLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 124.0
-offset_top = 76.0
-offset_right = 170.0
-offset_bottom = 104.0
+offset_left = 112.0
+offset_top = 66.0
+offset_right = 156.0
+offset_bottom = 92.0
 text = "40m"
 horizontal_alignment = 1
 
 [node name="ZoomOut" type="Button" parent="."]
-custom_minimum_size = Vector2(42, 42)
+custom_minimum_size = Vector2(36, 36)
 layout_mode = 0
-offset_left = 128.0
+offset_left = 116.0
 offset_top = 108.0
-offset_right = 170.0
-offset_bottom = 150.0
+offset_right = 152.0
+offset_bottom = 144.0
 tooltip_text = "미니맵 축소"
 text = "−"
+
+[node name="PortalDistance" type="Label" parent="."]
+layout_mode = 0
+offset_top = 162.0
+offset_right = 160.0
+offset_bottom = 184.0
+theme_override_colors/font_color = Color(0.45, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "포털 0m"
+horizontal_alignment = 1
 
 [connection signal="pressed" from="ZoomIn" to="." method="_on_zoom_in"]
 [connection signal="pressed" from="ZoomOut" to="." method="_on_zoom_out"]
