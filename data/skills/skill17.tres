@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_b03jv"]
+
+[resource]
+script = ExtResource("1_b03jv")
+id = "skill17"
+legacy_id = "gragas_q"
+champion_id = "Gragas"
+champion_name = "그라가스"
+slot_key = "Q"
+reference_name = "술통 굴리기"
+reference_description = "그라가스가 술통을 굴려 폭발시킵니다. 술통은 4초 뒤 자동으로 폭발하며 스킬을 다시 사용하여 직접 폭발시킬 수도 있습니다. 술통이 오래 남아 있을수록 위력이 증가하며, 폭발에 맞은 적은 둔화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GragasQ.png"
+display_name = "술통 굴리기"
+description = "그라가스가 술통을 굴려 폭발시킵니다. 술통은 4초 뒤 자동으로 폭발하며 스킬을 다시 사용하여 직접 폭발시킬 수도 있습니다. 술통이 오래 남아 있을수록 위력이 증가하며, 폭발에 맞은 적은 둔화됩니다."

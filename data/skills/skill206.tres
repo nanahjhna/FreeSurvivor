@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ufwmh"]
+
+[resource]
+script = ExtResource("1_ufwmh")
+id = "skill206"
+legacy_id = "malphite_p"
+champion_id = "Malphite"
+champion_name = "말파이트"
+slot_key = "P"
+reference_name = "화강암 방패"
+reference_description = "말파이트는 여러 겹의 돌로 감싸여 있어 자신의 최대 체력 10%만큼의 피해를 흡수할 수 있습니다. 말파이트가 몇 초 동안 공격 받지 않으면 보호막이 재생성됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Malphite_GraniteShield.png"
+display_name = "화강암 방패"
+description = "말파이트는 여러 겹의 돌로 감싸여 있어 자신의 최대 체력 10%만큼의 피해를 흡수할 수 있습니다. 말파이트가 몇 초 동안 공격 받지 않으면 보호막이 재생성됩니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_klneg"]
+
+[resource]
+script = ExtResource("1_klneg")
+id = "skill426"
+legacy_id = "ahri_p"
+champion_id = "Ahri"
+champion_name = "아리"
+slot_key = "P"
+reference_name = "정기 흡수"
+reference_description = "아리가 미니언 또는 몬스터를 9마리 처치하면 체력을 회복합니다. / 아리가 적 챔피언 처치에 관여하면 더 많은 체력을 회복합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Ahri_SoulEater2.png"
+display_name = "정기 흡수"
+description = "아리가 미니언 또는 몬스터를 9마리 처치하면 체력을 회복합니다. / 아리가 적 챔피언 처치에 관여하면 더 많은 체력을 회복합니다."

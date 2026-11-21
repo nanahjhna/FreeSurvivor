@@ -1,0 +1,131 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="PackedScene" path="res://assets/char/char02/char02.glb" id="1_hstr7"]
+[ext_resource type="Script" path="res://scripts/resources/character_data.gd" id="2_gcit0"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="3_ccowp"]
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="4_xmbnw"]
+[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="5_l57jj"]
+[ext_resource type="PackedScene" path="res://scenes/skills/flame_attack.tscn" id="6_7fi1c"]
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="7_8p1c3"]
+
+[sub_resource type="Resource" id="Resource_4rdep"]
+script = ExtResource("3_ccowp")
+id = "skill873"
+legacy_id = "swordsman_q"
+slot_key = "q"
+reference_name = "질풍 베기"
+reference_description = "전방으로 빠르게 파고들며 검기를 날립니다."
+icon = "🗡️"
+display_name = "질풍 베기"
+description = "전방으로 빠르게 파고들며 검기를 날립니다."
+cooldown = 3.0
+damage_ratio = 1.6
+cooldown_step = 0.12
+damage_step = 0.2
+range = 13.0
+cast_type = "wave"
+effect_scene = ExtResource("4_xmbnw")
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_hp73i"]
+script = ExtResource("3_ccowp")
+id = "skill874"
+legacy_id = "swordsman_w"
+slot_key = "w"
+reference_name = "쌍검 회오리"
+reference_description = "쌍검을 휘둘러 주변 적을 베어냅니다."
+icon = "🌪️"
+display_name = "쌍검 회오리"
+description = "쌍검을 휘둘러 주변 적을 베어냅니다."
+cooldown = 5.5
+damage_ratio = 1.75
+cooldown_step = 0.16
+damage_step = 0.22
+range = 5.0
+cast_type = "spin"
+animation_key = "Kick"
+bonus_type = "area"
+effect_scene = ExtResource("5_l57jj")
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_8oiep"]
+script = ExtResource("3_ccowp")
+id = "skill875"
+legacy_id = "swordsman_e"
+slot_key = "e"
+reference_name = "섬광 연참"
+reference_description = "전방을 가르는 섬광의 검격을 발사합니다."
+display_name = "섬광 연참"
+description = "전방을 가르는 섬광의 검격을 발사합니다."
+cooldown = 8.0
+damage_ratio = 2.4
+cooldown_step = 0.2
+damage_step = 0.3
+range = 9.0
+cast_type = "flame"
+effect_scene = ExtResource("6_7fi1c")
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_mug03"]
+script = ExtResource("3_ccowp")
+id = "skill876"
+legacy_id = "swordsman_r"
+slot_key = "r"
+reference_name = "천강 낙월"
+reference_description = "강력한 검기를 폭발시켜 넓은 범위를 공격합니다."
+icon = "🌙"
+display_name = "천강 낙월"
+description = "강력한 검기를 폭발시켜 넓은 범위를 공격합니다."
+cooldown = 25.0
+damage_ratio = 4.0
+cooldown_step = 0.5
+damage_step = 0.55
+unlock_level = 8
+cast_type = "burst"
+bonus_type = "area"
+effect_scene = ExtResource("7_8p1c3")
+implemented = true
+support_status = "game_skill"
+
+[resource]
+script = ExtResource("2_gcit0")
+id = "char02"
+legacy_id = "char02"
+display_name = "유랑 검사"
+title = "쌍검 방랑자"
+role = "검사"
+color = Color(0.3, 0.52, 0.72, 1)
+model_scene = ExtResource("1_hstr7")
+animation_profile = "char02"
+animation_aliases = {
+"Attack": ["Sword_Regular_A_RT", "Sword_Attack_RT", "Sword_Attack_A_RT"],
+"AttackAlt": ["Sword_Regular_B_RT", "Sword_Attack_B_RT", "Sword_Regular_A_RT"],
+"Idle": ["Idle_Sword_RT", "Idle"],
+"Kick": ["Sword_Attack_RT", "Sword_Regular_A_RT"],
+"Run": ["Polearm_Run_RT", "Sword_Run_RT", "Run"],
+"Walk": ["Polearm_Run_RT", "Sword_Run_RT", "Run"]
+}
+base_str = 7
+base_agi = 8
+base_vit = 5
+base_int = 3
+base_dex = 6
+base_luk = 4
+base_hp = 112.0
+base_atk = 21.0
+base_def = 8.0
+base_spd = 7.2
+skills = Array[ExtResource("3_ccowp")]([SubResource("Resource_4rdep"), SubResource("Resource_hp73i"), SubResource("Resource_8oiep"), SubResource("Resource_mug03")])
+signature_skill = "질풍 쌍검"
+weapon_name = "쌍검"
+combat_style = "빠른 근접 전투와 연속 베기"
+description = "새로 추가된 3D 캐릭터 모델을 사용하는 쌍검 검사."
+appearance = "char02"
+starting_gear = {
+"accessory": null,
+"armor": "arm_leather",
+"weapon": "wpn_iron_sword"
+}

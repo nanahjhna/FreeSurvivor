@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/monster01/monster01.tscn" id="1_lmy2m"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_bjxdm"]
+
+[resource]
+script = ExtResource("2_bjxdm")
+id = "monster03"
+legacy_id = "infected"
+display_name = "감염자"
+model_scene = ExtResource("1_lmy2m")
+hp = 35.0
+speed = 3.2
+damage = 7.0
+attack_range = 1.6
+xp = 1
+gold = 25
+loot = {
+"gold": 25,
+"potion_chance": 0.5,
+"xp": 1
+}
+potion_chance = 0.5
+fall_on_death = false

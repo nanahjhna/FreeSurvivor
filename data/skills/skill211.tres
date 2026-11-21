@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_4v03j"]
+
+[resource]
+script = ExtResource("1_4v03j")
+id = "skill211"
+legacy_id = "mel_p"
+champion_id = "Mel"
+champion_name = "멜"
+slot_key = "P"
+reference_name = "이글거리는 광휘"
+reference_description = "멜이 스킬을 사용할 때마다 다음 기본 공격 시 투사체가 3개 (최대 9개) 추가됩니다. / / 멜이 스킬 또는 기본 공격으로 피해를 입히면 무한히 중첩할 수 있는 압도를 적용합니다. 압도 피해가 충분한 상태에서 멜의 공격이 적에게 적중하면 중첩을 소모하여 대상을 처형합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Mel_Passive.png"
+display_name = "이글거리는 광휘"
+description = "멜이 스킬을 사용할 때마다 다음 기본 공격 시 투사체가 3개 (최대 9개) 추가됩니다. / / 멜이 스킬 또는 기본 공격으로 피해를 입히면 무한히 중첩할 수 있는 압도를 적용합니다. 압도 피해가 충분한 상태에서 멜의 공격이 적에게 적중하면 중첩을 소모하여 대상을 처형합니다."

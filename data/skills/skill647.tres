@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_j10bm"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_5i8nn"]
+
+[resource]
+script = ExtResource("2_5i8nn")
+id = "skill647"
+legacy_id = "zoe_q"
+champion_id = "Zoe"
+champion_name = "조이"
+slot_key = "Q"
+reference_name = "통통별"
+reference_description = "조이가 별을 발사합니다. 별이 날아가는 도중에 방향을 바꿀 수 있으며, 별의 총 이동거리에 비례해 피해량이 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ZoeQ.png"
+display_name = "통통별"
+description = "조이가 별을 발사합니다. 별이 날아가는 도중에 방향을 바꿀 수 있으며, 별의 총 이동거리에 비례해 피해량이 증가합니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+effect_scene = ExtResource("1_j10bm")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

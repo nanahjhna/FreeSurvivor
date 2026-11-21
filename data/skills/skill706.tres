@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_176nx"]
+
+[resource]
+script = ExtResource("1_176nx")
+id = "skill706"
+legacy_id = "khazix_p"
+champion_id = "Khazix"
+champion_name = "카직스"
+slot_key = "P"
+reference_name = "보이지 않는 위협"
+reference_description = "동료로부터 고립된 근처 적에게 표식이 남습니다. 고립된 대상에게는 카직스의 스킬이 추가 효과를 발휘합니다. / / 카직스는 적의 시야에 노출되지 않을 때 보이지 않는 위협 효과를 받아, 다음 기본 공격으로 적 챔피언에게 추가 마법 피해를 입히고 몇 초간 둔화를 적용합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Khazix_P.png"
+display_name = "보이지 않는 위협"
+description = "동료로부터 고립된 근처 적에게 표식이 남습니다. 고립된 대상에게는 카직스의 스킬이 추가 효과를 발휘합니다. / / 카직스는 적의 시야에 노출되지 않을 때 보이지 않는 위협 효과를 받아, 다음 기본 공격으로 적 챔피언에게 추가 마법 피해를 입히고 몇 초간 둔화를 적용합니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_41tgv"]
+
+[resource]
+script = ExtResource("1_41tgv")
+id = "skill242"
+legacy_id = "bard_q"
+champion_id = "Bard"
+champion_name = "바드"
+slot_key = "Q"
+reference_name = "우주의 결속"
+reference_description = "바드가 투사체를 발사하여, 처음 적중하는 적을 둔화시키고 관통합니다. 관통한 후 벽을 맞히면 처음 적중한 적을 기절시킵니다. 관통 후 다른 적에게 적중하면 두 대상을 모두 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BardQ.png"
+display_name = "우주의 결속"
+description = "바드가 투사체를 발사하여, 처음 적중하는 적을 둔화시키고 관통합니다. 관통한 후 벽을 맞히면 처음 적중한 적을 기절시킵니다. 관통 후 다른 적에게 적중하면 두 대상을 모두 기절시킵니다."

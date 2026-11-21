@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_k5sab"]
+
+[resource]
+script = ExtResource("1_k5sab")
+id = "skill52"
+legacy_id = "nautilus_q"
+champion_id = "Nautilus"
+champion_name = "노틸러스"
+slot_key = "Q"
+reference_name = "닻줄 견인"
+reference_description = "노틸러스가 전방으로 닻을 던집니다. 닻이 적을 맞히면 노틸러스와 대상이 가까이 당겨지며 대상에게 마법 피해를 입힙니다. 닻이 지형을 맞히면 노틸러스가 지형 쪽으로 끌려갑니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/NautilusAnchorDrag.png"
+display_name = "닻줄 견인"
+description = "노틸러스가 전방으로 닻을 던집니다. 닻이 적을 맞히면 노틸러스와 대상이 가까이 당겨지며 대상에게 마법 피해를 입힙니다. 닻이 지형을 맞히면 노틸러스가 지형 쪽으로 끌려갑니다."

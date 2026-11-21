@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_olpve"]
+
+[resource]
+script = ExtResource("1_olpve")
+id = "skill461"
+legacy_id = "aatrox_p"
+champion_id = "Aatrox"
+champion_name = "아트록스"
+slot_key = "P"
+reference_name = "사신 태세"
+reference_description = "주기적으로 아트록스의 기본 공격이 대상 최대 체력에 비례하여 추가 마법 피해를 입히고 자신의 체력을 회복합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Aatrox_Passive.png"
+display_name = "사신 태세"
+description = "주기적으로 아트록스의 기본 공격이 대상 최대 체력에 비례하여 추가 마법 피해를 입히고 자신의 체력을 회복합니다."

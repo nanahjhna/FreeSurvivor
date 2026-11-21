@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_vrmwm"]
+
+[resource]
+script = ExtResource("1_vrmwm")
+id = "skill838"
+legacy_id = "fiddlesticks_w"
+champion_id = "Fiddlesticks"
+champion_name = "피들스틱"
+slot_key = "W"
+reference_name = "풍작"
+reference_description = "피들스틱이 주변 적의 체력을 흡수합니다. 지속시간이 끝날 때 잃은 체력에 비례한 추가 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/FiddleSticksW.png"
+display_name = "풍작"
+description = "피들스틱이 주변 적의 체력을 흡수합니다. 지속시간이 끝날 때 잃은 체력에 비례한 추가 피해를 입힙니다."

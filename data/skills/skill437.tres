@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_nc44f"]
+
+[resource]
+script = ExtResource("1_nc44f")
+id = "skill437"
+legacy_id = "aurelionsol_q"
+champion_id = "AurelionSol"
+champion_name = "아우렐리온 솔"
+slot_key = "Q"
+reference_name = "빛의 숨결"
+reference_description = "아우렐리온 솔이 몇 초 동안 용의 숨결을 내뿜어 처음 적중하는 적에게 피해를 입히고 주변 적에게는 그보다 적은 광역 피해를 입힙니다. 숨결이 적에게 적중할 때마다 매초 추가 피해를 입힙니다. 추가 피해량은 획득한 별가루 양만큼 증가합니다. 대상이 챔피언이면 별가루를 획득합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AurelionSolQ.png"
+display_name = "빛의 숨결"
+description = "아우렐리온 솔이 몇 초 동안 용의 숨결을 내뿜어 처음 적중하는 적에게 피해를 입히고 주변 적에게는 그보다 적은 광역 피해를 입힙니다. 숨결이 적에게 적중할 때마다 매초 추가 피해를 입힙니다. 추가 피해량은 획득한 별가루 양만큼 증가합니다. 대상이 챔피언이면 별가루를 획득합니다."

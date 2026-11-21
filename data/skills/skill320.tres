@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_f2ogu"]
+
+[resource]
+script = ExtResource("1_f2ogu")
+id = "skill320"
+legacy_id = "viktor_r"
+champion_id = "Viktor"
+champion_name = "빅토르"
+slot_key = "R"
+reference_name = "아케인 폭풍"
+reference_description = "빅토르가 목표 위치에 아케인 폭풍을 일으켜 대상 지역에 있는 적에게 마법 피해를 입히며 적의 정신 집중을 끊습니다. 폭풍은 주위 적에게 주기적으로 마법 피해를 주고 빅토르가 진행 방향을 바꿀 수 있습니다. / / 증강: 아케인 폭풍이 25% 빠르게 이동하고 챔피언이 폭풍으로부터 피해를 입은 후 죽을 때마다 폭풍의 크기가 커지고 지속시간이 증가합니다. / /"
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ViktorR.png"
+display_name = "아케인 폭풍"
+description = "빅토르가 목표 위치에 아케인 폭풍을 일으켜 대상 지역에 있는 적에게 마법 피해를 입히며 적의 정신 집중을 끊습니다. 폭풍은 주위 적에게 주기적으로 마법 피해를 주고 빅토르가 진행 방향을 바꿀 수 있습니다. / / 증강: 아케인 폭풍이 25% 빠르게 이동하고 챔피언이 폭풍으로부터 피해를 입은 후 죽을 때마다 폭풍의 크기가 커지고 지속시간이 증가합니다. / /"

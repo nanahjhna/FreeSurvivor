@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_c27y0"]
+
+[resource]
+script = ExtResource("1_c27y0")
+id = "skill23"
+legacy_id = "graves_w"
+champion_id = "Graves"
+champion_name = "그레이브즈"
+slot_key = "W"
+reference_name = "연막탄"
+reference_description = "그레이브즈가 목표 지점에 연막탄을 발사하여 시야를 좁히는 연기 구름을 만들어냅니다. 처음으로 연막탄에 맞은 적은 마법 피해를 입고 잠시 동안 이동 속도가 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GravesSmokeGrenade.png"
+display_name = "연막탄"
+description = "그레이브즈가 목표 지점에 연막탄을 발사하여 시야를 좁히는 연기 구름을 만들어냅니다. 처음으로 연막탄에 맞은 적은 마법 피해를 입고 잠시 동안 이동 속도가 감소합니다."

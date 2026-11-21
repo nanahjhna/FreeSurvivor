@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_5n3i7"]
+
+[resource]
+script = ExtResource("1_5n3i7")
+id = "skill525"
+legacy_id = "ornn_r"
+champion_id = "Ornn"
+champion_name = "오른"
+slot_key = "R"
+reference_name = "대장장이 신의 부름"
+reference_description = "오른이 목표 위치에 거대한 불의 정령을 소환합니다. 불의 정령은 오른에게로 다가오며 점점 이동 속도가 빨라집니다. 정령이 밟고 지나간 적은 피해를 입고 둔화되며 불안정 상태가 됩니다. 오른이 대장장이 신의 부름을 재시전하면 정령 쪽으로 돌진합니다. 오른이 돌진해 정령에 부딪히면 정령의 진행 방향이 바뀝니다. 진행 방향이 바뀐 정령은 부딪힌 모든 적을 공중으로 띄우며 전과 동일한 피해를 입히고 다시 불안정 상태로 만듭니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/OrnnR.png"
+display_name = "대장장이 신의 부름"
+description = "오른이 목표 위치에 거대한 불의 정령을 소환합니다. 불의 정령은 오른에게로 다가오며 점점 이동 속도가 빨라집니다. 정령이 밟고 지나간 적은 피해를 입고 둔화되며 불안정 상태가 됩니다. 오른이 대장장이 신의 부름을 재시전하면 정령 쪽으로 돌진합니다. 오른이 돌진해 정령에 부딪히면 정령의 진행 방향이 바뀝니다. 진행 방향이 바뀐 정령은 부딪힌 모든 적을 공중으로 띄우며 전과 동일한 피해를 입히고 다시 불안정 상태로 만듭니다."

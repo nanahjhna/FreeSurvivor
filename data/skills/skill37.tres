@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_p85qx"]
+
+[resource]
+script = ExtResource("1_p85qx")
+id = "skill37"
+legacy_id = "nami_q"
+champion_id = "Nami"
+champion_name = "나미"
+slot_key = "Q"
+reference_name = "물의 감옥"
+reference_description = "거대한 물방울을 지정한 위치로 발사해 물방울이 닿은 적에게 피해를 입히고 닿는 순간 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/NamiQ.png"
+display_name = "물의 감옥"
+description = "거대한 물방울을 지정한 위치로 발사해 물방울이 닿은 적에게 피해를 입히고 닿는 순간 기절시킵니다."

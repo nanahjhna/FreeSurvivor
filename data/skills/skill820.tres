@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ednup"]
+
+[resource]
+script = ExtResource("1_ednup")
+id = "skill820"
+legacy_id = "twitch_r"
+champion_id = "Twitch"
+champion_name = "트위치"
+slot_key = "R"
+reference_name = "무차별 난사"
+reference_description = "트위치가 석궁의 위력을 최대한으로 끌어올려 멀리로 관통 화살들을 발사하며, 경로상의 모든 적을 꿰뚫습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TwitchFullAutomatic.png"
+display_name = "무차별 난사"
+description = "트위치가 석궁의 위력을 최대한으로 끌어올려 멀리로 관통 화살들을 발사하며, 경로상의 모든 적을 꿰뚫습니다."

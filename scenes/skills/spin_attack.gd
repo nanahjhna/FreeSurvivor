@@ -7,7 +7,8 @@ var player_ref: Node3D = null
 
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 
-func cast(caster: Node3D, _target: Node3D, _direction: Vector3, damage_multiplier: float, _definition: Dictionary) -> void:
+func cast(caster: Node3D, _target: Node3D, _direction: Vector3, damage_multiplier: float, definition: Dictionary) -> void:
+	apply_definition_visual(definition)
 	setup(caster, damage_multiplier)
 
 func setup(player: Node3D, dmg_mult: float):

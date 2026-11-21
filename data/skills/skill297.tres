@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_nygqa"]
+
+[resource]
+script = ExtResource("1_nygqa")
+id = "skill297"
+legacy_id = "brand_q"
+champion_id = "Brand"
+champion_name = "브랜드"
+slot_key = "Q"
+reference_name = "불태우기"
+reference_description = "브랜드가 불덩이를 발사하여 마법 피해를 입힙니다. 대상이 불타는 상태라면, 불태우기에 맞은 대상은 기절합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BrandQ.png"
+display_name = "불태우기"
+description = "브랜드가 불덩이를 발사하여 마법 피해를 입힙니다. 대상이 불타는 상태라면, 불태우기에 맞은 대상은 기절합니다."

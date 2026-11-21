@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_1dsnn"]
+
+[resource]
+script = ExtResource("1_1dsnn")
+id = "skill295"
+legacy_id = "briar_r"
+champion_id = "Briar"
+champion_name = "브라이어"
+slot_key = "R"
+reference_name = "불가항력적 죽음"
+reference_description = "브라이어가 족쇄의 혈석을 발로 찬 다음, 혈석이 첫 번째로 적중한 챔피언을 먹잇감으로 지정하고 대상을 향해 날아갑니다. 착지 시 다른 주변 적을 공포에 빠트리고 피의 갈증에 완전히 사로잡힙니다. 이후 먹잇감을 죽을 때까지 쫓으며, 핏빛 광분 효과와 방어력, 마법 저항력, 생명력 흡수, 이동 속도를 추가로 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BriarR.png"
+display_name = "불가항력적 죽음"
+description = "브라이어가 족쇄의 혈석을 발로 찬 다음, 혈석이 첫 번째로 적중한 챔피언을 먹잇감으로 지정하고 대상을 향해 날아갑니다. 착지 시 다른 주변 적을 공포에 빠트리고 피의 갈증에 완전히 사로잡힙니다. 이후 먹잇감을 죽을 때까지 쫓으며, 핏빛 광분 효과와 방어력, 마법 저항력, 생명력 흡수, 이동 속도를 추가로 얻습니다."

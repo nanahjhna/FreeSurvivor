@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/mutant/mutant.tscn" id="1_hyywe"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_1dts3"]
+
+[resource]
+script = ExtResource("2_1dts3")
+id = "monster06"
+legacy_id = "mutant_lord"
+display_name = "뮤턴트 군주"
+model_scene = ExtResource("1_hyywe")
+hp = 650.0
+speed = 1.9
+damage = 30.0
+attack_range = 2.6
+attack_interval = 1.4
+xp = 45
+gold = 500
+loot = {
+"gold": 500,
+"potion_chance": 1.0,
+"xp": 45
+}
+is_boss = true
+potion_chance = 1.0
+visual_scale = Vector3(2, 2, 2)
+collision_scale = Vector3(2, 2, 2)
+fall_on_death = false
+grade = "보스"

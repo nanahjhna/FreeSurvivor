@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_50j58"]
+
+[resource]
+script = ExtResource("1_50j58")
+id = "skill416"
+legacy_id = "singed_p"
+champion_id = "Singed"
+champion_name = "신지드"
+slot_key = "P"
+reference_name = "독성 급류"
+reference_description = "신지드가 근처 챔피언을 회피하며 일시적으로 이동 속도가 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Singed_Passive.png"
+display_name = "독성 급류"
+description = "신지드가 근처 챔피언을 회피하며 일시적으로 이동 속도가 증가합니다."

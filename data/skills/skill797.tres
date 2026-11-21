@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ee1mb"]
+
+[resource]
+script = ExtResource("1_ee1mb")
+id = "skill797"
+legacy_id = "trundle_q"
+champion_id = "Trundle"
+champion_name = "트런들"
+slot_key = "Q"
+reference_name = "깨물기"
+reference_description = "트런들이 상대를 물어뜯어 피해를 입히고 잠깐 둔화 효과를 주며 적의 공격력을 약간 흡수합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TrundleTrollSmash.png"
+display_name = "깨물기"
+description = "트런들이 상대를 물어뜯어 피해를 입히고 잠깐 둔화 효과를 주며 적의 공격력을 약간 흡수합니다."

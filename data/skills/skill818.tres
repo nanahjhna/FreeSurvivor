@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ef4fe"]
+
+[resource]
+script = ExtResource("1_ef4fe")
+id = "skill818"
+legacy_id = "twitch_w"
+champion_id = "Twitch"
+champion_name = "트위치"
+slot_key = "W"
+reference_name = "독약 병"
+reference_description = "트위치가 명중하면 폭발하는 독약 병을 던져, 범위 내 대상들에게 둔화 효과를 부여하고 맹독을 적용합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TwitchVenomCask.png"
+display_name = "독약 병"
+description = "트위치가 명중하면 폭발하는 독약 병을 던져, 범위 내 대상들에게 둔화 효과를 부여하고 맹독을 적용합니다."

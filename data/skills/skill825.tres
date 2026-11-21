@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_xuigl"]
+
+[resource]
+script = ExtResource("1_xuigl")
+id = "skill825"
+legacy_id = "teemo_r"
+champion_id = "Teemo"
+champion_name = "티모"
+slot_key = "R"
+reference_name = "유독성 함정"
+reference_description = "티모가 가방에 있던 버섯을 사용하여 폭발성 독 함정을 던집니다. 적이 함정을 밟으면 독 구름이 퍼져 나와 몇 초에 걸쳐 적의 이동 속도를 늦추고 피해를 입힙니다. 버섯 위에 새 버섯을 던져서 튕기면 더 멀리까지 함정을 설치할 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TeemoR.png"
+display_name = "유독성 함정"
+description = "티모가 가방에 있던 버섯을 사용하여 폭발성 독 함정을 던집니다. 적이 함정을 밟으면 독 구름이 퍼져 나와 몇 초에 걸쳐 적의 이동 속도를 늦추고 피해를 입힙니다. 버섯 위에 새 버섯을 던져서 튕기면 더 멀리까지 함정을 설치할 수 있습니다."

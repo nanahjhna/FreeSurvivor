@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_i0eoq"]
+
+[resource]
+script = ExtResource("1_i0eoq")
+id = "skill887"
+legacy_id = "paladin_e"
+reference_name = "신성한 치유"
+reference_description = "신성한 힘으로 최대 HP의 30%를 회복합니다."
+icon = "✚"
+display_name = "신성한 치유"
+description = "신성한 힘으로 최대 HP의 30%를 회복합니다."
+cooldown = 28.0
+range = 0.0
+cast_type = "heal"
+heal_ratio = 0.3
+implemented = true
+support_status = "game_skill"

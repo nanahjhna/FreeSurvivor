@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_3txrc"]
+
+[resource]
+script = ExtResource("1_3txrc")
+id = "skill831"
+legacy_id = "pantheon_p"
+champion_id = "Pantheon"
+champion_name = "판테온"
+slot_key = "P"
+reference_name = "필멸자의 의지"
+reference_description = "스킬 사용 또는 공격을 몇 차례 하고 나면 다음 스킬이 강화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Pantheon_Passive.png"
+display_name = "필멸자의 의지"
+description = "스킬 사용 또는 공격을 몇 차례 하고 나면 다음 스킬이 강화됩니다."

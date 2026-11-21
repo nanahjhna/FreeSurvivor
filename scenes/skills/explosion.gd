@@ -4,7 +4,8 @@ extends "res://scenes/skills/skill_effect_base.gd"
 var hit_targets: Array[Node] = []
 var lifetime: float = 0.55
 
-func cast(caster: Node3D, _target: Node3D, _direction: Vector3, damage_multiplier: float, _definition: Dictionary) -> void:
+func cast(caster: Node3D, _target: Node3D, _direction: Vector3, damage_multiplier: float, definition: Dictionary) -> void:
+	apply_definition_visual(definition)
 	setup(caster.global_position, damage_multiplier)
 
 func setup(origin: Vector3, dmg_mult: float):

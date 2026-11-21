@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_5mkwp"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_p4rdp"]
+
+[resource]
+script = ExtResource("2_p4rdp")
+id = "skill866"
+legacy_id = "fighter_q"
+reference_name = "쇄도 연권"
+reference_description = "전방으로 기공을 실은 주먹을 날려 경로의 적을 관통합니다."
+icon = "👊"
+display_name = "쇄도 연권"
+description = "전방으로 기공을 실은 주먹을 날려 경로의 적을 관통합니다."
+cost = 180
+cooldown = 3.2
+damage_ratio = 1.45
+cooldown_step = 0.1
+damage_step = 0.18
+range = 12.0
+cast_type = "wave"
+effect_scene = ExtResource("1_5mkwp")
+implemented = true
+support_status = "game_skill"

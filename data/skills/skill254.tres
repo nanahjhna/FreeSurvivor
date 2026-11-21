@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_qejh6"]
+
+[resource]
+script = ExtResource("1_qejh6")
+id = "skill254"
+legacy_id = "vi_e"
+champion_id = "Vi"
+champion_name = "바이"
+slot_key = "E"
+reference_name = "끈질긴 힘"
+reference_description = "바이의 다음 공격이 대상을 관통하여 뒤에 있는 적들에게 피해를 가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ViE.png"
+display_name = "끈질긴 힘"
+description = "바이의 다음 공격이 대상을 관통하여 뒤에 있는 적들에게 피해를 가합니다."

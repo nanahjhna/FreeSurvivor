@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_i2bbb"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_7d5rf"]
+
+[resource]
+script = ExtResource("2_7d5rf")
+id = "skill652"
+legacy_id = "ziggs_q"
+champion_id = "Ziggs"
+champion_name = "직스"
+slot_key = "Q"
+reference_name = "반동 폭탄"
+reference_description = "직스가 반동 폭탄을 던져 마법 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ZiggsQ.png"
+display_name = "반동 폭탄"
+description = "직스가 반동 폭탄을 던져 마법 피해를 입힙니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+bonus_type = "magic"
+effect_scene = ExtResource("1_i2bbb")
+effect_color = Color(0.45882353, 0.6666667, 1, 1)
+implemented = true
+support_status = "generic_effect_ready"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_1vfq6"]
+
+[resource]
+script = ExtResource("1_1vfq6")
+id = "skill180"
+legacy_id = "riven_r"
+champion_id = "Riven"
+champion_name = "리븐"
+slot_key = "R"
+reference_name = "추방자의 검"
+reference_description = "리븐이 자신의 옛 검에 힘을 불어넣어 추가 공격력과 공격 사거리를 얻습니다. 또한, 지속시간 동안 강력한 원거리 스킬인 바람 가르기를 한 번 사용할 수 있게 됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RivenFengShuiEngine.png"
+display_name = "추방자의 검"
+description = "리븐이 자신의 옛 검에 힘을 불어넣어 추가 공격력과 공격 사거리를 얻습니다. 또한, 지속시간 동안 강력한 원거리 스킬인 바람 가르기를 한 번 사용할 수 있게 됩니다."

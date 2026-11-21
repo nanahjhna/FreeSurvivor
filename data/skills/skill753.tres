@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_tqdaf"]
+
+[resource]
+script = ExtResource("1_tqdaf")
+id = "skill753"
+legacy_id = "quinn_w"
+champion_id = "Quinn"
+champion_name = "퀸"
+slot_key = "W"
+reference_name = "예리한 감각"
+reference_description = "기본 지속 효과로 퀸이 매사냥 대상을 공격한 이후 공격 속도와 이동 속도가 상승합니다. 사용하면 발러가 주변의 넓은 지역을 드러냅니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/QuinnW.png"
+display_name = "예리한 감각"
+description = "기본 지속 효과로 퀸이 매사냥 대상을 공격한 이후 공격 속도와 이동 속도가 상승합니다. 사용하면 발러가 주변의 넓은 지역을 드러냅니다."

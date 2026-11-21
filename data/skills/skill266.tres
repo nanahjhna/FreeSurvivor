@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_66oqk"]
+
+[resource]
+script = ExtResource("1_66oqk")
+id = "skill266"
+legacy_id = "vex_p"
+champion_id = "Vex"
+champion_name = "벡스"
+slot_key = "P"
+reference_name = "파멸과 우울"
+reference_description = "벡스가 주기적으로 강화 상태가 되어 다음 기본 스킬로 적 챔피언을 공포에 빠뜨리고 돌진을 방해합니다. 주변 적이 돌진할 때마다 벡스가 적에게 표식을 남깁니다. 표식을 소모해 추가 피해를 입힐 수 있으며 강화 상태의 재사용 대기시간이 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Icons_Vex_Passive.png"
+display_name = "파멸과 우울"
+description = "벡스가 주기적으로 강화 상태가 되어 다음 기본 스킬로 적 챔피언을 공포에 빠뜨리고 돌진을 방해합니다. 주변 적이 돌진할 때마다 벡스가 적에게 표식을 남깁니다. 표식을 소모해 추가 피해를 입힐 수 있으며 강화 상태의 재사용 대기시간이 감소합니다."

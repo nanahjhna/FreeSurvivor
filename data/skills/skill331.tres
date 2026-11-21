@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_0drt1"]
+
+[resource]
+script = ExtResource("1_0drt1")
+id = "skill331"
+legacy_id = "sion_p"
+champion_id = "Sion"
+champion_name = "사이온"
+slot_key = "P"
+reference_name = "영광스러운 죽음"
+reference_description = "사이온은 사망한 이후 잠시 되살아나지만 체력이 급속히 떨어집니다. 이 동안 사이온은 매우 빠르게 공격하며 체력을 회복합니다. 공격 적중 시 대상 최대 체력에 비례해 추가 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Sion_Passive1.png"
+display_name = "영광스러운 죽음"
+description = "사이온은 사망한 이후 잠시 되살아나지만 체력이 급속히 떨어집니다. 이 동안 사이온은 매우 빠르게 공격하며 체력을 회복합니다. 공격 적중 시 대상 최대 체력에 비례해 추가 피해를 입힙니다."

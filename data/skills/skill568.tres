@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_lvid6"]
+
+[resource]
+script = ExtResource("1_lvid6")
+id = "skill568"
+legacy_id = "yuumi_w"
+champion_id = "Yuumi"
+champion_name = "유미"
+slot_key = "W"
+reference_name = "너랑 유미랑!"
+reference_description = "유미가 대상 아군에게 돌진하여 포탑을 제외한 유닛이 대상으로 지정할 수 없는 상태가 됩니다. 단짝에게 붙어있을 때 유미의 체력 회복 및 보호막 효과가 증폭되고 단짝은 적중 시 체력을 회복합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YuumiW.png"
+display_name = "너랑 유미랑!"
+description = "유미가 대상 아군에게 돌진하여 포탑을 제외한 유닛이 대상으로 지정할 수 없는 상태가 됩니다. 단짝에게 붙어있을 때 유미의 체력 회복 및 보호막 효과가 증폭되고 단짝은 적중 시 체력을 회복합니다."

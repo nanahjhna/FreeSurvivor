@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/flame_attack.tscn" id="1_qkvb3"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_ahi18"]
+
+[resource]
+script = ExtResource("2_ahi18")
+id = "skill879"
+legacy_id = "archer_e"
+reference_name = "올가미 사격"
+reference_description = "지정 방향을 강하게 꿰뚫는 사격을 가합니다."
+icon = "🎯"
+display_name = "올가미 사격"
+description = "지정 방향을 강하게 꿰뚫는 사격을 가합니다."
+cooldown = 8.0
+damage_ratio = 2.3
+cooldown_step = 0.18
+damage_step = 0.28
+range = 14.0
+cast_type = "flame"
+animation_key = "AttackAlt"
+effect_scene = ExtResource("1_qkvb3")
+implemented = true
+support_status = "game_skill"

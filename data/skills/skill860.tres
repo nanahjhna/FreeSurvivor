@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_hhsil"]
+
+[resource]
+script = ExtResource("1_hhsil")
+id = "skill860"
+legacy_id = "hecarim_r"
+champion_id = "Hecarim"
+champion_name = "헤카림"
+slot_key = "R"
+reference_name = "그림자의 맹습"
+reference_description = "헤카림이 유령 기수들을 소환하며 전방으로 돌진해 일직선 상에 마법 피해를 입힙니다. 헤카림이 돌격을 멈추면 충격파가 발생하여, 주변 적들이 공포에 사로잡혀 달아납니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/HecarimUlt.png"
+display_name = "그림자의 맹습"
+description = "헤카림이 유령 기수들을 소환하며 전방으로 돌진해 일직선 상에 마법 피해를 입힙니다. 헤카림이 돌격을 멈추면 충격파가 발생하여, 주변 적들이 공포에 사로잡혀 달아납니다."

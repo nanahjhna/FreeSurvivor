@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ynxuc"]
+
+[resource]
+script = ExtResource("1_ynxuc")
+id = "skill165"
+legacy_id = "lulu_r"
+champion_id = "Lulu"
+champion_name = "룰루"
+slot_key = "R"
+reference_name = "급성장"
+reference_description = "룰루가 아군의 몸집을 키우며 근처의 적들을 공중으로 띄워올리고, 아군의 체력을 대폭 높여줍니다. 이후 몇 초 동안 해당 아군에게 오라가 생겨 근처의 적들은 속도가 느려집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LuluR.png"
+display_name = "급성장"
+description = "룰루가 아군의 몸집을 키우며 근처의 적들을 공중으로 띄워올리고, 아군의 체력을 대폭 높여줍니다. 이후 몇 초 동안 해당 아군에게 오라가 생겨 근처의 적들은 속도가 느려집니다."

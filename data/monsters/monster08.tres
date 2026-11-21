@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/zombie/zombie.tscn" id="1_kocff"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_fn8dh"]
+
+[resource]
+script = ExtResource("2_fn8dh")
+id = "monster08"
+legacy_id = "zombie"
+display_name = "좀비"
+model_scene = ExtResource("1_kocff")
+hp = 35.0
+speed = 3.2
+damage = 7.0
+attack_range = 1.4
+xp = 1
+gold = 35
+loot = {
+"gold": 35,
+"potion_chance": 0.5,
+"xp": 1
+}
+potion_chance = 0.5

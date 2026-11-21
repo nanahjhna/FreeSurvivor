@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_4srh2"]
+
+[resource]
+script = ExtResource("1_4srh2")
+id = "skill244"
+legacy_id = "bard_e"
+champion_id = "Bard"
+champion_name = "바드"
+slot_key = "E"
+reference_name = "신비한 차원문"
+reference_description = "바드가 근처 지형지물에 차원문을 엽니다. 아군과 적 챔피언이 모두 이 차원문을 이용해 정해진 방향으로 해당 지형지물을 통과할 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BardE.png"
+display_name = "신비한 차원문"
+description = "바드가 근처 지형지물에 차원문을 엽니다. 아군과 적 챔피언이 모두 이 차원문을 이용해 정해진 방향으로 해당 지형지물을 통과할 수 있습니다."

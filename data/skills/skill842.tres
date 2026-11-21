@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_2l64n"]
+
+[resource]
+script = ExtResource("1_2l64n")
+id = "skill842"
+legacy_id = "fiora_q"
+champion_id = "Fiora"
+champion_name = "피오라"
+slot_key = "Q"
+reference_name = "찌르기"
+reference_description = "피오라가 한 방향으로 돌진하며 근처 적 하나를 찔러 물리 피해를 입히고 적중 시 효과를 적용합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/FioraQ.png"
+display_name = "찌르기"
+description = "피오라가 한 방향으로 돌진하며 근처 적 하나를 찔러 물리 피해를 입히고 적중 시 효과를 적용합니다."

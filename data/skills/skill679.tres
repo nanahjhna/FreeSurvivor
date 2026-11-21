@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ywmsr"]
+
+[resource]
+script = ExtResource("1_ywmsr")
+id = "skill679"
+legacy_id = "karma_e"
+champion_id = "Karma"
+champion_name = "카르마"
+slot_key = "E"
+reference_name = "고무"
+reference_description = "카르마가 보호막을 소환하여 적이 가하는 피해를 막아내고, 보호받는 아군은 이동 속도가 상승합니다. / / 만트라 추가 효과: 대상에게서 에너지가 흘러나와 보호막을 강화하고 주변 아군 챔피언들에게도 고무 효과를 적용합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KarmaSolKimShield.png"
+display_name = "고무"
+description = "카르마가 보호막을 소환하여 적이 가하는 피해를 막아내고, 보호받는 아군은 이동 속도가 상승합니다. / / 만트라 추가 효과: 대상에게서 에너지가 흘러나와 보호막을 강화하고 주변 아군 챔피언들에게도 고무 효과를 적용합니다."

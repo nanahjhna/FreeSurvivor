@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_6w3lx"]
+
+[resource]
+script = ExtResource("1_6w3lx")
+id = "skill554"
+legacy_id = "urgot_e"
+champion_id = "Urgot"
+champion_name = "우르곳"
+slot_key = "E"
+reference_name = "경멸"
+reference_description = "우르곳이 한 방향으로 돌진하며 자신에게 보호막을 씌우고 챔피언이 아닌 대상을 밀어냅니다. 적 챔피언과 충돌하면 우르곳이 멈추고 적 챔피언을 자신의 뒤로 던집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/UrgotE.png"
+display_name = "경멸"
+description = "우르곳이 한 방향으로 돌진하며 자신에게 보호막을 씌우고 챔피언이 아닌 대상을 밀어냅니다. 적 챔피언과 충돌하면 우르곳이 멈추고 적 챔피언을 자신의 뒤로 던집니다."

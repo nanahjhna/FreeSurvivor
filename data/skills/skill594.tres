@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_j3pes"]
+
+[resource]
+script = ExtResource("1_j3pes")
+id = "skill594"
+legacy_id = "jarvaniv_e"
+champion_id = "JarvanIV"
+champion_name = "자르반 4세"
+slot_key = "E"
+reference_name = "데마시아의 깃발"
+reference_description = "데마시아의 긍지를 품은 자르반 4세의 공격 속도가 상승합니다. 데마시아의 깃발을 사용하면 자르반 4세가 데마시아의 깃발을 꽂아 마법 피해를 가하며, 주변 아군 챔피언의 공격 속도를 올려 줍니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JarvanIVDemacianStandard.png"
+display_name = "데마시아의 깃발"
+description = "데마시아의 긍지를 품은 자르반 4세의 공격 속도가 상승합니다. 데마시아의 깃발을 사용하면 자르반 4세가 데마시아의 깃발을 꽂아 마법 피해를 가하며, 주변 아군 챔피언의 공격 속도를 올려 줍니다."

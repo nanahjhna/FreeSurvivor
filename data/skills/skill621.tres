@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_6iykp"]
+
+[resource]
+script = ExtResource("1_6iykp")
+id = "skill621"
+legacy_id = "jax_p"
+champion_id = "Jax"
+champion_name = "잭스"
+slot_key = "P"
+reference_name = "가차없는 맹공"
+reference_description = "잭스가 연속해서 기본 공격을 가하면 공격 속도가 상승합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Armsmaster_MasterOfArms.png"
+display_name = "가차없는 맹공"
+description = "잭스가 연속해서 기본 공격을 가하면 공격 속도가 상승합니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_f52uq"]
+
+[resource]
+script = ExtResource("1_f52uq")
+id = "skill88"
+legacy_id = "diana_w"
+champion_id = "Diana"
+champion_name = "다이애나"
+slot_key = "W"
+reference_name = "은빛 가호"
+reference_description = "다이애나가 주위를 돌면서 적에게 접촉하면 폭발하여 해당 지역에 피해를 주는 세 개의 구체를 생성합니다. 또한 잠시 동안 피해를 흡수하는 보호막을 얻습니다. 보호막은 세 번째 구체가 폭발하면 위력이 더 커집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/DianaOrbs.png"
+display_name = "은빛 가호"
+description = "다이애나가 주위를 돌면서 적에게 접촉하면 폭발하여 해당 지역에 피해를 주는 세 개의 구체를 생성합니다. 또한 잠시 동안 피해를 흡수하는 보호막을 얻습니다. 보호막은 세 번째 구체가 폭발하면 위력이 더 커집니다."

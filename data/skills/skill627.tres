@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_kufnk"]
+
+[resource]
+script = ExtResource("1_kufnk")
+id = "skill627"
+legacy_id = "zed_q"
+champion_id = "Zed"
+champion_name = "제드"
+slot_key = "Q"
+reference_name = "예리한 표창"
+reference_description = "제드와 그림자가 표창을 던집니다. / / 각 표창은 적에게 명중하면 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ZedQ.png"
+display_name = "예리한 표창"
+description = "제드와 그림자가 표창을 던집니다. / / 각 표창은 적에게 명중하면 피해를 입힙니다."

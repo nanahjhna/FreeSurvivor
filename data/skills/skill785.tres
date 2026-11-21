@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_mepus"]
+
+[resource]
+script = ExtResource("1_mepus")
+id = "skill785"
+legacy_id = "talon_r"
+champion_id = "Talon"
+champion_name = "탈론"
+slot_key = "R"
+reference_name = "그림자 공격"
+reference_description = "탈론이 사방에 검을 던지면서 투명 상태가 되며 추가 이동 속도를 얻습니다. 투명 상태가 풀리면 검이 다시 탈론이 있는 곳으로 모여듭니다. 검이 움직일 때마다, 한 개 이상의 검에 맞은 적은 그림자 공격으로 물리 피해를 입습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TalonR.png"
+display_name = "그림자 공격"
+description = "탈론이 사방에 검을 던지면서 투명 상태가 되며 추가 이동 속도를 얻습니다. 투명 상태가 풀리면 검이 다시 탈론이 있는 곳으로 모여듭니다. 검이 움직일 때마다, 한 개 이상의 검에 맞은 적은 그림자 공격으로 물리 피해를 입습니다."

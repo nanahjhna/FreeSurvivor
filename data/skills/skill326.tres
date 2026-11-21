@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_u5hnq"]
+
+[resource]
+script = ExtResource("1_u5hnq")
+id = "skill326"
+legacy_id = "samira_p"
+champion_id = "Samira"
+champion_name = "사미라"
+slot_key = "P"
+reference_name = "무모한 충동"
+reference_description = "사미라가 마지막으로 맞힌 공격과 다른 기본 공격 또는 스킬을 적중시키면 콤보를 1회 쌓습니다. 근접 공격 사거리 내에 있는 적을 공격하면 추가 마법 피해를 입힙니다. 이동 불가 효과에 영향을 받은 적에게 기본 공격을 가하면 최대 사거리까지 돌진합니다. 해당 적이 공중으로 띄워진 상태라면 사미라도 대상을 잠시 동안 공중으로 띄워 올립니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/SamiraP.png"
+display_name = "무모한 충동"
+description = "사미라가 마지막으로 맞힌 공격과 다른 기본 공격 또는 스킬을 적중시키면 콤보를 1회 쌓습니다. 근접 공격 사거리 내에 있는 적을 공격하면 추가 마법 피해를 입힙니다. 이동 불가 효과에 영향을 받은 적에게 기본 공격을 가하면 최대 사거리까지 돌진합니다. 해당 적이 공중으로 띄워진 상태라면 사미라도 대상을 잠시 동안 공중으로 띄워 올립니다."

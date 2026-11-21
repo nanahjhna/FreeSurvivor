@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_3rcc1"]
+
+[resource]
+script = ExtResource("1_3rcc1")
+id = "skill648"
+legacy_id = "zoe_w"
+champion_id = "Zoe"
+champion_name = "조이"
+slot_key = "W"
+reference_name = "주문도둑"
+reference_description = "적이 소환사 주문이나 사용 효과가 있는 아이템을 사용하면 주문 파편이 남고, 조이는 그 파편을 주워 해당 주문 및 효과를 사용할 수 있습니다. 또한 조이가 소환사 주문을 사용하면 미사일이 3개 생성되어 가장 가까운 적에게 날아갑니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ZoeW.png"
+display_name = "주문도둑"
+description = "적이 소환사 주문이나 사용 효과가 있는 아이템을 사용하면 주문 파편이 남고, 조이는 그 파편을 주워 해당 주문 및 효과를 사용할 수 있습니다. 또한 조이가 소환사 주문을 사용하면 미사일이 3개 생성되어 가장 가까운 적에게 날아갑니다."

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_br5rl"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_ymhjs"]
+
+[resource]
+script = ExtResource("2_ymhjs")
+id = "skill722"
+legacy_id = "kennen_q"
+champion_id = "Kennen"
+champion_name = "케넨"
+slot_key = "Q"
+reference_name = "천둥의 표창"
+reference_description = "케넨이 빠르게 날아가는 수리검을 날려 맞은 대상에게 피해를 입히고 폭풍의 표식을 남깁니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KennenShurikenHurlMissile1.png"
+display_name = "천둥의 표창"
+description = "케넨이 빠르게 날아가는 수리검을 날려 맞은 대상에게 피해를 입히고 폭풍의 표식을 남깁니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+effect_scene = ExtResource("1_br5rl")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

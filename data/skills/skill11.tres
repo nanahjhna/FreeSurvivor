@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_4ddke"]
+
+[resource]
+script = ExtResource("1_4ddke")
+id = "skill11"
+legacy_id = "gangplank_p"
+champion_id = "Gangplank"
+champion_name = "갱플랭크"
+slot_key = "P"
+reference_name = "불의 심판"
+reference_description = "몇 초에 한 번씩 갱플랭크의 근접 공격이 적에게 불을 붙입니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Gangplank_Passive.png"
+display_name = "불의 심판"
+description = "몇 초에 한 번씩 갱플랭크의 근접 공격이 적에게 불을 붙입니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_nm1qx"]
+
+[resource]
+script = ExtResource("1_nm1qx")
+id = "skill377"
+legacy_id = "shen_q"
+champion_id = "Shen"
+champion_name = "쉔"
+slot_key = "Q"
+reference_name = "황혼 강습"
+reference_description = "쉔이 기의 검을 불러들여 공격해 대상의 최대 체력에 비례한 피해를 입힙니다. 기의 검이 적 챔피언과 충돌하면 이 공격이 크게 강화되며, 기의 검에 부딪힌 적들은 쉔으로부터 달아날 때 둔화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ShenQ.png"
+display_name = "황혼 강습"
+description = "쉔이 기의 검을 불러들여 공격해 대상의 최대 체력에 비례한 피해를 입힙니다. 기의 검이 적 챔피언과 충돌하면 이 공격이 크게 강화되며, 기의 검에 부딪힌 적들은 쉔으로부터 달아날 때 둔화됩니다."

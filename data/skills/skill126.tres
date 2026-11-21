@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_st87a"]
+
+[resource]
+script = ExtResource("1_st87a")
+id = "skill126"
+legacy_id = "renekton_p"
+champion_id = "Renekton"
+champion_name = "레넥톤"
+slot_key = "P"
+reference_name = "분노의 지배"
+reference_description = "레넥톤이 기본 공격 시 분노를 생성합니다. 레넥톤의 체력이 낮으면 생성되는 분노가 증가합니다. 분노는 레넥톤의 스킬을 강화시키며 추가 효과를 줍니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Renekton_Passive.png"
+display_name = "분노의 지배"
+description = "레넥톤이 기본 공격 시 분노를 생성합니다. 레넥톤의 체력이 낮으면 생성되는 분노가 증가합니다. 분노는 레넥톤의 스킬을 강화시키며 추가 효과를 줍니다."

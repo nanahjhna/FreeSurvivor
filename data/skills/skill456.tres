@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_mhamn"]
+
+[resource]
+script = ExtResource("1_mhamn")
+id = "skill456"
+legacy_id = "akshan_p"
+champion_id = "Akshan"
+champion_name = "아크샨"
+slot_key = "P"
+reference_name = "비열한 싸움"
+reference_description = "아크샨의 기본 공격 및 스킬이 세 번 적중할 때마다 추가 물리 피해를 입힙니다. 대상이 챔피언인 경우 아크샨이 보호막을 얻습니다. / / 아크샨이 기본 공격 후 피해량이 감소한 두 번째 공격을 발사합니다. 추가 공격을 도중에 취소하면 대신 이동 속도가 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/akshan_p.png"
+display_name = "비열한 싸움"
+description = "아크샨의 기본 공격 및 스킬이 세 번 적중할 때마다 추가 물리 피해를 입힙니다. 대상이 챔피언인 경우 아크샨이 보호막을 얻습니다. / / 아크샨이 기본 공격 후 피해량이 감소한 두 번째 공격을 발사합니다. 추가 공격을 도중에 취소하면 대신 이동 속도가 증가합니다."

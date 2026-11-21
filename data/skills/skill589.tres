@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_2c1cr"]
+
+[resource]
+script = ExtResource("1_2c1cr")
+id = "skill589"
+legacy_id = "illaoi_e"
+champion_id = "Illaoi"
+champion_name = "일라오이"
+slot_key = "E"
+reference_name = "영혼의 시험"
+reference_description = "일라오이가 적의 몸에서 영혼을 분리해 자신의 앞에 서게 만듭니다. 영혼은 자신이 입는 피해량의 일부를 원래의 대상에게 돌려줍니다. 대상이 처치되거나 영혼에서 너무 멀어지면, 대상은 숙주가 되어 촉수를 소환하기 시작합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/IllaoiE.png"
+display_name = "영혼의 시험"
+description = "일라오이가 적의 몸에서 영혼을 분리해 자신의 앞에 서게 만듭니다. 영혼은 자신이 입는 피해량의 일부를 원래의 대상에게 돌려줍니다. 대상이 처치되거나 영혼에서 너무 멀어지면, 대상은 숙주가 되어 촉수를 소환하기 시작합니다."

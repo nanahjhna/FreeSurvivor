@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/monster01/monster01.tscn" id="1_6f1y2"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_vqvpr"]
+
+[resource]
+script = ExtResource("2_vqvpr")
+id = "monster04"
+legacy_id = "infected_boss"
+display_name = "거대 감염자"
+model_scene = ExtResource("1_6f1y2")
+hp = 900.0
+speed = 1.7
+damage = 24.0
+attack_range = 3.0
+xp = 60
+gold = 500
+loot = {
+"gold": 500,
+"potion_chance": 1.0,
+"xp": 60
+}
+is_boss = true
+potion_chance = 1.0
+visual_scale = Vector3(2.2, 2.2, 2.2)
+collision_scale = Vector3(2.2, 2.2, 2.2)
+fall_on_death = false
+grade = "보스"

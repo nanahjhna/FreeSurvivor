@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_bbiyb"]
+
+[resource]
+script = ExtResource("1_bbiyb")
+id = "skill572"
+legacy_id = "irelia_q"
+champion_id = "Irelia"
+champion_name = "이렐리아"
+slot_key = "Q"
+reference_name = "칼날 쇄도"
+reference_description = "이렐리아가 돌진해 대상을 공격하고 체력을 회복합니다. 대상에게 표식이 있거나 칼날 쇄도로 적을 처치하면 칼날 쇄도의 재사용 대기시간이 초기화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/IreliaQ.png"
+display_name = "칼날 쇄도"
+description = "이렐리아가 돌진해 대상을 공격하고 체력을 회복합니다. 대상에게 표식이 있거나 칼날 쇄도로 적을 처치하면 칼날 쇄도의 재사용 대기시간이 초기화됩니다."

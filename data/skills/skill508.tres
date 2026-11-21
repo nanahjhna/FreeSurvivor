@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_x5pyn"]
+
+[resource]
+script = ExtResource("1_x5pyn")
+id = "skill508"
+legacy_id = "elise_w"
+champion_id = "Elise"
+champion_name = "엘리스"
+slot_key = "W"
+reference_name = "위험한 새끼 거미 / 광란의 질주"
+reference_description = "인간 형태: 독을 품은 새끼 거미를 풀어놓으면 대상 적 근처에 가서 터집니다. / / 거미 형태: 엘리스와 새끼 거미들의 공격 속도가 상승합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/EliseHumanW.png"
+display_name = "위험한 새끼 거미 / 광란의 질주"
+description = "인간 형태: 독을 품은 새끼 거미를 풀어놓으면 대상 적 근처에 가서 터집니다. / / 거미 형태: 엘리스와 새끼 거미들의 공격 속도가 상승합니다."

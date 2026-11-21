@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ketdv"]
+
+[resource]
+script = ExtResource("1_ketdv")
+id = "skill467"
+legacy_id = "aphelios_q"
+champion_id = "Aphelios"
+champion_name = "아펠리오스"
+slot_key = "Q"
+reference_name = "무기 스킬"
+reference_description = "아펠리오스는 주 무기에 따라 5개의 스킬을 사용할 수 있습니다. / / 만월총(소총): 원거리 공격으로 대상에게 표식을 남깁니다. 표식을 소모해 추가로 원거리 공격을 가할 수 있습니다. / 절단검(낫 모양 권총): 빠르게 이동하며 주 무기와 보조 무기로 주위 적들을 공격합니다. / 중력포(대포): 이 무기로 둔화된 모든 적을 속박합니다. / 화염포(화염 방사기): 원뿔 형태로 적에게 화염을 발사한 후 보조 무기로 공격합니다. / 반월검(투척 무기): 보조 무기와 동일한 무기를 사용하는 파수탑을 배치합니다. /"
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ApheliosQ_ClientTooltipWrapper.png"
+display_name = "무기 스킬"
+description = "아펠리오스는 주 무기에 따라 5개의 스킬을 사용할 수 있습니다. / / 만월총(소총): 원거리 공격으로 대상에게 표식을 남깁니다. 표식을 소모해 추가로 원거리 공격을 가할 수 있습니다. / 절단검(낫 모양 권총): 빠르게 이동하며 주 무기와 보조 무기로 주위 적들을 공격합니다. / 중력포(대포): 이 무기로 둔화된 모든 적을 속박합니다. / 화염포(화염 방사기): 원뿔 형태로 적에게 화염을 발사한 후 보조 무기로 공격합니다. / 반월검(투척 무기): 보조 무기와 동일한 무기를 사용하는 파수탑을 배치합니다. /"

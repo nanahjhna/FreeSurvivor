@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_xirrr"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_jfee5"]
+
+[resource]
+script = ExtResource("2_jfee5")
+id = "skill77"
+legacy_id = "nilah_q"
+champion_id = "Nilah"
+champion_name = "닐라"
+slot_key = "Q"
+reference_name = "무형의 검"
+reference_description = "지정한 방향으로 칼날 채찍을 후려쳐 일직선상에 있는 모든 적에게 피해를 입힙니다. 공격 사거리가 잠깐 동안 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/NilahQ.png"
+display_name = "무형의 검"
+description = "지정한 방향으로 칼날 채찍을 후려쳐 일직선상에 있는 모든 적에게 피해를 입힙니다. 공격 사거리가 잠깐 동안 증가합니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+effect_scene = ExtResource("1_xirrr")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

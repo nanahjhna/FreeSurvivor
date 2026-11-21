@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="1_go0a8"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_t4eex"]
+
+[resource]
+script = ExtResource("2_t4eex")
+id = "skill867"
+legacy_id = "fighter_w"
+reference_name = "선풍각"
+reference_description = "몸을 회전시켜 주위 적을 연속으로 걷어찹니다."
+icon = "🌀"
+display_name = "선풍각"
+description = "몸을 회전시켜 주위 적을 연속으로 걷어찹니다."
+cost = 200
+cooldown = 5.0
+damage_ratio = 1.9
+cooldown_step = 0.16
+damage_step = 0.22
+range = 4.8
+cast_type = "spin"
+bonus_type = "area"
+effect_scene = ExtResource("1_go0a8")
+implemented = true
+support_status = "game_skill"

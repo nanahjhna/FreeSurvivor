@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_pt3pv"]
+
+[resource]
+script = ExtResource("1_pt3pv")
+id = "skill748"
+legacy_id = "corki_w"
+champion_id = "Corki"
+champion_name = "코르키"
+slot_key = "W"
+reference_name = "발키리"
+reference_description = "코르키가 목표 위치로 비행하며 폭탄을 투하하여 불타는 흔적을 남겨, 그 안에 있는 적에게 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/CarpetBomb.png"
+display_name = "발키리"
+description = "코르키가 목표 위치로 비행하며 폭탄을 투하하여 불타는 흔적을 남겨, 그 안에 있는 적에게 피해를 입힙니다."

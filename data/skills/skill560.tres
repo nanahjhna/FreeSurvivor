@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_bx7gy"]
+
+[resource]
+script = ExtResource("1_bx7gy")
+id = "skill560"
+legacy_id = "warwick_r"
+champion_id = "Warwick"
+champion_name = "워윅"
+slot_key = "R"
+reference_name = "무한의 구속"
+reference_description = "워윅이 지정한 방향으로 도약해 (도약 거리는 추가 이동 속도에 비례) 첫 번째로 부딪힌 챔피언을 1.5초 동안 제압합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/WarwickR.png"
+display_name = "무한의 구속"
+description = "워윅이 지정한 방향으로 도약해 (도약 거리는 추가 이동 속도에 비례) 첫 번째로 부딪힌 챔피언을 1.5초 동안 제압합니다."

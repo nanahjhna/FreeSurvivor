@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_fflp1"]
+
+[resource]
+script = ExtResource("1_fflp1")
+id = "skill33"
+legacy_id = "gnar_w"
+champion_id = "Gnar"
+champion_name = "나르"
+slot_key = "W"
+reference_name = "슝슝 / 쿵쾅"
+reference_description = "나르는 기본 공격과 스킬 공격을 하면 신이 나서 추가 피해를 입히며 이동 속도가 상승합니다. / / 메가 나르는 너무 분노해 있어서, 뒷발로 일어나서 전방을 꽝 내리치며 일정 범위 안의 적들을 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GnarW.png"
+display_name = "슝슝 / 쿵쾅"
+description = "나르는 기본 공격과 스킬 공격을 하면 신이 나서 추가 피해를 입히며 이동 속도가 상승합니다. / / 메가 나르는 너무 분노해 있어서, 뒷발로 일어나서 전방을 꽝 내리치며 일정 범위 안의 적들을 기절시킵니다."

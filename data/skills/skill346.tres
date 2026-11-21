@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_f4fvn"]
+
+[resource]
+script = ExtResource("1_f4fvn")
+id = "skill346"
+legacy_id = "senna_p"
+champion_id = "Senna"
+champion_name = "세나"
+slot_key = "P"
+reference_name = "면죄"
+reference_description = "세나 근처에서 유닛이 쓰러지면 그 영혼이 주기적으로 검은 안개에 갇히게 됩니다. 세나는 해당 영혼을 공격하여 영혼을 죽음 속에 가둔 안개를 흡수하고 영혼을 해방시킬 수 있습니다. 안개는 세나의 유물포를 강화시켜 추가 공격력, 공격 사거리, 치명타 확률을 부여합니다. / / 세나의 유물포 공격 속도가 느려지고 추가 피해를 입히며 잠시 공격 대상의 이동 속도를 일부 흡수합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Senna_Passive.png"
+display_name = "면죄"
+description = "세나 근처에서 유닛이 쓰러지면 그 영혼이 주기적으로 검은 안개에 갇히게 됩니다. 세나는 해당 영혼을 공격하여 영혼을 죽음 속에 가둔 안개를 흡수하고 영혼을 해방시킬 수 있습니다. 안개는 세나의 유물포를 강화시켜 추가 공격력, 공격 사거리, 치명타 확률을 부여합니다. / / 세나의 유물포 공격 속도가 느려지고 추가 피해를 입히며 잠시 공격 대상의 이동 속도를 일부 흡수합니다."

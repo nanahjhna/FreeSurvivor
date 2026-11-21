@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_qu248"]
+
+[resource]
+script = ExtResource("1_qu248")
+id = "skill522"
+legacy_id = "ornn_q"
+champion_id = "Ornn"
+champion_name = "오른"
+slot_key = "Q"
+reference_name = "용암 균열"
+reference_description = "오른이 지면을 내려쳐 적에게 물리 피해를 입히고 둔화시키는 균열을 만들어냅니다. 잠시 후 목표 지점에 용암 기둥이 생성됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/OrnnQ.png"
+display_name = "용암 균열"
+description = "오른이 지면을 내려쳐 적에게 물리 피해를 입히고 둔화시키는 균열을 만들어냅니다. 잠시 후 목표 지점에 용암 기둥이 생성됩니다."

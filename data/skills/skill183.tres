@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ddvk2"]
+
+[resource]
+script = ExtResource("1_ddvk2")
+id = "skill183"
+legacy_id = "lissandra_w"
+champion_id = "Lissandra"
+champion_name = "리산드라"
+slot_key = "W"
+reference_name = "서릿발"
+reference_description = "주변 적들을 꽁꽁 얼려 마법 피해를 입히면서 발을 묶습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LissandraW.png"
+display_name = "서릿발"
+description = "주변 적들을 꽁꽁 얼려 마법 피해를 입히면서 발을 묶습니다."

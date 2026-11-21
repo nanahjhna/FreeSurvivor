@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_w2nn3"]
+
+[resource]
+script = ExtResource("1_w2nn3")
+id = "skill63"
+legacy_id = "nunu_w"
+champion_id = "Nunu"
+champion_name = "누누와 윌럼프"
+slot_key = "W"
+reference_name = "데굴데굴 눈덩이!"
+reference_description = "윌럼프가 굴릴수록 크기와 속도가 증가하는 눈덩이를 생성합니다. 눈덩이는 적에게 피해를 입히고 공중으로 띄워 올립니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/NunuW.png"
+display_name = "데굴데굴 눈덩이!"
+description = "윌럼프가 굴릴수록 크기와 속도가 증가하는 눈덩이를 생성합니다. 눈덩이는 적에게 피해를 입히고 공중으로 띄워 올립니다."

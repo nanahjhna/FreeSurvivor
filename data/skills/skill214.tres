@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_wvppx"]
+
+[resource]
+script = ExtResource("1_wvppx")
+id = "skill214"
+legacy_id = "mel_e"
+champion_id = "Mel"
+champion_name = "멜"
+slot_key = "E"
+reference_name = "태양 올가미"
+reference_description = "멜이 전방으로 찬란한 구체를 발사하여 중심에 있는 적을 속박하는 한편 그 주변에 있는 적을 둔화시키며 지속 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/MelE.png"
+display_name = "태양 올가미"
+description = "멜이 전방으로 찬란한 구체를 발사하여 중심에 있는 적을 속박하는 한편 그 주변에 있는 적을 둔화시키며 지속 피해를 입힙니다."

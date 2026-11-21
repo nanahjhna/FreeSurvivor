@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_d4510"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_e0rkl"]
+
+[resource]
+script = ExtResource("2_e0rkl")
+id = "skill367"
+legacy_id = "sona_q"
+champion_id = "Sona"
+champion_name = "소나"
+slot_key = "Q"
+reference_name = "용맹의 찬가"
+reference_description = "소나가 용맹의 찬가를 연주하여 강렬한 선율을 발사하여 주변에 있는 두 명의 적에게 마법 피해를 입힙니다. 이때 챔피언과 몬스터를 우선 공격합니다. 또한 이 스킬을 사용하면 잠시 동안 오라가 생겨서 효과 범위 안에 있는 아군이 다음번 적 공격 시 추가 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SonaQ.png"
+display_name = "용맹의 찬가"
+description = "소나가 용맹의 찬가를 연주하여 강렬한 선율을 발사하여 주변에 있는 두 명의 적에게 마법 피해를 입힙니다. 이때 챔피언과 몬스터를 우선 공격합니다. 또한 이 스킬을 사용하면 잠시 동안 오라가 생겨서 효과 범위 안에 있는 아군이 다음번 적 공격 시 추가 피해를 입힙니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+bonus_type = "magic"
+effect_scene = ExtResource("1_d4510")
+effect_color = Color(0.45882353, 0.6666667, 1, 1)
+implemented = true
+support_status = "generic_effect_ready"

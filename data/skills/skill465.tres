@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ctdpt"]
+
+[resource]
+script = ExtResource("1_ctdpt")
+id = "skill465"
+legacy_id = "aatrox_r"
+champion_id = "Aatrox"
+champion_name = "아트록스"
+slot_key = "R"
+reference_name = "세계의 종결자"
+reference_description = "아트록스가 악마의 힘을 해방하여 근처 적 미니언에게 공포를 주고 자신의 공격력과 체력 회복량, 이동 속도가 증가합니다. 아트록스가 챔피언 처치에 관여하면 이 효과의 지속시간이 연장됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AatroxR.png"
+display_name = "세계의 종결자"
+description = "아트록스가 악마의 힘을 해방하여 근처 적 미니언에게 공포를 주고 자신의 공격력과 체력 회복량, 이동 속도가 증가합니다. 아트록스가 챔피언 처치에 관여하면 이 효과의 지속시간이 연장됩니다."

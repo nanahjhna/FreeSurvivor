@@ -19,6 +19,10 @@
 
 기존 효과 종류를 조합할 때는 씬과 시전 메타데이터를 등록하면 됩니다. 예를 들어 `cast_pattern: "fan"`, `projectile_count`, `spread_radians`로 부채꼴 투사체를 구성할 수 있습니다. 회복 스킬은 `cast_type: "heal"`, 지속 효과는 `cast_type: "passive"`를 사용합니다.
 
+`data/skill_catalog.json`은 챔피언별 참고 스킬 전체를 보관합니다. `game_ready: true`인 항목만 `SkillDatabase.get_skill()`에서 실행 정의로 변환되어 SkillManager가 사용할 수 있습니다. 현재 공통 효과 씬으로 처리할 수 있는 투사체, 회전 범위 공격, 폭발, 자가 회복, 피격 후 체력 회복 패시브만 실행 대상으로 표시하며, 나머지는 `game_support_status: "unimplemented"`인 참고 항목으로 남깁니다. 아직 어느 직업에도 자동 장착되지 않습니다.
+
+추후 카탈로그 캐릭터를 추가할 때 `CharacterSkillDatabase.get_skill_set("Garen")`처럼 `champion_id`를 전달하면 구현된 항목만 조회할 수 있고, `get_default_loadout("Garen")`은 구현된 Q/W/E/R 슬롯을 돌려줍니다. 패시브는 자동 장착 대상에서 제외됩니다. 마나는 사용하지 않으며, 스킬 강화 비용은 `cost_base`의 골드 값으로 처리합니다.
+
 ## 몬스터 추가
 
 1. `scripts/monster_database.gd`의 `MONSTERS`에 고유 ID, `BaseMonster` 파생 씬 경로, 기본 능력치, 처치 보상, 보스 여부를 등록합니다.

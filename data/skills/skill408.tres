@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_611tr"]
+
+[resource]
+script = ExtResource("1_611tr")
+id = "skill408"
+legacy_id = "xinzhao_w"
+champion_id = "XinZhao"
+champion_name = "신 짜오"
+slot_key = "W"
+reference_name = "풍전참뢰"
+reference_description = "신 짜오가 창으로 앞을 가른 뒤 그대로 찌릅니다. 적중당한 적은 둔화되며 도전 받은 상태가 됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/XinZhaoW.png"
+display_name = "풍전참뢰"
+description = "신 짜오가 창으로 앞을 가른 뒤 그대로 찌릅니다. 적중당한 적은 둔화되며 도전 받은 상태가 됩니다."

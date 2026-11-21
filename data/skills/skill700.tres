@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_sfii2"]
+
+[resource]
+script = ExtResource("1_sfii2")
+id = "skill700"
+legacy_id = "cassiopeia_r"
+champion_id = "Cassiopeia"
+champion_name = "카시오페아"
+slot_key = "R"
+reference_name = "석화의 응시"
+reference_description = "카시오페아가 눈에서 마법의 에너지를 발사하여 정면에서 자신을 바라보는 적을 기절시키고, 등지고 있는 적의 속도를 늦춥니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/CassiopeiaR.png"
+display_name = "석화의 응시"
+description = "카시오페아가 눈에서 마법의 에너지를 발사하여 정면에서 자신을 바라보는 적을 기절시키고, 등지고 있는 적의 속도를 늦춥니다."

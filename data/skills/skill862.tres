@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_85ot5"]
+
+[resource]
+script = ExtResource("1_85ot5")
+id = "skill862"
+legacy_id = "hwei_q"
+champion_id = "Hwei"
+champion_name = "흐웨이"
+slot_key = "Q"
+reference_name = "주제: 참사"
+reference_description = "흐웨이가 일련의 참사를 상상하며 파괴적인 일격을 그립니다. / / 흐웨이의 스킬을 공격 스킬인 파멸의 화염, 절단의 번개, 녹아내린 균열로 교체합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/HweiQ.png"
+display_name = "주제: 참사"
+description = "흐웨이가 일련의 참사를 상상하며 파괴적인 일격을 그립니다. / / 흐웨이의 스킬을 공격 스킬인 파멸의 화염, 절단의 번개, 녹아내린 균열로 교체합니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_g5pk7"]
+
+[resource]
+script = ExtResource("1_g5pk7")
+id = "skill392"
+legacy_id = "swain_q"
+champion_id = "Swain"
+champion_name = "스웨인"
+slot_key = "Q"
+reference_name = "죽음의 손길"
+reference_description = "스웨인이 섬뜩한 힘을 지닌 번개를 여러 갈래 방출합니다. 적중당한 적이 죽으면 번개가 해당 유닛을 관통합니다. 적중한 번개의 수에 따라 피해량도 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SwainQ.png"
+display_name = "죽음의 손길"
+description = "스웨인이 섬뜩한 힘을 지닌 번개를 여러 갈래 방출합니다. 적중당한 적이 죽으면 번개가 해당 유닛을 관통합니다. 적중한 번개의 수에 따라 피해량도 증가합니다."

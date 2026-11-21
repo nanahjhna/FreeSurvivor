@@ -1,60 +1,98 @@
 class_name CharacterSkillDatabase
 extends RefCounted
 
-const SKILL_DATABASE := preload("res://scripts/skill_database.gd")
+## Runtime adapter over the skills embedded in each CharacterData resource.
+## Legacy ID lookup remains for save compatibility; new characters need only
+## one character .tres with its skill subresources and slot keys.
+static func _get_character(character_class_id: String) -> CharacterData:
+	return CharacterRegistry.get_by_id(character_class_id)
 
-# Character definitions only reference shared skill IDs. To add a character,
-# register its skills in SkillDatabase and add slot IDs here.
-const CHARACTER_SKILL_ASSIGNMENTS: Dictionary = {
-	"fighter": {
-		"skills": ["fighter_passive", "fighter_q", "fighter_w", "fighter_e", "fighter_r", "fighter_volley", "fighter_renewal"],
-		"loadout": {"q": "fighter_q", "w": "fighter_w", "e": "fighter_e", "r": "fighter_r", "a": "fighter_volley", "s": "fighter_renewal"}
-	},
-	"fighter_2d": {
-		"skills": ["fighter_passive", "fighter_q", "fighter_w", "fighter_e", "fighter_r", "fighter_volley", "fighter_renewal"],
-		"loadout": {"q": "fighter_q", "w": "fighter_w", "e": "fighter_e", "r": "fighter_r", "a": "fighter_volley", "s": "fighter_renewal"}
-	},
-	"char02": {
-		"skills": ["fighter_passive", "fighter_q", "fighter_w", "fighter_e", "fighter_r", "fighter_volley", "fighter_renewal"],
-		"loadout": {"q": "fighter_q", "w": "fighter_w", "e": "fighter_e", "r": "fighter_r", "a": "fighter_volley", "s": "fighter_renewal"}
-	}
-}
+
+static func get_runtime_skill_id(character: CharacterData, skill: SkillData, index: int) -> String:
+	if not skill.legacy_id.is_empty():
+		return skill.legacy_id
+	if not skill.id.is_empty():
+		return skill.id
+	var fallback_kind := "passive" if skill.cast_type == "passive" else "skill"
+	var skill_key := skill.slot_key if not skill.slot_key.is_empty() else "%s_%02d" % [fallback_kind, index]
+	return "%s_%s" % [character.legacy_id if not character.legacy_id.is_empty() else character.id, skill_key]
+
 
 static func get_skill_ids(character_class_id: String) -> Array:
-	var config: Dictionary = CHARACTER_SKILL_ASSIGNMENTS.get(character_class_id, {})
+	var character := _get_character(character_class_id)
 	var result: Array = []
-	for skill_id in config.get("skills", []):
-		if SKILL_DATABASE.has_skill(str(skill_id)):
-			result.append(str(skill_id))
+	if character == null:
+		return result
+	if not character.skills.is_empty():
+		for index in range(character.skills.size()):
+			var skill := character.skills[index]
+			if skill != null and skill.implemented:
+				result.append(get_runtime_skill_id(character, skill, index))
+		return result
+	for canonical_id in character.skill_ids:
+		var skill := SkillRegistry.get_by_id(canonical_id)
+		if skill == null or not skill.implemented:
+			continue
+		result.append(skill.legacy_id if not skill.legacy_id.is_empty() else skill.id)
 	return result
 
 
 static func get_registered_character_ids() -> Array[String]:
 	var ids: Array[String] = []
-	for character_id in CHARACTER_SKILL_ASSIGNMENTS.keys():
-		ids.append(str(character_id))
+	for character in CharacterRegistry.all():
+		var legacy_id := character.legacy_id if not character.legacy_id.is_empty() else character.id
+		if not get_skill_ids(legacy_id).is_empty():
+			ids.append(legacy_id)
 	return ids
 
 
 static func has_skill_assignment(character_class_id: String) -> bool:
-	return CHARACTER_SKILL_ASSIGNMENTS.has(character_class_id) and not get_skill_ids(character_class_id).is_empty()
+	return not get_skill_ids(character_class_id).is_empty()
 
 
 static func get_skill_set(character_class_id: String) -> Dictionary:
-	return SKILL_DATABASE.get_game_skills(get_skill_ids(character_class_id))
+	var skills: Dictionary = {}
+	var character := _get_character(character_class_id)
+	if character == null:
+		return skills
+	if not character.skills.is_empty():
+		for index in range(character.skills.size()):
+			var skill := character.skills[index]
+			if skill != null and skill.implemented:
+				var key := get_runtime_skill_id(character, skill, index)
+				skills[key] = skill.to_game_dictionary()
+		return skills
+	for skill_id in get_skill_ids(character_class_id):
+		var skill := SkillRegistry.get_by_id(str(skill_id))
+		if skill != null:
+			skills[str(skill_id)] = skill.to_game_dictionary()
+	return skills
+
 
 static func get_default_levels(character_class_id: String) -> Dictionary:
-	var result: Dictionary = {}
+	var levels: Dictionary = {}
 	for skill_id in get_skill_ids(character_class_id):
-		result[skill_id] = 1
-	return result
+		levels[skill_id] = 1
+	return levels
+
 
 static func get_default_loadout(character_class_id: String) -> Dictionary:
-	var config: Dictionary = CHARACTER_SKILL_ASSIGNMENTS.get(character_class_id, {})
-	var registered_skills := get_skill_ids(character_class_id)
+	var character := _get_character(character_class_id)
 	var result: Dictionary = {}
-	for slot in config.get("loadout", {}):
-		var skill_id := str(config["loadout"][slot])
-		if registered_skills.has(skill_id):
-			result[str(slot)] = skill_id
+	if character == null:
+		return result
+	if not character.skills.is_empty():
+		for index in range(character.skills.size()):
+			var skill := character.skills[index]
+			if skill == null or not skill.implemented or skill.cast_type in ["passive", "unassigned"]:
+				continue
+			if skill.slot_key in ["q", "w", "e", "r", "a", "s"]:
+				result[skill.slot_key] = get_runtime_skill_id(character, skill, index)
+		return result
+	for slot in character.skill_loadout:
+		var canonical_id := str(character.skill_loadout[slot])
+		var skill := SkillRegistry.get_by_id(canonical_id)
+		if skill == null or not skill.implemented or skill.cast_type in ["passive", "unassigned"]:
+			continue
+		result[str(slot)] = skill.legacy_id if not skill.legacy_id.is_empty() else skill.id
 	return result

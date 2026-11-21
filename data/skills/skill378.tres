@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_wwp2j"]
+
+[resource]
+script = ExtResource("1_wwp2j")
+id = "skill378"
+legacy_id = "shen_w"
+champion_id = "Shen"
+champion_name = "쉔"
+slot_key = "W"
+reference_name = "의지의 결계"
+reference_description = "쉔이나 기의 검 근처 아군에 대한 공격이 차단됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ShenW.png"
+display_name = "의지의 결계"
+description = "쉔이나 기의 검 근처 아군에 대한 공격이 차단됩니다."

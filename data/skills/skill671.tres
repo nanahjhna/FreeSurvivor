@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ik0ko"]
+
+[resource]
+script = ExtResource("1_ik0ko")
+id = "skill671"
+legacy_id = "chogath_p"
+champion_id = "Chogath"
+champion_name = "초가스"
+slot_key = "P"
+reference_name = "육식"
+reference_description = "초가스는 유닛을 죽이면 체력과 마나를 회복합니다. 회복량은 초가스의 레벨이 높아질수록 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/GreenTerror_TailSpike.png"
+display_name = "육식"
+description = "초가스는 유닛을 죽이면 체력과 마나를 회복합니다. 회복량은 초가스의 레벨이 높아질수록 증가합니다."

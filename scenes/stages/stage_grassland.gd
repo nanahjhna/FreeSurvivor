@@ -19,9 +19,9 @@ func _ready():
 		var camera := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 		if camera:
 			camera.set("quarter_view_enabled", true)
-			camera.set("quarter_distance", 16.0)
-			camera.set("quarter_elevation_degrees", 45.0)
-			camera.set("quarter_azimuth_degrees", 45.0)
+			camera.set("quarter_distance", 18.0)
+			camera.set("quarter_elevation_degrees", 35.0)
+			camera.set("quarter_azimuth_degrees", 0.0)
 			camera.set("back_view_enabled", false)
 			camera.set("first_person_enabled", false)
 			camera.fov = BATTLE_CAMERA_FOV

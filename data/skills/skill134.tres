@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_unjny"]
+
+[resource]
+script = ExtResource("1_unjny")
+id = "skill134"
+legacy_id = "leona_e"
+champion_id = "Leona"
+champion_name = "레오나"
+slot_key = "E"
+reference_name = "천공의 검"
+reference_description = "레오나가 검으로 태양의 형상을 쏘아 일직선에 있는 적에게 마법 피해를 줍니다. 이 형상이 사라지면 마지막으로 공격 당한 챔피언이 일시적으로 이동 불능 상태가 되며 레오나가 그쪽으로 돌격하게 됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LeonaZenithBlade.png"
+display_name = "천공의 검"
+description = "레오나가 검으로 태양의 형상을 쏘아 일직선에 있는 적에게 마법 피해를 줍니다. 이 형상이 사라지면 마지막으로 공격 당한 챔피언이 일시적으로 이동 불능 상태가 되며 레오나가 그쪽으로 돌격하게 됩니다."

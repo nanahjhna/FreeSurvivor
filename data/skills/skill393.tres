@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ymrj5"]
+
+[resource]
+script = ExtResource("1_ymrj5")
+id = "skill393"
+legacy_id = "swain_w"
+champion_id = "Swain"
+champion_name = "스웨인"
+slot_key = "W"
+reference_name = "제국의 눈"
+reference_description = "스웨인이 악마의 눈을 소환해 적에게 피해를 입히고 둔화시킵니다. 챔피언이 적중당하면 모습이 드러나고 스웨인은 영혼 조각을 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SwainW.png"
+display_name = "제국의 눈"
+description = "스웨인이 악마의 눈을 소환해 적에게 피해를 입히고 둔화시킵니다. 챔피언이 적중당하면 모습이 드러나고 스웨인은 영혼 조각을 얻습니다."

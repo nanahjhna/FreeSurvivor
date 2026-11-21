@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/mutant/mutant.tscn" id="1_wqhd0"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_sbk7m"]
+
+[resource]
+script = ExtResource("2_sbk7m")
+id = "monster05"
+legacy_id = "mutant"
+display_name = "뮤턴트"
+model_scene = ExtResource("1_wqhd0")
+hp = 110.0
+speed = 2.1
+damage = 16.0
+attack_range = 1.8
+attack_interval = 1.4
+xp = 5
+gold = 90
+loot = {
+"gold": 90,
+"potion_chance": 0.5,
+"xp": 5
+}
+potion_chance = 0.5

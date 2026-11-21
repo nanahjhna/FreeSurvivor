@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_6vjle"]
+
+[resource]
+script = ExtResource("1_6vjle")
+id = "skill174"
+legacy_id = "leesin_e"
+champion_id = "LeeSin"
+champion_name = "리 신"
+slot_key = "E"
+reference_name = "폭풍/무력화"
+reference_description = "폭풍: 리 신이 바닥을 내리쳐 마법 피해를 입히고 은신한 유닛을 드러내는 충격파를 발생시킵니다. 폭풍이 적에게 명중하면 무력화를 사용할 수 있습니다. / 무력화: 리 신이 폭풍에 피해를 입은 적을 약화시키며 이동 속도를 낮춥니다. 저하된 이동 속도는 시간이 지남에 따라 점차 회복됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LeeSinEOne.png"
+display_name = "폭풍/무력화"
+description = "폭풍: 리 신이 바닥을 내리쳐 마법 피해를 입히고 은신한 유닛을 드러내는 충격파를 발생시킵니다. 폭풍이 적에게 명중하면 무력화를 사용할 수 있습니다. / 무력화: 리 신이 폭풍에 피해를 입은 적을 약화시키며 이동 속도를 낮춥니다. 저하된 이동 속도는 시간이 지남에 따라 점차 회복됩니다."

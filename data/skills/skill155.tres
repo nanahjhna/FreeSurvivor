@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_i6t8g"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_o4o7s"]
+
+[resource]
+script = ExtResource("2_o4o7s")
+id = "skill155"
+legacy_id = "locke_r"
+champion_id = "Locke"
+champion_name = "로크"
+slot_key = "R"
+reference_name = "연옥"
+reference_description = "로크가 적을 구속하는 유물을 던져 적중한 적에게 피해를 입히고 경우에 따라 처형합니다. 로크는 적 챔피언을 봉인해 추가 위력을 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LockeR.png"
+display_name = "연옥"
+description = "로크가 적을 구속하는 유물을 던져 적중한 적에게 피해를 입히고 경우에 따라 처형합니다. 로크는 적 챔피언을 봉인해 추가 위력을 얻습니다."
+cost = 400
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+unlock_level = 8
+cast_type = "wave"
+effect_scene = ExtResource("1_i6t8g")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

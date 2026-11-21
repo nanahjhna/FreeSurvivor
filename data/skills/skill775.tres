@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_k2l0f"]
+
+[resource]
+script = ExtResource("1_k2l0f")
+id = "skill775"
+legacy_id = "kindred_r"
+champion_id = "Kindred"
+champion_name = "킨드레드"
+slot_key = "R"
+reference_name = "양의 안식처"
+reference_description = "양은 안식처 영역 안에 있는 모든 생명체를 죽음으로부터 지켜줍니다. 효과가 끝날 때까지는 아무도 죽지 않습니다. 효과가 끝나면 유닛들이 치유됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KindredR.png"
+display_name = "양의 안식처"
+description = "양은 안식처 영역 안에 있는 모든 생명체를 죽음으로부터 지켜줍니다. 효과가 끝날 때까지는 아무도 죽지 않습니다. 효과가 끝나면 유닛들이 치유됩니다."

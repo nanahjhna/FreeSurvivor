@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_hoauj"]
+
+[resource]
+script = ExtResource("1_hoauj")
+id = "skill660"
+legacy_id = "jhin_r"
+champion_id = "Jhin"
+champion_name = "진"
+slot_key = "R"
+reference_name = "커튼 콜"
+reference_description = "진이 정신 집중을 해 속삭임을 견착식 저격포로 변신시킵니다. 엄청난 사거리에서 4발의 강력한 탄환을 발사하며, 탄환은 미니언과 몬스터는 관통하지만 챔피언에 맞으면 정지합니다. 적중당한 적은 둔화되며 잃은 체력에 비례한 추가 피해를 입습니다. 특별히 완벽하게 세공된 4번째 탄환은 더욱 강력하여 항상 치명타가 적용됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JhinR.png"
+display_name = "커튼 콜"
+description = "진이 정신 집중을 해 속삭임을 견착식 저격포로 변신시킵니다. 엄청난 사거리에서 4발의 강력한 탄환을 발사하며, 탄환은 미니언과 몬스터는 관통하지만 챔피언에 맞으면 정지합니다. 적중당한 적은 둔화되며 잃은 체력에 비례한 추가 피해를 입습니다. 특별히 완벽하게 세공된 4번째 탄환은 더욱 강력하여 항상 치명타가 적용됩니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_vqc5f"]
+
+[resource]
+script = ExtResource("1_vqc5f")
+id = "skill500"
+legacy_id = "yasuo_r"
+champion_id = "Yasuo"
+champion_name = "야스오"
+slot_key = "R"
+reference_name = "최후의 숨결"
+reference_description = "공중에 뜬 적 챔피언에게 점멸하여 물리 피해를 입히고, 해당 지역에서 공중에 떠 있는 모든 적을 공중에 붙들어둡니다. 기류가 최대치로 차는 대신, 폭풍 구름의 중첩이 모두 초기화됩니다. / / 이후 몇 초 동안 야스오의 치명타에 높은 방어구 관통력이 추가로 적용됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YasuoR.png"
+display_name = "최후의 숨결"
+description = "공중에 뜬 적 챔피언에게 점멸하여 물리 피해를 입히고, 해당 지역에서 공중에 떠 있는 모든 적을 공중에 붙들어둡니다. 기류가 최대치로 차는 대신, 폭풍 구름의 중첩이 모두 초기화됩니다. / / 이후 몇 초 동안 야스오의 치명타에 높은 방어구 관통력이 추가로 적용됩니다."

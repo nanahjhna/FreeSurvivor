@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_w8opl"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_72y0e"]
+
+[resource]
+script = ExtResource("2_72y0e")
+id = "skill482"
+legacy_id = "annie_q"
+champion_id = "Annie"
+champion_name = "애니"
+slot_key = "Q"
+reference_name = "붕괴"
+reference_description = "애니가 마나로 가득 찬 화염구를 던져 피해를 입히고 결정타를 냈을 때 사용한 마나를 되돌려 받습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AnnieQ.png"
+display_name = "붕괴"
+description = "애니가 마나로 가득 찬 화염구를 던져 피해를 입히고 결정타를 냈을 때 사용한 마나를 되돌려 받습니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+bonus_type = "magic"
+effect_scene = ExtResource("1_w8opl")
+effect_color = Color(0.45882353, 0.6666667, 1, 1)
+implemented = true
+support_status = "generic_effect_ready"

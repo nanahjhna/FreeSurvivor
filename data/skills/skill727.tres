@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_ib1hc"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_3t7h3"]
+
+[resource]
+script = ExtResource("2_3t7h3")
+id = "skill727"
+legacy_id = "caitlyn_q"
+champion_id = "Caitlyn"
+champion_name = "케이틀린"
+slot_key = "Q"
+reference_name = "필트오버 피스메이커"
+reference_description = "케이틀린이 소총을 1초 동안 조준한 후 관통하는 탄환을 발사하여 물리 피해를 입힙니다. (다음 명중하는 대상에게는 더 낮은 피해가 들어갑니다.)"
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/CaitlynQ.png"
+display_name = "필트오버 피스메이커"
+description = "케이틀린이 소총을 1초 동안 조준한 후 관통하는 탄환을 발사하여 물리 피해를 입힙니다. (다음 명중하는 대상에게는 더 낮은 피해가 들어갑니다.)"
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+effect_scene = ExtResource("1_ib1hc")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_w2su2"]
+
+[resource]
+script = ExtResource("1_w2su2")
+id = "skill317"
+legacy_id = "viktor_q"
+champion_id = "Viktor"
+champion_name = "빅토르"
+slot_key = "Q"
+reference_name = "힘의 흡수"
+reference_description = "빅토르가 적 유닛에 폭발을 일으켜 마법 피해를 입히며 보호막을 얻고 다음번 기본 공격이 강화됩니다. / / 증강: 스킬 사용 시 빅토르의 이동 속도가 빨라지고 힘의 흡수 보호막 흡수량이 60% 증가합니다. /"
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ViktorQ.png"
+display_name = "힘의 흡수"
+description = "빅토르가 적 유닛에 폭발을 일으켜 마법 피해를 입히며 보호막을 얻고 다음번 기본 공격이 강화됩니다. / / 증강: 스킬 사용 시 빅토르의 이동 속도가 빨라지고 힘의 흡수 보호막 흡수량이 60% 증가합니다. /"

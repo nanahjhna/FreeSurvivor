@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_0c78v"]
+
+[resource]
+script = ExtResource("1_0c78v")
+id = "skill669"
+legacy_id = "jinx_e"
+champion_id = "Jinx"
+champion_name = "징크스"
+slot_key = "E"
+reference_name = "와작와작 뻥!"
+reference_description = "징크스가 와작와작 지뢰를 일렬로 던지면 5초 후에 폭발하며 주변 적들을 불태웁니다. 와작와작 지뢰는 적 챔피언이 밟으면 물어뜯어 제자리에 묶습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JinxE.png"
+display_name = "와작와작 뻥!"
+description = "징크스가 와작와작 지뢰를 일렬로 던지면 5초 후에 폭발하며 주변 적들을 불태웁니다. 와작와작 지뢰는 적 챔피언이 밟으면 물어뜯어 제자리에 묶습니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_03cob"]
+
+[resource]
+script = ExtResource("1_03cob")
+id = "skill387"
+legacy_id = "smolder_q"
+champion_id = "Smolder"
+champion_name = "스몰더"
+slot_key = "Q"
+reference_name = "초강력 화염 숨결"
+reference_description = "스몰더가 적에게 불을 내뿜습니다. 이 스킬은 스몰더가 중첩을 쌓을수록 더 강력해집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SmolderQ.png"
+display_name = "초강력 화염 숨결"
+description = "스몰더가 적에게 불을 내뿜습니다. 이 스킬은 스몰더가 중첩을 쌓을수록 더 강력해집니다."

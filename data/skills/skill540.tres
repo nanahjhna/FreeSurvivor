@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ik8gl"]
+
+[resource]
+script = ExtResource("1_ik8gl")
+id = "skill540"
+legacy_id = "yone_r"
+champion_id = "Yone"
+champion_name = "요네"
+slot_key = "R"
+reference_name = "운명봉인"
+reference_description = "요네가 강력한 일격을 날리며 경로에 있는 마지막 챔피언 뒤로 순간적으로 이동하고 적중한 모든 적을 자신 쪽으로 끌어당깁니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YoneR.png"
+display_name = "운명봉인"
+description = "요네가 강력한 일격을 날리며 경로에 있는 마지막 챔피언 뒤로 순간적으로 이동하고 적중한 모든 적을 자신 쪽으로 끌어당깁니다."

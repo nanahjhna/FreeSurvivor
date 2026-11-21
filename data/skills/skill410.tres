@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ydo4y"]
+
+[resource]
+script = ExtResource("1_ydo4y")
+id = "skill410"
+legacy_id = "xinzhao_r"
+champion_id = "XinZhao"
+champion_name = "신 짜오"
+slot_key = "R"
+reference_name = "현월수호"
+reference_description = "기본 지속 효과로 신 짜오가 자신이 최근에 피해를 입힌 적에게 도전합니다. 사용 시, 신 짜오가 주위 적들에게 각 유닛의 현재 체력에 비례한 피해를 입히고 도전 받지 않은 대상을 뒤로 밀어내며 일정 거리 밖에 있는 적 챔피언에게 피해를 받지 않는 상태가 됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/XinZhaoR.png"
+display_name = "현월수호"
+description = "기본 지속 효과로 신 짜오가 자신이 최근에 피해를 입힌 적에게 도전합니다. 사용 시, 신 짜오가 주위 적들에게 각 유닛의 현재 체력에 비례한 피해를 입히고 도전 받지 않은 대상을 뒤로 밀어내며 일정 거리 밖에 있는 적 챔피언에게 피해를 받지 않는 상태가 됩니다."

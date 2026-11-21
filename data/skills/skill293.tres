@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_e3b6u"]
+
+[resource]
+script = ExtResource("1_e3b6u")
+id = "skill293"
+legacy_id = "briar_w"
+champion_id = "Briar"
+champion_name = "브라이어"
+slot_key = "W"
+reference_name = "핏빛 광분 / 식욕 폭발"
+reference_description = "브라이어가 앞으로 도약해 족쇄를 깨부수고 핏빛 광분 상태에 들어가 가장 가까운 적을 가차 없이 추격합니다. (챔피언 우선) 핏빛 광분 상태에서 공격 속도와 이동 속도가 상승하며 기본 공격으로 대상 주변에 피해를 입힙니다. / / 이 스킬을 핏빛 광분 상태에서 재사용하면 다음 기본 공격 시 적을 베어 먹어 대상이 잃은 체력에 비례해 추가 피해를 입히고 피해량에 비례해 체력을 회복합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BriarW.png"
+display_name = "핏빛 광분 / 식욕 폭발"
+description = "브라이어가 앞으로 도약해 족쇄를 깨부수고 핏빛 광분 상태에 들어가 가장 가까운 적을 가차 없이 추격합니다. (챔피언 우선) 핏빛 광분 상태에서 공격 속도와 이동 속도가 상승하며 기본 공격으로 대상 주변에 피해를 입힙니다. / / 이 스킬을 핏빛 광분 상태에서 재사용하면 다음 기본 공격 시 적을 베어 먹어 대상이 잃은 체력에 비례해 추가 피해를 입히고 피해량에 비례해 체력을 회복합니다."

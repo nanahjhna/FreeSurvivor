@@ -2,13 +2,13 @@ extends Control
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/player.tscn")
 const CLASS_GROWTH := {
-	"warrior": "근접 공격과 안정적인 생존", "archer": "원거리 공격과 빠른 명중",
-	"mage": "마법 공격과 높은 SP", "paladin": "높은 체력과 방어",
-	"assassin": "빠른 공격과 치명타", "priest": "마법 능력과 균형 잡힌 지원"
+	"fighter": "기동성과 근접 타격", "char02": "빠른 근접 전투와 연속 베기",
+	"archer": "원거리 관통과 빠른 연사", "mage": "마법 광역 공격과 원소 폭발",
+	"paladin": "높은 체력과 방어, 자가 회복"
 }
 const CLASS_WEAPONS := {
-	"warrior": "장검", "archer": "활", "mage": "마법 지팡이",
-	"paladin": "성검과 방패", "assassin": "쌍검", "priest": "성물 지팡이"
+	"fighter": "권갑", "char02": "쌍검", "archer": "장궁", "mage": "원소 지팡이",
+	"paladin": "성검과 방패"
 }
 const FIRST_NAMES: Array[String] = ["아린", "시온", "하린", "도윤", "유나", "태오", "세린", "라온"]
 const LAST_NAMES: Array[String] = ["빛", "솔", "별", "린", "온", "하늘", "새벽", "바람"]
@@ -119,11 +119,24 @@ func _show_creation(slot_index: int):
 	creation_slot = slot_index
 	selected_class_id = GameData.FIGHTER_ID
 	_clear_screen()
-	var layout := _build_shell("CREATE CHARACTER · SLOT %02d" % (slot_index + 1), "← 슬롯 선택", _show_selection)
+	var layout := _build_shell("새 캐릭터 만들기", "← 슬롯 선택", _show_selection)
+	var instructions := UiStyle.make_label(
+		"직업을 고르고 이름을 입력하면 빈 슬롯에 저장됩니다.\n직업 선택  →  이름 입력  →  캐릭터 생성",
+		14,
+		UiStyle.MUTED
+	)
+	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	instructions.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	layout.add_child(instructions)
 	var body := _new_body(layout)
 
-	var left := _make_section(body, 330, "직업 선택")
+	var left := _make_section(body, 330, "1. 직업 선택")
 	var scroll := ScrollContainer.new()
+	# Keep the nested class list tall enough to receive taps inside the outer
+	# portrait-page ScrollContainer. Without a minimum height the section can
+	# collapse and leave the class buttons clipped or covered on mobile layouts.
+	if _is_portrait_layout():
+		scroll.custom_minimum_size.y = clampf(get_viewport_rect().size.y * 0.30, 360.0, 400.0)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	left.add_child(scroll)
@@ -132,12 +145,12 @@ func _show_creation(slot_index: int):
 	class_list.add_theme_constant_override("separation", 8)
 	scroll.add_child(class_list)
 	_build_preview(_make_section(body, 560, "캐릭터 미리보기 · 드래그/터치로 회전"))
-	_build_detail_panel(_make_section(body, 440, "직업 정보"))
+	_build_detail_panel(_make_section(body, 440, "선택한 직업 정보"))
 
 	var footer: Container = VBoxContainer.new() if _is_portrait_layout() else HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 10)
 	layout.add_child(footer)
-	footer.add_child(UiStyle.make_label("캐릭터 이름", 16, Color(1.0, 0.86, 0.45)))
+	footer.add_child(UiStyle.make_label("2. 캐릭터 이름", 16, Color(1.0, 0.86, 0.45)))
 	name_edit = LineEdit.new()
 	name_edit.custom_minimum_size = Vector2(360, 50)
 	name_edit.max_length = GameData.CHARACTER_NAME_MAX_LENGTH
@@ -452,8 +465,10 @@ func _populate_classes():
 		var character := GameData.get_class_template_data(class_id)
 		if not bool(character.get("unlocked", false)):
 			continue
-		var button := UiStyle.make_button("%s  %s\n%s" % [str(character.get("icon", "⚔️")), str(character.get("role", class_id)), str(character.get("title", ""))], Vector2(0, 76))
+		var button := UiStyle.make_button("%s  %s\n%s" % [str(character.get("icon", "⚔️")), str(character.get("role", class_id)), str(character.get("title", ""))], Vector2(0, 70))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.toggle_mode = true
+		button.focus_mode = Control.FOCUS_ALL
 		button.tooltip_text = str(character.get("desc", ""))
 		button.set_meta("class_id", class_id)
 		button.pressed.connect(_select_class.bind(class_id))
@@ -481,7 +496,12 @@ func _select_class(class_id: String):
 	detail_progress.text = "%s\n\n전투 스타일: %s" % [str(character.get("desc", "")), str(character.get("combat_style", CLASS_GROWTH.get(class_id, "균형 성장")))]
 	for child in class_list.get_children():
 		if child is Button:
-			child.button_pressed = str(child.get_meta("class_id", "")) == class_id
+			var is_selected := str(child.get_meta("class_id", "")) == class_id
+			child.button_pressed = is_selected
+			if is_selected:
+				child.add_theme_stylebox_override("normal", UiStyle.button_style(Color(0.24, 0.07, 0.035, 1.0), UiStyle.GOLD_BRIGHT))
+			else:
+				child.add_theme_stylebox_override("normal", UiStyle.button_style(UiStyle.INK_SOFT, Color(0.62, 0.43, 0.23, 0.86)))
 	_set_preview_class(class_id, character)
 	_update_create_button()
 
@@ -612,11 +632,12 @@ func _set_preview_class(class_id: String, character: Dictionary):
 			selected_animation.process_mode = Node.PROCESS_MODE_ALWAYS
 	elif preview_player.has_method("set_character_2d_mode"):
 		preview_player.call("set_character_2d_mode", class_id == "fighter_2d")
-	if class_id in [GameData.FIGHTER_ID, "fighter_2d"]:
-		for mesh in preview_visual.find_children("*", "MeshInstance3D"):
-			(mesh as MeshInstance3D).material_override = null
-	else:
+	# Registered 3D characters keep their authored textures and materials in the preview.
+	if class_id == "fighter_2d":
 		_update_preview_color(color_value if color_value is Color else Color(0.25, 0.55, 0.9))
+	else:
+		for mesh in preview_visual.find_children("*", "MeshInstance3D", true, false):
+			(mesh as MeshInstance3D).material_override = null
 	_update_preview_weapon(class_id)
 	_preview_rotation = 0.0
 	_idle_time = 0.0

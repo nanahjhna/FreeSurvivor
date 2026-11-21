@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ykerj"]
+
+[resource]
+script = ExtResource("1_ykerj")
+id = "skill471"
+legacy_id = "alistar_p"
+champion_id = "Alistar"
+champion_name = "알리스타"
+slot_key = "P"
+reference_name = "승리의 포효"
+reference_description = "근처에서 적이 죽거나, 알리스타가 적 챔피언을 기절 혹은 이동시킬 때마다 포효를 중첩시킵니다. 최대치까지 중첩되면 근처의 모든 아군 챔피언과 자신의 체력을 회복시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Alistar_E.png"
+display_name = "승리의 포효"
+description = "근처에서 적이 죽거나, 알리스타가 적 챔피언을 기절 혹은 이동시킬 때마다 포효를 중첩시킵니다. 최대치까지 중첩되면 근처의 모든 아군 챔피언과 자신의 체력을 회복시킵니다."

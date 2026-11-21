@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/monster01/monster01.tscn" id="1_5ewl3"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_136lr"]
+
+[resource]
+script = ExtResource("2_136lr")
+id = "monster12"
+legacy_id = "card_enemy_5"
+display_name = "심연의 카드 군주"
+model_scene = ExtResource("1_5ewl3")
+hp = 135.0
+speed = 0.0
+damage = 0.0
+attack_range = 0.0
+attack_interval = 0.0
+loot = {
+"gold": 0,
+"potion_chance": 0.0,
+"xp": 0
+}
+icon = "🐲"
+grade = "던전"
+description = "턴제 카드 던전에서 사용하는 적 데이터."
+card_floor = 5
+card_hp = 135
+card_icon = "🐲"
+card_pattern = Array[Dictionary]([{
+"type": "attack",
+"value": 14
+}, {
+"type": "status",
+"value": 5
+}, {
+"type": "defend",
+"value": 14
+}, {
+"type": "heavy",
+"value": 24
+}])

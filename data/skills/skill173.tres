@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_2wons"]
+
+[resource]
+script = ExtResource("1_2wons")
+id = "skill173"
+legacy_id = "leesin_w"
+champion_id = "LeeSin"
+champion_name = "리 신"
+slot_key = "W"
+reference_name = "방호 / 강철의 의지"
+reference_description = "방호: 리 신이 대상 아군에게 돌격하여 자신에게 피해를 흡수하는 보호막을 생성합니다. 해당 아군이 챔피언일 경우 아군에게도 보호막이 적용됩니다. 방호를 사용하고 난 뒤 강철의 의지를 시전할 수 있습니다. / 강철의 의지: 고된 수행으로 리 신이 전투에서 보다 잘 살아남을 수 있게 됩니다. 모든 피해 흡혈 효과를 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LeeSinWOne.png"
+display_name = "방호 / 강철의 의지"
+description = "방호: 리 신이 대상 아군에게 돌격하여 자신에게 피해를 흡수하는 보호막을 생성합니다. 해당 아군이 챔피언일 경우 아군에게도 보호막이 적용됩니다. 방호를 사용하고 난 뒤 강철의 의지를 시전할 수 있습니다. / 강철의 의지: 고된 수행으로 리 신이 전투에서 보다 잘 살아남을 수 있게 됩니다. 모든 피해 흡혈 효과를 얻습니다."

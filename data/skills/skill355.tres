@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_suuf1"]
+
+[resource]
+script = ExtResource("1_suuf1")
+id = "skill355"
+legacy_id = "seraphine_r"
+champion_id = "Seraphine"
+champion_name = "세라핀"
+slot_key = "R"
+reference_name = "앙코르"
+reference_description = "세라핀이 적중한 적에게 피해를 입히고 매혹합니다. 아군 또는 적 챔피언에게 적중하면 사거리가 초기화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SeraphineR.png"
+display_name = "앙코르"
+description = "세라핀이 적중한 적에게 피해를 입히고 매혹합니다. 아군 또는 적 챔피언에게 적중하면 사거리가 초기화됩니다."

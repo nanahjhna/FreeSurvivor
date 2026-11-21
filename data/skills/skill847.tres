@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_uqsmx"]
+
+[resource]
+script = ExtResource("1_uqsmx")
+id = "skill847"
+legacy_id = "fizz_q"
+champion_id = "Fizz"
+champion_name = "피즈"
+slot_key = "Q"
+reference_name = "성게 찌르기"
+reference_description = "피즈가 대상을 뚫고 지나가며 마법 피해를 줍니다. 적중 시 효과도 적용됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/FizzQ.png"
+display_name = "성게 찌르기"
+description = "피즈가 대상을 뚫고 지나가며 마법 피해를 줍니다. 적중 시 효과도 적용됩니다."

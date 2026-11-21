@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_mb4i2"]
+
+[resource]
+script = ExtResource("1_mb4i2")
+id = "skill666"
+legacy_id = "jinx_p"
+champion_id = "Jinx"
+champion_name = "징크스"
+slot_key = "P"
+reference_name = "신난다!"
+reference_description = "징크스는 적 챔피언이나 에픽 정글 몬스터 처치에 관여하거나 구조물 파괴를 도우면 이동 속도와 공격 속도가 대폭 상승합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Jinx_Passive.png"
+display_name = "신난다!"
+description = "징크스는 적 챔피언이나 에픽 정글 몬스터 처치에 관여하거나 구조물 파괴를 도우면 이동 속도와 공격 속도가 대폭 상승합니다."

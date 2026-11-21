@@ -36,3 +36,28 @@ func create_model(player_id: String, parent: Node3D) -> Node3D:
 
 func get_animation_profile(player_id: String) -> String:
 	return str(get_definition(player_id).get("animation_profile", player_id))
+
+
+func get_animation_aliases(player_id: String) -> Dictionary:
+	var character := CharacterRegistry.get_by_id(player_id)
+	if character != null and not character.animation_aliases.is_empty():
+		return character.animation_aliases.duplicate(true)
+	var aliases: Variant = get_definition(player_id).get("animation_aliases", {})
+	return aliases.duplicate(true) if aliases is Dictionary else {}
+
+
+func get_skill_animation_key(skill_id: String, slot_key: String = "") -> String:
+	var character := CharacterRegistry.get_by_id(GameData.get_leader_id())
+	if character != null:
+		for index in range(character.skills.size()):
+			var character_skill := character.skills[index]
+			if character_skill != null and (character_skill.id == skill_id or character_skill.legacy_id == skill_id):
+				return character_skill.animation_key
+			if character_skill != null and CharacterSkillDatabase.get_runtime_skill_id(character, character_skill, index) == skill_id:
+				return character_skill.animation_key
+		if not slot_key.is_empty():
+			for character_skill in character.skills:
+				if character_skill != null and character_skill.slot_key == slot_key:
+					return character_skill.animation_key
+	var skill := SkillRegistry.get_by_id(skill_id)
+	return skill.animation_key if skill != null else "AttackAlt"

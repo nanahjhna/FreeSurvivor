@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_i6w0o"]
+
+[resource]
+script = ExtResource("1_i6w0o")
+id = "skill694"
+legacy_id = "karthus_e"
+champion_id = "Karthus"
+champion_name = "카서스"
+slot_key = "E"
+reference_name = "부패"
+reference_description = "카서스는 적에게서 마력을 훔쳐 적을 처치할 때마다 마나를 획득합니다. 또 카서스는 희생양의 영혼을 자신 주위에 둘러 적들에게 피해를 입힐 수도 있지만, 이럴 경우 마나가 매우 빨리 소모됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KarthusDefile.png"
+display_name = "부패"
+description = "카서스는 적에게서 마력을 훔쳐 적을 처치할 때마다 마나를 획득합니다. 또 카서스는 희생양의 영혼을 자신 주위에 둘러 적들에게 피해를 입힐 수도 있지만, 이럴 경우 마나가 매우 빨리 소모됩니다."

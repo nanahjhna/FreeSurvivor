@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_a4xgh"]
+
+[resource]
+script = ExtResource("1_a4xgh")
+id = "skill731"
+legacy_id = "kayn_p"
+champion_id = "Kayn"
+champion_name = "케인"
+slot_key = "P"
+reference_name = "다르킨의 낫"
+reference_description = "케인은 다르킨 무기 라아스트를 휘두르는 한편 제압하려고 하고, 라아스트는 케인을 잠식하려 합니다. 다르킨이 승리하거나, 아니면 케인이 라아스트를 제압해 그림자 암살자가 될 수도 있습니다. / / 다르킨: 챔피언에게 가한 스킬 피해에 비례해 체력을 회복합니다. / / 그림자 암살자: 적 챔피언과 전투 시작 후 첫 몇 초 동안 추가 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Kayn_Passive_Primary.png"
+display_name = "다르킨의 낫"
+description = "케인은 다르킨 무기 라아스트를 휘두르는 한편 제압하려고 하고, 라아스트는 케인을 잠식하려 합니다. 다르킨이 승리하거나, 아니면 케인이 라아스트를 제압해 그림자 암살자가 될 수도 있습니다. / / 다르킨: 챔피언에게 가한 스킬 피해에 비례해 체력을 회복합니다. / / 그림자 암살자: 적 챔피언과 전투 시작 후 첫 몇 초 동안 추가 피해를 입힙니다."

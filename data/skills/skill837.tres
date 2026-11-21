@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_6g53l"]
+
+[resource]
+script = ExtResource("1_6g53l")
+id = "skill837"
+legacy_id = "fiddlesticks_q"
+champion_id = "Fiddlesticks"
+champion_name = "피들스틱"
+slot_key = "Q"
+reference_name = "공포"
+reference_description = "피들스틱이 적의 시야에 보이지 않을 때 적에게 스킬로 피해를 입히거나 공포를 사용하면 대상을 공포에 질리게 하여 일정 시간 도망치게 합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/FiddleSticksQ.png"
+display_name = "공포"
+description = "피들스틱이 적의 시야에 보이지 않을 때 적에게 스킬로 피해를 입히거나 공포를 사용하면 대상을 공포에 질리게 하여 일정 시간 도망치게 합니다."

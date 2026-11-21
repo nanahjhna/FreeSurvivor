@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_rnwfg"]
+
+[resource]
+script = ExtResource("1_rnwfg")
+id = "skill857"
+legacy_id = "hecarim_q"
+champion_id = "Hecarim"
+champion_name = "헤카림"
+slot_key = "Q"
+reference_name = "회오리 베기"
+reference_description = "헤카림이 주변 적을 베어 물리 피해를 입힙니다. 한 명의 적이라도 적중 시 다음 회오리 베기의 피해량이 증가하며 재사용 대기시간이 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/HecarimRapidSlash.png"
+display_name = "회오리 베기"
+description = "헤카림이 주변 적을 베어 물리 피해를 입힙니다. 한 명의 적이라도 적중 시 다음 회오리 베기의 피해량이 증가하며 재사용 대기시간이 감소합니다."

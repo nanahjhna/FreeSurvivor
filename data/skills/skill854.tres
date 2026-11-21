@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_0i5ha"]
+
+[resource]
+script = ExtResource("1_0i5ha")
+id = "skill854"
+legacy_id = "heimerdinger_e"
+champion_id = "Heimerdinger"
+champion_name = "하이머딩거"
+slot_key = "E"
+reference_name = "CH-2 전자폭풍 수류탄"
+reference_description = "하이머딩거가 목표 위치에 수류탄을 던져 적에게 피해를 입힙니다. 수류탄에 직격당한 적은 기절하며, 빗겨맞은 유닛은 느려집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/HeimerdingerE.png"
+display_name = "CH-2 전자폭풍 수류탄"
+description = "하이머딩거가 목표 위치에 수류탄을 던져 적에게 피해를 입힙니다. 수류탄에 직격당한 적은 기절하며, 빗겨맞은 유닛은 느려집니다."

@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/monster01/monster01.tscn" id="1_nrf1g"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_kicqg"]
+
+[resource]
+script = ExtResource("2_kicqg")
+id = "monster09"
+legacy_id = "card_enemy_1"
+display_name = "묘지 쥐"
+model_scene = ExtResource("1_nrf1g")
+hp = 42.0
+speed = 0.0
+damage = 0.0
+attack_range = 0.0
+attack_interval = 0.0
+loot = {
+"gold": 0,
+"potion_chance": 0.0,
+"xp": 0
+}
+icon = "🐀"
+grade = "던전"
+description = "턴제 카드 던전에서 사용하는 적 데이터."
+card_floor = 1
+card_hp = 42
+card_icon = "🐀"
+card_pattern = Array[Dictionary]([{
+"type": "attack",
+"value": 7
+}, {
+"type": "attack",
+"value": 8
+}, {
+"type": "defend",
+"value": 6
+}])

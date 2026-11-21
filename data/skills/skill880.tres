@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="1_r4esm"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_eks8l"]
+
+[resource]
+script = ExtResource("2_eks8l")
+id = "skill880"
+legacy_id = "archer_r"
+reference_name = "유성 화살비"
+reference_description = "넓은 지역에 강력한 화살비를 쏟아붓습니다."
+icon = "☄️"
+display_name = "유성 화살비"
+description = "넓은 지역에 강력한 화살비를 쏟아붓습니다."
+cooldown = 24.0
+damage_ratio = 3.8
+cooldown_step = 0.45
+damage_step = 0.5
+range = 11.0
+unlock_level = 8
+cast_type = "burst"
+animation_key = "AttackAlt"
+bonus_type = "area"
+effect_scene = ExtResource("1_r4esm")
+implemented = true
+support_status = "game_skill"

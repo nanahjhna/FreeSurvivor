@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_xdexu"]
+
+[resource]
+script = ExtResource("1_xdexu")
+id = "skill243"
+legacy_id = "bard_w"
+champion_id = "Bard"
+champion_name = "바드"
+slot_key = "W"
+reference_name = "수호자의 성소"
+reference_description = "짧은 시간 동안 치유력이 증가하는 체력 회복 성소를 드러냅니다. 성소는 처음 발을 들이는 아군을 치유하고 속도를 높인 후 사라집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BardW.png"
+display_name = "수호자의 성소"
+description = "짧은 시간 동안 치유력이 증가하는 체력 회복 성소를 드러냅니다. 성소는 처음 발을 들이는 아군을 치유하고 속도를 높인 후 사라집니다."

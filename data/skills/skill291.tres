@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_2eycd"]
+
+[resource]
+script = ExtResource("1_2eycd")
+id = "skill291"
+legacy_id = "briar_p"
+champion_id = "Briar"
+champion_name = "브라이어"
+slot_key = "P"
+reference_name = "진홍빛 저주"
+reference_description = "브라이어는 기본 공격과 스킬로 중첩 가능한 출혈 효과를 적용하며, 출혈 피해의 일정 비율만큼 체력을 회복합니다. 늘 허기진 브라이어는 잃은 체력에 비례해 체력 회복량이 증가하는 대신 기본 체력 재생이 없습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/BriarP.png"
+display_name = "진홍빛 저주"
+description = "브라이어는 기본 공격과 스킬로 중첩 가능한 출혈 효과를 적용하며, 출혈 피해의 일정 비율만큼 체력을 회복합니다. 늘 허기진 브라이어는 잃은 체력에 비례해 체력 회복량이 증가하는 대신 기본 체력 재생이 없습니다."

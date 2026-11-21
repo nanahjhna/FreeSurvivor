@@ -91,7 +91,7 @@ func try_cast(skill_key: String, target: Node3D = null) -> bool:
 	cooldowns[skill_key] = float(GameData.skill_cooldowns.get(ability_id, meta.get("base_cd", 1.0)))
 	emit_signal("skill_cooldown_updated", skill_key, cooldowns[skill_key], get_max_cooldown(skill_key))
 	if player.has_method("play_skill_animation"):
-		player.play_skill_animation(skill_key)
+		player.play_skill_animation(skill_key, ability_id)
 	var skill_power := GameData.get_skill_damage_multiplier(ability_id)
 	if cast_type == "heal":
 		player.heal(player.max_hp * float(meta.get("heal_ratio", 0.2)))

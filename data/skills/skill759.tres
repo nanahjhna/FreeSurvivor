@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_pabgq"]
+
+[resource]
+script = ExtResource("1_pabgq")
+id = "skill759"
+legacy_id = "ksante_e"
+champion_id = "KSante"
+champion_name = "크산테"
+slot_key = "E"
+reference_name = "발놀림"
+reference_description = "크산테가 돌진해 보호막을 얻습니다. 아군을 대상으로 지정하면 크산테가 해당 아군에게 돌진하며 돌진 사거리가 증가하고 크산테와 아군 모두 보호막을 얻습니다. / / 총공세 시 재사용 대기시간이 감소하고 속도가 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KSanteE.png"
+display_name = "발놀림"
+description = "크산테가 돌진해 보호막을 얻습니다. 아군을 대상으로 지정하면 크산테가 해당 아군에게 돌진하며 돌진 사거리가 증가하고 크산테와 아군 모두 보호막을 얻습니다. / / 총공세 시 재사용 대기시간이 감소하고 속도가 증가합니다."

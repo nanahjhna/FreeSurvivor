@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_t18bj"]
+
+[resource]
+script = ExtResource("1_t18bj")
+id = "skill132"
+legacy_id = "leona_q"
+champion_id = "Leona"
+champion_name = "레오나"
+slot_key = "Q"
+reference_name = "여명의 방패"
+reference_description = "레오나가 다음 기본 공격에서 방패를 사용하여 대상에게 추가 마법 피해를 입히고 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LeonaShieldOfDaybreak.png"
+display_name = "여명의 방패"
+description = "레오나가 다음 기본 공격에서 방패를 사용하여 대상에게 추가 마법 피해를 입히고 기절시킵니다."

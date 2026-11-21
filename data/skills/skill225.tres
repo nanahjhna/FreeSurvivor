@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_fcsuy"]
+
+[resource]
+script = ExtResource("1_fcsuy")
+id = "skill225"
+legacy_id = "morgana_r"
+champion_id = "Morgana"
+champion_name = "모르가나"
+slot_key = "R"
+reference_name = "영혼의 족쇄"
+reference_description = "모르가나가 날개를 펼치며 천상의 힘을 완전히 해방하여 땅 위로 날아오르고 주변 적 챔피언에게 검은 고통의 사슬을 날립니다. 모르가나의 이동 속도가 증가합니다. 사슬은 이동 속도를 늦추고 처음에 피해를 입히며 시간이 지난 후에도 사슬을 벗어나지 못하는 적을 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/MorganaR.png"
+display_name = "영혼의 족쇄"
+description = "모르가나가 날개를 펼치며 천상의 힘을 완전히 해방하여 땅 위로 날아오르고 주변 적 챔피언에게 검은 고통의 사슬을 날립니다. 모르가나의 이동 속도가 증가합니다. 사슬은 이동 속도를 늦추고 처음에 피해를 입히며 시간이 지난 후에도 사슬을 벗어나지 못하는 적을 기절시킵니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_sewvf"]
+
+[resource]
+script = ExtResource("1_sewvf")
+id = "skill824"
+legacy_id = "teemo_e"
+champion_id = "Teemo"
+champion_name = "티모"
+slot_key = "E"
+reference_name = "맹독 다트"
+reference_description = "티모의 기본 공격 %i:OnHit% 적중 시 적은 중독되어 4초 동안 매초 피해를 입습니다. 기본 공격을 맞힐 때마다 독 피해도 같이 들어갑니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TeemoE.png"
+display_name = "맹독 다트"
+description = "티모의 기본 공격 %i:OnHit% 적중 시 적은 중독되어 4초 동안 매초 피해를 입습니다. 기본 공격을 맞힐 때마다 독 피해도 같이 들어갑니다."

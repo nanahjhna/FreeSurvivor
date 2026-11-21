@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_2m4a6"]
+
+[resource]
+script = ExtResource("1_2m4a6")
+id = "skill634"
+legacy_id = "xerath_e"
+champion_id = "Xerath"
+champion_name = "제라스"
+slot_key = "E"
+reference_name = "충격 구체"
+reference_description = "적 한 명에게 마법 피해를 주며 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/XerathMageSpear.png"
+display_name = "충격 구체"
+description = "적 한 명에게 마법 피해를 주며 기절시킵니다."

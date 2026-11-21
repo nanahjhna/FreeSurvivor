@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_qp1iu"]
+
+[resource]
+script = ExtResource("1_qp1iu")
+id = "skill499"
+legacy_id = "yasuo_e"
+champion_id = "Yasuo"
+champion_name = "야스오"
+slot_key = "E"
+reference_name = "질풍검"
+reference_description = "대상 적을 뚫고 돌진하여 마법 피해를 입힙니다. 이후 사용할 때마다 돌진의 피해량이 증가하며 최대치에 도달하면 더 이상 증가하지 않습니다. / / 몇 초 내에는 동일한 대상에게 재사용할 수 없습니다. / / 돌진 도중 사용할 경우, 강철 폭풍이 원형으로 타격합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YasuoE.png"
+display_name = "질풍검"
+description = "대상 적을 뚫고 돌진하여 마법 피해를 입힙니다. 이후 사용할 때마다 돌진의 피해량이 증가하며 최대치에 도달하면 더 이상 증가하지 않습니다. / / 몇 초 내에는 동일한 대상에게 재사용할 수 없습니다. / / 돌진 도중 사용할 경우, 강철 폭풍이 원형으로 타격합니다."

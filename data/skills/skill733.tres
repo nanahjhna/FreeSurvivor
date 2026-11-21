@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_xg87o"]
+
+[resource]
+script = ExtResource("1_xg87o")
+id = "skill733"
+legacy_id = "kayn_w"
+champion_id = "Kayn"
+champion_name = "케인"
+slot_key = "W"
+reference_name = "몰아치는 낫"
+reference_description = "케인이 직선상의 대상 모두에게 피해를 입히고 둔화시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KaynW.png"
+display_name = "몰아치는 낫"
+description = "케인이 직선상의 대상 모두에게 피해를 입히고 둔화시킵니다."

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_w3um2"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_qvb86"]
+
+[resource]
+script = ExtResource("2_qvb86")
+id = "skill774"
+legacy_id = "kindred_e"
+champion_id = "Kindred"
+champion_name = "킨드레드"
+slot_key = "E"
+reference_name = "차오르는 공포"
+reference_description = "양이 신중하게 화살을 발사해 대상의 속도를 늦춥니다. 양이 대상을 두 번 더 공격하면 세 번째 공격 시 늑대가 적을 덮치게 만들어, 흉포한 공격으로 큰 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KindredEWrapper.png"
+display_name = "차오르는 공포"
+description = "양이 신중하게 화살을 발사해 대상의 속도를 늦춥니다. 양이 대상을 두 번 더 공격하면 세 번째 공격 시 늑대가 적을 덮치게 만들어, 흉포한 공격으로 큰 피해를 입힙니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+effect_scene = ExtResource("1_w3um2")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_3u1jl"]
+
+[resource]
+script = ExtResource("1_3u1jl")
+id = "skill808"
+legacy_id = "tryndamere_w"
+champion_id = "Tryndamere"
+champion_name = "트린다미어"
+slot_key = "W"
+reference_name = "조롱의 외침"
+reference_description = "트린다미어가 모욕적인 외침으로 주변 챔피언들의 공격력을 낮춥니다. 트린다미어에게서 등을 돌린 챔피언들은 이동 속도 역시 느려집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TryndamereW.png"
+display_name = "조롱의 외침"
+description = "트린다미어가 모욕적인 외침으로 주변 챔피언들의 공격력을 낮춥니다. 트린다미어에게서 등을 돌린 챔피언들은 이동 속도 역시 느려집니다."

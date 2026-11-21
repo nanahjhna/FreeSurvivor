@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_4il55"]
+
+[resource]
+script = ExtResource("1_4il55")
+id = "skill784"
+legacy_id = "talon_e"
+champion_id = "Talon"
+champion_name = "탈론"
+slot_key = "E"
+reference_name = "암살자의 길"
+reference_description = "탈론이 구조물이나 지형 위로 일정 거리를 도약해 넘습니다. 이 스킬 자체는 재사용 대기시간이 짧지만 한 번 넘은 지형은 상당 시간 동안 다시 넘을 수 없습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TalonE.png"
+display_name = "암살자의 길"
+description = "탈론이 구조물이나 지형 위로 일정 거리를 도약해 넘습니다. 이 스킬 자체는 재사용 대기시간이 짧지만 한 번 넘은 지형은 상당 시간 동안 다시 넘을 수 없습니다."

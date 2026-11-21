@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_f413d"]
+
+[resource]
+script = ExtResource("1_f413d")
+id = "skill505"
+legacy_id = "ekko_r"
+champion_id = "Ekko"
+champion_name = "에코"
+slot_key = "R"
+reference_name = "시공간 붕괴"
+reference_description = "에코가 시공간을 붕괴시켜 대상으로 지정할 수 없게 되며 더 유리한 지점으로 시간을 되돌립니다. 몇 초 전 아무 때로나 돌아가며, 이 동안 입은 피해의 일부가 회복됩니다. 에코가 착지하는 지역 부근의 적들은 큰 피해를 입습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/EkkoR.png"
+display_name = "시공간 붕괴"
+description = "에코가 시공간을 붕괴시켜 대상으로 지정할 수 없게 되며 더 유리한 지점으로 시간을 되돌립니다. 몇 초 전 아무 때로나 돌아가며, 이 동안 입은 피해의 일부가 회복됩니다. 에코가 착지하는 지역 부근의 적들은 큰 피해를 입습니다."

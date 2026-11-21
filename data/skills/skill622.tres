@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_7be1t"]
+
+[resource]
+script = ExtResource("1_7be1t")
+id = "skill622"
+legacy_id = "jax_q"
+champion_id = "Jax"
+champion_name = "잭스"
+slot_key = "Q"
+reference_name = "도약 공격"
+reference_description = "잭스가 목표 유닛을 향해 뛰어오릅니다. 대상이 적일 경우 무기로 내려칩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JaxQ.png"
+display_name = "도약 공격"
+description = "잭스가 목표 유닛을 향해 뛰어오릅니다. 대상이 적일 경우 무기로 내려칩니다."

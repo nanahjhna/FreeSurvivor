@@ -1,0 +1,139 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3]
+
+[ext_resource type="PackedScene" path="res://assets/char/char03/char03.glb" id="1_t7vfg"]
+[ext_resource type="Script" path="res://scripts/resources/character_data.gd" id="2_28gbx"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="3_llhkp"]
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="4_rfwj4"]
+[ext_resource type="PackedScene" path="res://scenes/skills/flame_attack.tscn" id="5_41uek"]
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="6_w0iij"]
+
+[sub_resource type="Resource" id="Resource_6c161"]
+script = ExtResource("3_llhkp")
+id = "skill881"
+legacy_id = "mage_q"
+slot_key = "q"
+reference_name = "화염구"
+reference_description = "불덩이를 던져 전방의 적을 태웁니다."
+icon = "🔥"
+display_name = "화염구"
+description = "불덩이를 던져 전방의 적을 태웁니다."
+cooldown = 3.4
+damage_ratio = 1.75
+cooldown_step = 0.12
+damage_step = 0.22
+range = 13.0
+cast_type = "wave"
+bonus_type = "fire"
+effect_scene = ExtResource("4_rfwj4")
+uses_magic_power = true
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_pl2rv"]
+script = ExtResource("3_llhkp")
+id = "skill882"
+legacy_id = "mage_w"
+slot_key = "w"
+reference_name = "잿불 폭풍"
+reference_description = "전방에 불꽃 폭풍을 일으킵니다."
+icon = "🌋"
+display_name = "잿불 폭풍"
+description = "전방에 불꽃 폭풍을 일으킵니다."
+cooldown = 7.0
+damage_ratio = 2.1
+cooldown_step = 0.18
+damage_step = 0.28
+range = 8.0
+cast_type = "flame"
+animation_key = "Kick"
+bonus_type = "fire"
+effect_scene = ExtResource("5_41uek")
+uses_magic_power = true
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_kyxh8"]
+script = ExtResource("3_llhkp")
+id = "skill883"
+legacy_id = "mage_e"
+slot_key = "e"
+reference_name = "비전 폭발"
+reference_description = "주변에 비전 에너지를 방출합니다."
+icon = "💥"
+display_name = "비전 폭발"
+description = "주변에 비전 에너지를 방출합니다."
+cooldown = 10.0
+damage_ratio = 2.6
+cooldown_step = 0.22
+damage_step = 0.32
+range = 9.0
+cast_type = "burst"
+bonus_type = "magic"
+effect_scene = ExtResource("6_w0iij")
+uses_magic_power = true
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_wwgml"]
+script = ExtResource("3_llhkp")
+id = "skill884"
+legacy_id = "mage_r"
+slot_key = "r"
+reference_name = "유성 낙하"
+reference_description = "거대한 마력 폭발로 넓은 범위의 적을 섬멸합니다."
+icon = "☄️"
+display_name = "유성 낙하"
+description = "거대한 마력 폭발로 넓은 범위의 적을 섬멸합니다."
+cooldown = 26.0
+damage_ratio = 4.5
+cooldown_step = 0.5
+damage_step = 0.55
+range = 11.0
+unlock_level = 8
+cast_type = "burst"
+bonus_type = "magic"
+effect_scene = ExtResource("6_w0iij")
+uses_magic_power = true
+implemented = true
+support_status = "game_skill"
+
+[resource]
+script = ExtResource("2_28gbx")
+id = "char05"
+legacy_id = "mage"
+display_name = "원소술사"
+title = "잿불의 계승자"
+role = "마법사"
+icon = "🔮"
+color = Color(0.55, 0.39, 0.82, 1)
+model_scene = ExtResource("1_t7vfg")
+animation_profile = "mage"
+animation_aliases = {
+"Attack": ["Standing_1H_Magic_Attack_01_RT", "Standing_1H_Magic_Attack_03_RT"],
+"AttackAlt": ["Standing_1H_Magic_Attack_03_RT", "Standing_1H_Magic_Attack_01_RT"],
+"Death": ["Livershot_Knockdown_RT"],
+"Hit": ["Hit_Chest_RT"],
+"Idle": ["Breathing_Idle_RT"],
+"Kick": ["Standing_2H_Magic_Area_Attack_02_RT", "Standing_2H_Magic_Attack_01_RT"],
+"Run": ["Run_Female_RT"],
+"Walk": ["Run_Female_RT"]
+}
+base_str = 3
+base_agi = 4
+base_vit = 4
+base_int = 9
+base_dex = 5
+base_luk = 5
+base_atk = 17.0
+base_def = 6.0
+base_spd = 6.4
+skills = Array[ExtResource("3_llhkp")]([SubResource("Resource_6c161"), SubResource("Resource_pl2rv"), SubResource("Resource_kyxh8"), SubResource("Resource_wwgml")])
+signature_skill = "화염구"
+weapon_name = "원소 지팡이"
+combat_style = "마법 광역 공격과 원소 폭발"
+description = "마나 없이 재사용 대기시간을 활용해 원소 마법을 연속 시전하는 마법사."
+starting_gear = {
+"accessory": null,
+"armor": null,
+"weapon": null
+}

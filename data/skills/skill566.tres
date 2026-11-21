@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_rw1j1"]
+
+[resource]
+script = ExtResource("1_rw1j1")
+id = "skill566"
+legacy_id = "yuumi_p"
+champion_id = "Yuumi"
+champion_name = "유미"
+slot_key = "P"
+reference_name = "야옹이 친구"
+reference_description = "기본 공격이나 스킬로 챔피언을 맞히면 주기적으로 유미가 체력을 회복하고 다음으로 밀착하는 아군의 체력을 회복시킵니다. / / 유미는 밀착한 아군과 특별한 유대를 형성합니다. 가장 유대가 긴밀한 아군에게 밀착한 동안 유미의 스킬이 강화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/YuumiP2.png"
+display_name = "야옹이 친구"
+description = "기본 공격이나 스킬로 챔피언을 맞히면 주기적으로 유미가 체력을 회복하고 다음으로 밀착하는 아군의 체력을 회복시킵니다. / / 유미는 밀착한 아군과 특별한 유대를 형성합니다. 가장 유대가 긴밀한 아군에게 밀착한 동안 유미의 스킬이 강화됩니다."

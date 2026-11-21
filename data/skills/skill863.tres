@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_yubfi"]
+
+[resource]
+script = ExtResource("1_yubfi")
+id = "skill863"
+legacy_id = "hwei_w"
+champion_id = "Hwei"
+champion_name = "흐웨이"
+slot_key = "W"
+reference_name = "주제: 평온"
+reference_description = "흐웨이가 일련의 평온을 상상하며 힘을 북돋는 배경을 그립니다. / / 흐웨이의 스킬을 보조 스킬인 쏜살같은 물살, 반사의 웅덩이, 요동치는 빛으로 교체합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/HweiW.png"
+display_name = "주제: 평온"
+description = "흐웨이가 일련의 평온을 상상하며 힘을 북돋는 배경을 그립니다. / / 흐웨이의 스킬을 보조 스킬인 쏜살같은 물살, 반사의 웅덩이, 요동치는 빛으로 교체합니다."

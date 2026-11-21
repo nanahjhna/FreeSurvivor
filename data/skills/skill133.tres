@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_x03tr"]
+
+[resource]
+script = ExtResource("1_x03tr")
+id = "skill133"
+legacy_id = "leona_w"
+champion_id = "Leona"
+champion_name = "레오나"
+slot_key = "W"
+reference_name = "일식"
+reference_description = "레오나가 방패를 들어 피해량 감소 효과를 얻고 방어력과 마법 저항력을 높입니다. 지속시간이 끝날 때 근처에 적이 있으면 마법 피해를 주며 스킬의 지속시간이 늘어납니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LeonaSolarBarrier.png"
+display_name = "일식"
+description = "레오나가 방패를 들어 피해량 감소 효과를 얻고 방어력과 마법 저항력을 높입니다. 지속시간이 끝날 때 근처에 적이 있으면 마법 피해를 주며 스킬의 지속시간이 늘어납니다."

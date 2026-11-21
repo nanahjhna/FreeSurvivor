@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_pabcn"]
+
+[resource]
+script = ExtResource("1_pabcn")
+id = "skill327"
+legacy_id = "samira_q"
+champion_id = "Samira"
+champion_name = "사미라"
+slot_key = "Q"
+reference_name = "천부적 재능"
+reference_description = "사미라가 총을 쏘거나 검을 휘둘러 피해를 입힙니다. 거침없는 질주 도중 사용하면 돌진이 끝난 후 경로 내에 있는 모든 적을 공격합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SamiraQ.png"
+display_name = "천부적 재능"
+description = "사미라가 총을 쏘거나 검을 휘둘러 피해를 입힙니다. 거침없는 질주 도중 사용하면 돌진이 끝난 후 경로 내에 있는 모든 적을 공격합니다."

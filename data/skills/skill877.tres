@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_knlgo"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_c6n1o"]
+
+[resource]
+script = ExtResource("2_c6n1o")
+id = "skill877"
+legacy_id = "archer_q"
+reference_name = "관통 화살"
+reference_description = "적을 관통하는 빠른 화살을 발사합니다."
+icon = "➶"
+display_name = "관통 화살"
+description = "적을 관통하는 빠른 화살을 발사합니다."
+cooldown = 2.8
+damage_ratio = 1.45
+cooldown_step = 0.1
+damage_step = 0.18
+range = 16.0
+cast_type = "wave"
+animation_key = "AttackAlt"
+effect_scene = ExtResource("1_knlgo")
+implemented = true
+support_status = "game_skill"

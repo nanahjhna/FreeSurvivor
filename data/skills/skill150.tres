@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_hrinc"]
+
+[resource]
+script = ExtResource("1_hrinc")
+id = "skill150"
+legacy_id = "rengar_r"
+champion_id = "Rengar"
+champion_name = "렝가"
+slot_key = "R"
+reference_name = "사냥의 전율"
+reference_description = "렝가가 맹수의 본능을 발동해 위장 상태가 되고 일정 범위 내에서 가장 가까이에 있는 적을 드러내 확인할 수 있습니다. 사냥의 전율이 활성화된 동안에는 이동 속도가 빨라지고 수풀에 있지 않아도 확인한 적에게 도약할 수 있으며, 이때 대상의 방어력을 감소시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RengarR.png"
+display_name = "사냥의 전율"
+description = "렝가가 맹수의 본능을 발동해 위장 상태가 되고 일정 범위 내에서 가장 가까이에 있는 적을 드러내 확인할 수 있습니다. 사냥의 전율이 활성화된 동안에는 이동 속도가 빨라지고 수풀에 있지 않아도 확인한 적에게 도약할 수 있으며, 이때 대상의 방어력을 감소시킵니다."

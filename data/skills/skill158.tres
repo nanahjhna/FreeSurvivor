@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_odb5h"]
+
+[resource]
+script = ExtResource("1_odb5h")
+id = "skill158"
+legacy_id = "lucian_w"
+champion_id = "Lucian"
+champion_name = "루시안"
+slot_key = "W"
+reference_name = "타는 불길"
+reference_description = "루시안이 별 모양으로 폭발하여 적에게 표식을 남기는 미사일을 발사합니다. 미사일에 맞은 적은 잠시 위치가 드러나며 표식이 남아 있는 적을 공격하면 루시안의 이동 속도가 상승합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LucianW.png"
+display_name = "타는 불길"
+description = "루시안이 별 모양으로 폭발하여 적에게 표식을 남기는 미사일을 발사합니다. 미사일에 맞은 적은 잠시 위치가 드러나며 표식이 남아 있는 적을 공격하면 루시안의 이동 속도가 상승합니다."

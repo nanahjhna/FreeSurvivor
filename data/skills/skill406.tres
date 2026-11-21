@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_nt73x"]
+
+[resource]
+script = ExtResource("1_nt73x")
+id = "skill406"
+legacy_id = "xinzhao_p"
+champion_id = "XinZhao"
+champion_name = "신 짜오"
+slot_key = "P"
+reference_name = "결심"
+reference_description = "세 번째 기본 공격 시마다 추가 피해를 입히고 자신의 체력을 회복합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/XinZhaoReworkP.png"
+display_name = "결심"
+description = "세 번째 기본 공격 시마다 추가 피해를 입히고 자신의 체력을 회복합니다."

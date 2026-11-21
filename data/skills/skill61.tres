@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_8gyc8"]
+
+[resource]
+script = ExtResource("1_8gyc8")
+id = "skill61"
+legacy_id = "nunu_p"
+champion_id = "Nunu"
+champion_name = "누누와 윌럼프"
+slot_key = "P"
+reference_name = "프렐요드의 부름"
+reference_description = "누누가 윌럼프와 주변 아군 1명의 공격 속도와 이동 속도를 증가시키고, 윌럼프의 기본 공격이 대상 근처의 적에게 피해를 줍니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/NunuPassive.png"
+display_name = "프렐요드의 부름"
+description = "누누가 윌럼프와 주변 아군 1명의 공격 속도와 이동 속도를 증가시키고, 윌럼프의 기본 공격이 대상 근처의 적에게 피해를 줍니다."

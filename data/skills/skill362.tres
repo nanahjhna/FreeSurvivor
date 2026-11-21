@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_fsr4p"]
+
+[resource]
+script = ExtResource("1_fsr4p")
+id = "skill362"
+legacy_id = "sett_q"
+champion_id = "Sett"
+champion_name = "세트"
+slot_key = "Q"
+reference_name = "주먹다짐"
+reference_description = "세트의 다음 두 번의 공격이 대상 최대 체력에 비례해 추가 피해를 입힙니다. 또한 세트는 적 챔피언을 향해 이동할 때 이동 속도가 올라갑니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SettQ.png"
+display_name = "주먹다짐"
+description = "세트의 다음 두 번의 공격이 대상 최대 체력에 비례해 추가 피해를 입힙니다. 또한 세트는 적 챔피언을 향해 이동할 때 이동 속도가 올라갑니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ppodm"]
+
+[resource]
+script = ExtResource("1_ppodm")
+id = "skill712"
+legacy_id = "katarina_q"
+champion_id = "Katarina"
+champion_name = "카타리나"
+slot_key = "Q"
+reference_name = "단검 투척"
+reference_description = "카타리나가 대상에게 단검을 던집니다. 단검은 근처 적들에게 튕겼다가 땅에 떨어집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KatarinaQ.png"
+display_name = "단검 투척"
+description = "카타리나가 대상에게 단검을 던집니다. 단검은 근처 적들에게 튕겼다가 땅에 떨어집니다."

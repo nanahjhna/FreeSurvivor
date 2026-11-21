@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ltoiv"]
+
+[resource]
+script = ExtResource("1_ltoiv")
+id = "skill110"
+legacy_id = "rammus_r"
+champion_id = "Rammus"
+champion_name = "람머스"
+slot_key = "R"
+reference_name = "지진 폭격"
+reference_description = "람머스가 공중으로 뛰어오른 후 대상 지점에 착지하여 마법 피해를 입히고 적을 둔화시킵니다. 대회전 상태에서 사용하면 범위 중앙 근처에 있는 적을 공중으로 띄워 올립니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/Tremors2.png"
+display_name = "지진 폭격"
+description = "람머스가 공중으로 뛰어오른 후 대상 지점에 착지하여 마법 피해를 입히고 적을 둔화시킵니다. 대회전 상태에서 사용하면 범위 중앙 근처에 있는 적을 공중으로 띄워 올립니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ymogj"]
+
+[resource]
+script = ExtResource("1_ymogj")
+id = "skill448"
+legacy_id = "azir_w"
+champion_id = "Azir"
+champion_name = "아지르"
+slot_key = "W"
+reference_name = "일어나라!"
+reference_description = "아지르가 모래 병사를 소환하여 근처에 있는 대상을 공격합니다. 아지르의 기본 공격은 모래 병사의 공격 범위 내에 있는 대상에게 가해집니다. 아지르와 모래 병사의 공격은 일직선 상의 적들에게 마법 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AzirW.png"
+display_name = "일어나라!"
+description = "아지르가 모래 병사를 소환하여 근처에 있는 대상을 공격합니다. 아지르의 기본 공격은 모래 병사의 공격 범위 내에 있는 대상에게 가해집니다. 아지르와 모래 병사의 공격은 일직선 상의 적들에게 마법 피해를 입힙니다."

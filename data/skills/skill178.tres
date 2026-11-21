@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ku2ag"]
+
+[resource]
+script = ExtResource("1_ku2ag")
+id = "skill178"
+legacy_id = "riven_w"
+champion_id = "Riven"
+champion_name = "리븐"
+slot_key = "W"
+reference_name = "기 폭발"
+reference_description = "리븐이 기를 폭발시켜 근처의 적에게 피해를 주며 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RivenMartyr.png"
+display_name = "기 폭발"
+description = "리븐이 기를 폭발시켜 근처의 적에게 피해를 주며 기절시킵니다."

@@ -6,7 +6,8 @@ var direction: Vector3 = Vector3.FORWARD
 var hit_targets: Array[Node] = []
 var lifetime: float = 1.2
 
-func cast(caster: Node3D, _target: Node3D, cast_direction: Vector3, damage_multiplier: float, _definition: Dictionary) -> void:
+func cast(caster: Node3D, _target: Node3D, cast_direction: Vector3, damage_multiplier: float, definition: Dictionary) -> void:
+	apply_definition_visual(definition)
 	global_position = caster.global_position + Vector3(0.0, 0.8, 0.0) + cast_direction * 0.5
 	setup(cast_direction, damage_multiplier)
 

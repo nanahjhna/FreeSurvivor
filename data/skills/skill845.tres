@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_o3552"]
+
+[resource]
+script = ExtResource("1_o3552")
+id = "skill845"
+legacy_id = "fiora_r"
+champion_id = "Fiora"
+champion_name = "피오라"
+slot_key = "R"
+reference_name = "대결투"
+reference_description = "피오라가 적 챔피언의 급소 네 군데를 모두 드러내고 해당 적 근처에서 이동 속도가 증가합니다. 피오라가 급소 네 군데를 모두 가격하거나 한 군데라도 가격한 후 대상이 죽으면 다음 몇 초 동안 피오라와 주변 지역에 있는 아군이 치유됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/FioraR.png"
+display_name = "대결투"
+description = "피오라가 적 챔피언의 급소 네 군데를 모두 드러내고 해당 적 근처에서 이동 속도가 증가합니다. 피오라가 급소 네 군데를 모두 가격하거나 한 군데라도 가격한 후 대상이 죽으면 다음 몇 초 동안 피오라와 주변 지역에 있는 아군이 치유됩니다."

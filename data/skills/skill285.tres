@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_8pbsu"]
+
+[resource]
+script = ExtResource("1_8pbsu")
+id = "skill285"
+legacy_id = "volibear_r"
+champion_id = "Volibear"
+champion_name = "볼리베어"
+slot_key = "R"
+reference_name = "폭풍을 부르는 자"
+reference_description = "볼리베어가 지정한 위치로 도약하여 아래에 있는 적을 둔화시키고 피해를 입히며 추가 체력을 얻습니다. 볼리베어가 착지한 곳 근처에 있는 포탑은 일시적으로 비활성화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VolibearR.png"
+display_name = "폭풍을 부르는 자"
+description = "볼리베어가 지정한 위치로 도약하여 아래에 있는 적을 둔화시키고 피해를 입히며 추가 체력을 얻습니다. 볼리베어가 착지한 곳 근처에 있는 포탑은 일시적으로 비활성화됩니다."

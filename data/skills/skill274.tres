@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_jgj7l"]
+
+[resource]
+script = ExtResource("1_jgj7l")
+id = "skill274"
+legacy_id = "belveth_e"
+champion_id = "Belveth"
+champion_name = "벨베스"
+slot_key = "E"
+reference_name = "여제의 소용돌이"
+reference_description = "벨베스가 제자리에 가만히 서서 정신을 집중하며 가장 체력이 낮은 적을 노리고 생명력 흡수와 피해량 감소 효과를 부여하는 칼바람 소용돌이를 일으킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BelvethE.png"
+display_name = "여제의 소용돌이"
+description = "벨베스가 제자리에 가만히 서서 정신을 집중하며 가장 체력이 낮은 적을 노리고 생명력 흡수와 피해량 감소 효과를 부여하는 칼바람 소용돌이를 일으킵니다."

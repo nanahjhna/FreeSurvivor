@@ -1,0 +1,213 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3 uid="uid://ca2mhv8lvvxdr"]
+
+[ext_resource type="Script" uid="uid://dpjtcnv2duboh" path="res://scripts/resources/character_data.gd" id="1_g6opw"]
+[ext_resource type="Script" uid="uid://by4uujmb8456t" path="res://scripts/resources/skill_data.gd" id="2_4lpyr"]
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="3_ixpnj"]
+[ext_resource type="PackedScene" path="res://scenes/skills/flame_attack.tscn" id="4_vdw8w"]
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="5_bxkv4"]
+
+[sub_resource type="Resource" id="Resource_t4jxg"]
+script = ExtResource("2_4lpyr")
+id = "skill877"
+legacy_id = "archer_q"
+slot_key = "q"
+reference_name = "관통 화살"
+reference_description = "적을 관통하는 빠른 화살을 발사합니다."
+icon = "➶"
+display_name = "관통 화살"
+description = "적을 관통하는 빠른 화살을 발사합니다."
+cooldown = 2.8
+damage_ratio = 1.45
+cooldown_step = 0.1
+damage_step = 0.18
+range = 16.0
+cast_type = "wave"
+effect_scene = ExtResource("3_ixpnj")
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_mwx4j"]
+script = ExtResource("2_4lpyr")
+id = "skill878"
+legacy_id = "archer_w"
+slot_key = "w"
+reference_name = "매의 연사"
+reference_description = "세 방향으로 화살을 연속 발사합니다."
+icon = "🏹"
+display_name = "매의 연사"
+description = "세 방향으로 화살을 연속 발사합니다."
+cooldown = 6.0
+damage_ratio = 0.85
+cooldown_step = 0.12
+damage_step = 0.12
+range = 15.0
+cast_type = "volley"
+animation_key = "Kick"
+effect_scene = ExtResource("3_ixpnj")
+cast_pattern = "fan"
+projectile_count = 3
+spread_radians = 0.38
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_e1jsb"]
+script = ExtResource("2_4lpyr")
+id = "skill879"
+legacy_id = "archer_e"
+slot_key = "e"
+reference_name = "올가미 사격"
+reference_description = "지정 방향을 강하게 꿰뚫는 사격을 가합니다."
+icon = "🎯"
+display_name = "올가미 사격"
+description = "지정 방향을 강하게 꿰뚫는 사격을 가합니다."
+cooldown = 8.0
+damage_ratio = 2.3
+cooldown_step = 0.18
+damage_step = 0.28
+range = 14.0
+cast_type = "flame"
+effect_scene = ExtResource("4_vdw8w")
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_2f6pg"]
+script = ExtResource("2_4lpyr")
+id = "skill880"
+legacy_id = "archer_r"
+slot_key = "r"
+reference_name = "유성 화살비"
+reference_description = "넓은 지역에 강력한 화살비를 쏟아붓습니다."
+icon = "☄️"
+display_name = "유성 화살비"
+description = "넓은 지역에 강력한 화살비를 쏟아붓습니다."
+cooldown = 24.0
+damage_ratio = 3.8
+cooldown_step = 0.45
+damage_step = 0.5
+range = 11.0
+unlock_level = 8
+cast_type = "burst"
+bonus_type = "area"
+effect_scene = ExtResource("5_bxkv4")
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_4lpyr"]
+script = ExtResource("2_4lpyr")
+slot_key = "a"
+reference_name = "정조준 사격"
+reference_description = "정확하게 겨냥해 적 하나를 꿰뚫는 강화 화살을 쏩니다."
+icon = "🎯"
+display_name = "정조준 사격"
+description = "정확하게 겨냥해 적 하나를 꿰뚫는 강화 화살을 쏩니다."
+cooldown = 10.0
+damage_ratio = 2.8
+range = 18.0
+unlock_level = 3
+cast_type = "wave"
+animation_key = "Attack"
+effect_scene = ExtResource("3_ixpnj")
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_ixpnj"]
+script = ExtResource("2_4lpyr")
+slot_key = "s"
+reference_name = "숲의 숨결"
+reference_description = "자연의 기운을 모아 최대 체력의 28%를 회복합니다."
+icon = "🌿"
+display_name = "숲의 숨결"
+description = "자연의 기운을 모아 최대 체력의 28%를 회복합니다."
+cooldown = 26.0
+range = 0.0
+cast_type = "heal"
+animation_key = "Cast"
+heal_ratio = 0.28
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_vdw8w"]
+script = ExtResource("2_4lpyr")
+reference_name = "쌍연 화살"
+reference_description = "전방을 향해 세 발의 화살을 빠르게 연속 발사합니다."
+icon = "🏹"
+display_name = "쌍연 화살"
+description = "전방을 향해 세 발의 화살을 빠르게 연속 발사합니다."
+cooldown = 11.0
+damage_ratio = 0.78
+range = 17.0
+unlock_level = 5
+cast_type = "volley"
+effect_scene = ExtResource("3_ixpnj")
+cast_pattern = "fan"
+projectile_count = 3
+spread_radians = 0.24
+implemented = true
+support_status = "game_skill"
+
+[sub_resource type="Resource" id="Resource_bxkv4"]
+script = ExtResource("2_4lpyr")
+reference_name = "천궁 화살비"
+reference_description = "넓은 범위에 강력한 화살비를 쏟아붓습니다."
+icon = "☄️"
+display_name = "천궁 화살비"
+description = "넓은 범위에 강력한 화살비를 쏟아붓습니다."
+cooldown = 32.0
+damage_ratio = 4.6
+range = 12.0
+unlock_level = 10
+cast_type = "burst"
+animation_key = "Cast"
+effect_scene = ExtResource("5_bxkv4")
+implemented = true
+support_status = "game_skill"
+
+[resource]
+script = ExtResource("1_g6opw")
+id = "char01"
+legacy_id = "archer"
+display_name = "추적자"
+title = "황야의 명사수"
+role = "궁수"
+icon = "🏹"
+color = Color(0.35, 0.66, 0.39, 1)
+animation_profile = "archer"
+animation_aliases = {
+"Attack": ["Bow_Release_RT", "Bow_Shoot_RT", "Bow_Attack_RT", "Bow_Pull_Back_RT", "Attack"],
+"AttackAlt": ["Bow_Release_RT", "Bow_Shoot_RT", "Bow_Attack_RT", "Attack"],
+"AttackBase": ["Bow_Release_RT", "Bow_Shoot_RT", "Bow_Attack_RT", "Attack"],
+"Block": ["Blocking_RT", "Block_RT", "Block"],
+"Cast": ["Bow_Pull_Back_RT", "Bow_Release_RT", "Bow_Shoot_RT", "Cast"],
+"Death": ["Livershot_Knockdown_RT", "Death"],
+"Dodge": ["Dodge_RT", "Roll_RT", "Dodge"],
+"Fall": ["Livershot_Knockdown_RT", "Knockdown", "Fall"],
+"GetUp": ["Get_Up_RT", "Getting_Up_RT", "Stand_Up_RT", "GetUp"],
+"Hit": ["Hit_Chest_RT", "Hit_React_RT", "Hit"],
+"Idle": ["Breathing_Idle_RT", "Idle_Bow_RT", "Bow_Idle_RT", "Idle"],
+"Jump": ["Jump_RT", "Jump"],
+"Kick": ["Bow_Release_RT", "Bow_Shoot_RT", "Attack"],
+"Knockdown": ["Livershot_Knockdown_RT", "Knockdown", "Fall"],
+"Run": ["Run_Bow_RT", "Run_Female_RT", "Bow_Run_RT", "Run_Forward_RT", "Run"],
+"Victory": ["Victory_1_RT", "Victory_RT", "Victory"],
+"Walk": ["Walk_Bow_RT", "Walk_Female_RT", "Walk_Forward_RT", "Walk_RT", "Walk"]
+}
+base_str = 4
+base_agi = 8
+base_vit = 4
+base_int = 3
+base_dex = 9
+base_luk = 5
+base_hp = 105.0
+base_atk = 18.0
+base_def = 7.0
+base_spd = 7.4
+skills = Array[ExtResource("2_4lpyr")]([SubResource("Resource_t4jxg"), SubResource("Resource_mwx4j"), SubResource("Resource_e1jsb"), SubResource("Resource_2f6pg"), SubResource("Resource_4lpyr"), SubResource("Resource_ixpnj"), SubResource("Resource_vdw8w"), SubResource("Resource_bxkv4")])
+signature_skill = "관통 화살"
+weapon_name = "장궁"
+combat_style = "원거리 관통과 빠른 연사"
+description = "먼 거리에서 약점을 노리고 관통 사격을 가하는 황야의 사냥꾼."
+starting_gear = {
+"accessory": null,
+"armor": null,
+"weapon": null
+}

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_skrty"]
+
+[resource]
+script = ExtResource("1_skrty")
+id = "skill340"
+legacy_id = "sylas_r"
+champion_id = "Sylas"
+champion_name = "사일러스"
+slot_key = "R"
+reference_name = "강탈"
+reference_description = "사일러스가 적의 궁극기를 강탈해 자유롭게 사용합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SylasR.png"
+display_name = "강탈"
+description = "사일러스가 적의 궁극기를 강탈해 자유롭게 사용합니다."

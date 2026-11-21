@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_1vnn1"]
+
+[resource]
+script = ExtResource("1_1vnn1")
+id = "skill527"
+legacy_id = "orianna_q"
+champion_id = "Orianna"
+champion_name = "오리아나"
+slot_key = "Q"
+reference_name = "명령: 공격"
+reference_description = "오리아나가 구체에게 목표 지점으로 돌진하라고 명령하여 구체가 대상 지점으로 가는 동안 마주치는 대상에게 마법 피해를 줍니다. 여러 대상을 맞히는 경우 뒤로 갈수록 피해량이 작아집니다. 구체는 목표 지점에 머뭅니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/OrianaIzunaCommand.png"
+display_name = "명령: 공격"
+description = "오리아나가 구체에게 목표 지점으로 돌진하라고 명령하여 구체가 대상 지점으로 가는 동안 마주치는 대상에게 마법 피해를 줍니다. 여러 대상을 맞히는 경우 뒤로 갈수록 피해량이 작아집니다. 구체는 목표 지점에 머뭅니다."

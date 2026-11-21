@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_s2yci"]
+
+[resource]
+script = ExtResource("1_s2yci")
+id = "skill764"
+legacy_id = "kled_e"
+champion_id = "Kled"
+champion_name = "클레드"
+slot_key = "E"
+reference_name = "이랴!"
+reference_description = "클레드가 돌진하며 물리 피해를 입히고 이동 속도가 일시적으로 상승합니다. 다시 스킬을 사용하면 최초 대상 쪽으로 돌진하여 동일한 양의 피해를 또 입힐 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KledE.png"
+display_name = "이랴!"
+description = "클레드가 돌진하며 물리 피해를 입히고 이동 속도가 일시적으로 상승합니다. 다시 스킬을 사용하면 최초 대상 쪽으로 돌진하여 동일한 양의 피해를 또 입힐 수 있습니다."

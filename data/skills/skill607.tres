@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_sl1qw"]
+
+[resource]
+script = ExtResource("1_sl1qw")
+id = "skill607"
+legacy_id = "zac_q"
+champion_id = "Zac"
+champion_name = "자크"
+slot_key = "Q"
+reference_name = "탄성 주먹"
+reference_description = "자크가 팔을 쭉 뻗어 적을 붙잡습니다. 다른 적을 공격하면 둘을 서로에게 던져 충돌하게 합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ZacQ.png"
+display_name = "탄성 주먹"
+description = "자크가 팔을 쭉 뻗어 적을 붙잡습니다. 다른 적을 공격하면 둘을 서로에게 던져 충돌하게 합니다."

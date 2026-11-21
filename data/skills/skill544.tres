@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_la3w4"]
+
+[resource]
+script = ExtResource("1_la3w4")
+id = "skill544"
+legacy_id = "yorick_e"
+champion_id = "Yorick"
+champion_name = "요릭"
+slot_key = "E"
+reference_name = "애도의 안개"
+reference_description = "요릭이 대상에게 방어력을 감소시키고, 피해를 입히고, 이동 속도를 늦추며 표식을 남기는 안개의 구를 던집니다. 소환한 유닛은 표식이 있는 대상 쪽으로 이동할 때 이동 속도가 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YorickE.png"
+display_name = "애도의 안개"
+description = "요릭이 대상에게 방어력을 감소시키고, 피해를 입히고, 이동 속도를 늦추며 표식을 남기는 안개의 구를 던집니다. 소환한 유닛은 표식이 있는 대상 쪽으로 이동할 때 이동 속도가 증가합니다."

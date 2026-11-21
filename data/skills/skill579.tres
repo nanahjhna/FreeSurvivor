@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_3wh2m"]
+
+[resource]
+script = ExtResource("1_3wh2m")
+id = "skill579"
+legacy_id = "evelynn_e"
+champion_id = "Evelynn"
+champion_name = "이블린"
+slot_key = "E"
+reference_name = "채찍유린"
+reference_description = "이블린이 대상을 가격하여 피해를 줍니다. 이후 짧은 시간 동안 이동 속도가 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/EvelynnE.png"
+display_name = "채찍유린"
+description = "이블린이 대상을 가격하여 피해를 줍니다. 이후 짧은 시간 동안 이동 속도가 증가합니다."

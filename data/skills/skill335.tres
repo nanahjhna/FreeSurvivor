@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_jcm01"]
+
+[resource]
+script = ExtResource("1_jcm01")
+id = "skill335"
+legacy_id = "sion_r"
+champion_id = "Sion"
+champion_name = "사이온"
+slot_key = "R"
+reference_name = "멈출 수 없는 맹공"
+reference_description = "사이온이 한 방향으로 돌진하며 점차 속도가 상승합니다. 돌진 방향은 마우스 커서 위치로 약간 조종할 수 있습니다. 적과 충돌하면 돌진한 거리에 비례하여 피해를 입히고 띄워올립니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SionR.png"
+display_name = "멈출 수 없는 맹공"
+description = "사이온이 한 방향으로 돌진하며 점차 속도가 상승합니다. 돌진 방향은 마우스 커서 위치로 약간 조종할 수 있습니다. 적과 충돌하면 돌진한 거리에 비례하여 피해를 입히고 띄워올립니다."

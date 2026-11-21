@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_r8nf4"]
+
+[resource]
+script = ExtResource("1_r8nf4")
+id = "skill491"
+legacy_id = "ashe_p"
+champion_id = "Ashe"
+champion_name = "애쉬"
+slot_key = "P"
+reference_name = "서리 화살"
+reference_description = "애쉬의 공격을 받은 대상이 느려지며, 이 대상에 대한 애쉬의 공격력이 상승합니다. / / 애쉬의 치명타는 추가 피해를 가하지 않는 대신, 대상에게 더 강력한 둔화를 적용합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Ashe_P.png"
+display_name = "서리 화살"
+description = "애쉬의 공격을 받은 대상이 느려지며, 이 대상에 대한 애쉬의 공격력이 상승합니다. / / 애쉬의 치명타는 추가 피해를 가하지 않는 대신, 대상에게 더 강력한 둔화를 적용합니다."

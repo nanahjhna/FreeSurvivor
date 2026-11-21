@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_e863x"]
+
+[resource]
+script = ExtResource("1_e863x")
+id = "skill192"
+legacy_id = "masteryi_q"
+champion_id = "MasterYi"
+champion_name = "마스터 이"
+slot_key = "Q"
+reference_name = "일격 필살"
+reference_description = "마스터 이가 전장을 순식간에 가로질러 여러 명의 적 유닛에게 물리 피해를 입히며, 그동안 대상으로 지정할 수 없는 상태가 됩니다. 일격 필살은 치명타가 발동하며 몬스터에게 추가 물리 피해를 입힐 수 있습니다. 기본 공격을 하면 일격 필살의 재사용 대기시간이 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AlphaStrike.png"
+display_name = "일격 필살"
+description = "마스터 이가 전장을 순식간에 가로질러 여러 명의 적 유닛에게 물리 피해를 입히며, 그동안 대상으로 지정할 수 없는 상태가 됩니다. 일격 필살은 치명타가 발동하며 몬스터에게 추가 물리 피해를 입힐 수 있습니다. 기본 공격을 하면 일격 필살의 재사용 대기시간이 감소합니다."

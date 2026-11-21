@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_n48hm"]
+
+[resource]
+script = ExtResource("1_n48hm")
+id = "skill140"
+legacy_id = "reksai_r"
+champion_id = "RekSai"
+champion_name = "렉사이"
+slot_key = "R"
+reference_name = "공허의 돌진"
+reference_description = "기본 지속 효과로 렉사이가 피해를 입힌 대상에게 표식을 남깁니다. 스킬을 사용하면 잠시 대상으로 지정될 수 없는 상태가 되며, 표식이 있는 대상에게 도약하여 최대 체력에 비례해 큰 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RekSaiR.png"
+display_name = "공허의 돌진"
+description = "기본 지속 효과로 렉사이가 피해를 입힌 대상에게 표식을 남깁니다. 스킬을 사용하면 잠시 대상으로 지정될 수 없는 상태가 되며, 표식이 있는 대상에게 도약하여 최대 체력에 비례해 큰 피해를 입힙니다."

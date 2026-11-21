@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_afn6s"]
+
+[resource]
+script = ExtResource("1_afn6s")
+id = "skill565"
+legacy_id = "yunara_r"
+champion_id = "Yunara"
+champion_name = "유나라"
+slot_key = "R"
+reference_name = "자기 초월"
+reference_description = "유나라가 초월 상태에 돌입해 기본 스킬을 강화합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YunaraR.png"
+display_name = "자기 초월"
+description = "유나라가 초월 상태에 돌입해 기본 스킬을 강화합니다."

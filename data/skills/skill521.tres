@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_bv8h1"]
+
+[resource]
+script = ExtResource("1_bv8h1")
+id = "skill521"
+legacy_id = "ornn_p"
+champion_id = "Ornn"
+champion_name = "오른"
+slot_key = "P"
+reference_name = "간이 대장간"
+reference_description = "오른이 추가 방어력과 마법 저항력을 얻습니다. / / 오른은 어디에서든 골드를 써서 소모품을 제외한 아이템을 제작할 수 있습니다. / / 또한 걸작 아이템을 만들어 직접 사용하거나 아군의 아이템을 업그레이드할 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/OrnnP.png"
+display_name = "간이 대장간"
+description = "오른이 추가 방어력과 마법 저항력을 얻습니다. / / 오른은 어디에서든 골드를 써서 소모품을 제외한 아이템을 제작할 수 있습니다. / / 또한 걸작 아이템을 만들어 직접 사용하거나 아군의 아이템을 업그레이드할 수 있습니다."

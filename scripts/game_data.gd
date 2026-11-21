@@ -176,7 +176,7 @@ var characters: Dictionary = {
 	},
 	"fighter_2d": {
 		"id": "fighter_2d", "name": "화염권객", "title": "2D 화염권 무도가", "role": "무도가 · 2D",
-		"grade": "R", "icon": "🔥", "color": Color(0.82, 0.32, 0.18), "unlocked": true,
+		"grade": "R", "icon": "🔥", "color": Color(0.82, 0.32, 0.18), "unlocked": false,
 		"model_scene": "res://assets/char/char05/char05_textured.glb", "model_scale": Vector3.ONE, "animation_profile": "fighter",
 		"base_attributes": {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3},
 		"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0, "base_spd": 6.8,
@@ -187,10 +187,37 @@ var characters: Dictionary = {
 		"id": "char02", "name": "유랑 검사", "title": "쌍검 방랑자", "role": "검사",
 		"grade": "R", "icon": "⚔️", "color": Color(0.3, 0.52, 0.72), "unlocked": true,
 		"model_scene": "res://assets/char/char02/char02.glb", "model_scale": Vector3.ONE, "animation_profile": "char02",
-		"base_attributes": {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3},
-		"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0, "base_spd": 6.8,
-		"signature_skill": "쇄도 연권", "weapon_name": "쌍검", "combat_style": "빠른 근접 전투",
+		"base_attributes": {"STR": 7, "AGI": 8, "VIT": 5, "INT": 3, "DEX": 6, "LUK": 4},
+		"base_hp": 112.0, "base_atk": 21.0, "base_def": 8.0, "base_spd": 7.2,
+		"signature_skill": "질풍 쌍검", "weapon_name": "쌍검", "combat_style": "빠른 근접 전투와 연속 베기",
 		"appearance": "char02", "desc": "새로 추가된 3D 캐릭터 모델을 사용하는 쌍검 검사."
+	},
+	"archer": {
+		"id": "archer", "name": "추적자", "title": "황야의 명사수", "role": "궁수",
+		"grade": "R", "icon": "🏹", "color": Color(0.35, 0.66, 0.39), "unlocked": true,
+		"model_scene": "res://assets/char/char01/char01.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
+		"base_attributes": {"STR": 4, "AGI": 8, "VIT": 4, "INT": 3, "DEX": 9, "LUK": 5},
+		"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0, "base_spd": 7.4,
+		"signature_skill": "관통 화살", "weapon_name": "장궁", "combat_style": "원거리 관통과 빠른 연사",
+		"desc": "먼 거리에서 약점을 노리고 관통 사격을 가하는 황야의 사냥꾼."
+	},
+	"mage": {
+		"id": "mage", "name": "원소술사", "title": "잿불의 계승자", "role": "마법사",
+		"grade": "R", "icon": "🔮", "color": Color(0.55, 0.39, 0.82), "unlocked": true,
+		"model_scene": "res://assets/char/char03/char03.glb", "model_scale": Vector3.ONE, "animation_profile": "mage",
+		"base_attributes": {"STR": 3, "AGI": 4, "VIT": 4, "INT": 9, "DEX": 5, "LUK": 5},
+		"base_hp": 100.0, "base_atk": 17.0, "base_def": 6.0, "base_spd": 6.4,
+		"signature_skill": "화염구", "weapon_name": "원소 지팡이", "combat_style": "마법 광역 공격과 원소 폭발",
+		"desc": "마나 없이 재사용 대기시간을 활용해 원소 마법을 연속 시전하는 마법사."
+	},
+	"paladin": {
+		"id": "paladin", "name": "성기사", "title": "새벽의 수호자", "role": "성기사",
+		"grade": "R", "icon": "🛡️", "color": Color(0.82, 0.65, 0.29), "unlocked": true,
+		"model_scene": "res://assets/char/char04/char04.glb", "model_scale": Vector3.ONE, "animation_profile": "paladin",
+		"base_attributes": {"STR": 7, "AGI": 4, "VIT": 9, "INT": 5, "DEX": 3, "LUK": 3},
+		"base_hp": 145.0, "base_atk": 18.0, "base_def": 14.0, "base_spd": 5.9,
+		"signature_skill": "심판의 강타", "weapon_name": "성검과 방패", "combat_style": "높은 체력과 방어, 자가 회복",
+		"desc": "굳건한 방패로 버티고 신성한 힘으로 자신과 주변을 지키는 수호자."
 	}
 }
 

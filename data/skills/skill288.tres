@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ewpnw"]
+
+[resource]
+script = ExtResource("1_ewpnw")
+id = "skill288"
+legacy_id = "braum_w"
+champion_id = "Braum"
+champion_name = "브라움"
+slot_key = "W"
+reference_name = "내가 지킨다"
+reference_description = "브라움이 대상 아군 챔피언이나 미니언에게 도약합니다. 대상에게 다다르면 브라움과 아군은 몇 초 동안 방어력과 마법 저항력이 오릅니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/BraumW.png"
+display_name = "내가 지킨다"
+description = "브라움이 대상 아군 챔피언이나 미니언에게 도약합니다. 대상에게 다다르면 브라움과 아군은 몇 초 동안 방어력과 마법 저항력이 오릅니다."

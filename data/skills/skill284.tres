@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_i7f4e"]
+
+[resource]
+script = ExtResource("1_i7f4e")
+id = "skill284"
+legacy_id = "volibear_e"
+champion_id = "Volibear"
+champion_name = "볼리베어"
+slot_key = "E"
+reference_name = "천공 분열"
+reference_description = "볼리베어가 지정한 위치에 번개를 소환해 적에게 피해를 입히고 둔화시킵니다. 볼리베어가 폭발 반경 안에 있으면 보호막을 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VolibearE.png"
+display_name = "천공 분열"
+description = "볼리베어가 지정한 위치에 번개를 소환해 적에게 피해를 입히고 둔화시킵니다. 볼리베어가 폭발 반경 안에 있으면 보호막을 얻습니다."

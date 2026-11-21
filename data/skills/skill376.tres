@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_07cye"]
+
+[resource]
+script = ExtResource("1_07cye")
+id = "skill376"
+legacy_id = "shen_p"
+champion_id = "Shen"
+champion_name = "쉔"
+slot_key = "P"
+reference_name = "기 보호막"
+reference_description = "스킬을 사용하면 쉔이 보호막을 얻습니다. 다른 챔피언에게 스킬로 영향을 주면 이 효과의 재사용 대기시간이 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Shen_Passive.png"
+display_name = "기 보호막"
+description = "스킬을 사용하면 쉔이 보호막을 얻습니다. 다른 챔피언에게 스킬로 영향을 주면 이 효과의 재사용 대기시간이 감소합니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_2mjsq"]
+
+[resource]
+script = ExtResource("1_2mjsq")
+id = "skill428"
+legacy_id = "ahri_w"
+champion_id = "Ahri"
+champion_name = "아리"
+slot_key = "W"
+reference_name = "여우불"
+reference_description = "아리의 이동 속도가 잠시 동안 크게 증가하며 아리가 여우불 세 개를 생성하면, 각각 자동으로 적을 찾아 공격합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AhriW.png"
+display_name = "여우불"
+description = "아리의 이동 속도가 잠시 동안 크게 증가하며 아리가 여우불 세 개를 생성하면, 각각 자동으로 적을 찾아 공격합니다."

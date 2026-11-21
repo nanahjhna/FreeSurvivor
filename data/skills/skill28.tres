@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_q223e"]
+
+[resource]
+script = ExtResource("1_q223e")
+id = "skill28"
+legacy_id = "gwen_w"
+champion_id = "Gwen"
+champion_name = "그웬"
+slot_key = "W"
+reference_name = "신성한 안개"
+reference_description = "그웬이 안개를 소환하여 안개 밖에 있는 적으로부터 자신을 보호합니다. 안개에 들어오는 적만이 그웬을 대상으로 지정할 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GwenW.png"
+display_name = "신성한 안개"
+description = "그웬이 안개를 소환하여 안개 밖에 있는 적으로부터 자신을 보호합니다. 안개에 들어오는 적만이 그웬을 대상으로 지정할 수 있습니다."

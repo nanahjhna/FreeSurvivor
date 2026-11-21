@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_4yumt"]
+
+[resource]
+script = ExtResource("1_4yumt")
+id = "skill769"
+legacy_id = "qiyana_e"
+champion_id = "Qiyana"
+champion_name = "키아나"
+slot_key = "E"
+reference_name = "대담무쌍"
+reference_description = "키아나가 적에게 돌진하여 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/QiyanaE.png"
+display_name = "대담무쌍"
+description = "키아나가 적에게 돌진하여 피해를 입힙니다."

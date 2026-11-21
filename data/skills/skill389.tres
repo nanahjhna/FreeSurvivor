@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_s3akp"]
+
+[resource]
+script = ExtResource("1_s3akp")
+id = "skill389"
+legacy_id = "smolder_e"
+champion_id = "Smolder"
+champion_name = "스몰더"
+slot_key = "E"
+reference_name = "펄럭펄럭"
+reference_description = "스몰더가 지형을 무시하고 날며 체력이 가장 낮은 적을 폭격합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SmolderE.png"
+display_name = "펄럭펄럭"
+description = "스몰더가 지형을 무시하고 날며 체력이 가장 낮은 적을 폭격합니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_unvku"]
+
+[resource]
+script = ExtResource("1_unvku")
+id = "skill83"
+legacy_id = "darius_w"
+champion_id = "Darius"
+champion_name = "다리우스"
+slot_key = "W"
+reference_name = "마비의 일격"
+reference_description = "다리우스의 다음 공격은 적의 대동맥을 가격합니다. 적들이 출혈을 일으키면서 이동 속도가 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/DariusNoxianTacticsONH.png"
+display_name = "마비의 일격"
+description = "다리우스의 다음 공격은 적의 대동맥을 가격합니다. 적들이 출혈을 일으키면서 이동 속도가 감소합니다."

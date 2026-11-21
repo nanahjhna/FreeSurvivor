@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_oapft"]
+
+[resource]
+script = ExtResource("1_oapft")
+id = "skill148"
+legacy_id = "rengar_w"
+champion_id = "Rengar"
+champion_name = "렝가"
+slot_key = "W"
+reference_name = "전투의 포효"
+reference_description = "렝가가 전투의 포효를 내질러 적에게 피해를 입히고 지난 몇 초 동안 입은 피해의 일부를 회복합니다. / / 야성 효과: 모든 군중 제어 효과를 없앱니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RengarW.png"
+display_name = "전투의 포효"
+description = "렝가가 전투의 포효를 내질러 적에게 피해를 입히고 지난 몇 초 동안 입은 피해의 일부를 회복합니다. / / 야성 효과: 모든 군중 제어 효과를 없앱니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_5bdkj"]
+
+[resource]
+script = ExtResource("1_5bdkj")
+id = "skill466"
+legacy_id = "aphelios_p"
+champion_id = "Aphelios"
+champion_name = "아펠리오스"
+slot_key = "P"
+reference_name = "암살자와 예언자"
+reference_description = "아펠리오스는 쌍둥이 누이 알룬이 만든 다섯 가지의 루나리 무기를 사용합니다. 한 번에 주 무기와 보조 무기 등 총 두 가지 무기를 사용할 수 있습니다. 각 무기는 고유의 기본 공격과 스킬을 가지고 있습니다. 기본 공격과 스킬 사용 시 탄약을 소모하며, 탄약을 모두 소모하면 사용 중인 주 무기를 5개의 무기 중 다음 무기로 교체합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/ApheliosP.png"
+display_name = "암살자와 예언자"
+description = "아펠리오스는 쌍둥이 누이 알룬이 만든 다섯 가지의 루나리 무기를 사용합니다. 한 번에 주 무기와 보조 무기 등 총 두 가지 무기를 사용할 수 있습니다. 각 무기는 고유의 기본 공격과 스킬을 가지고 있습니다. 기본 공격과 스킬 사용 시 탄약을 소모하며, 탄약을 모두 소모하면 사용 중인 주 무기를 5개의 무기 중 다음 무기로 교체합니다."

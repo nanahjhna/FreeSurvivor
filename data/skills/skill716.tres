@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_u6o84"]
+
+[resource]
+script = ExtResource("1_u6o84")
+id = "skill716"
+legacy_id = "kalista_p"
+champion_id = "Kalista"
+champion_name = "칼리스타"
+slot_key = "P"
+reference_name = "전투 태세"
+reference_description = "칼리스타가 기본 공격이나 꿰뚫는 창의 준비 동작을 하는 동안 이동 명령을 하면, 칼리스타가 기본 공격과 함께 해당 위치로 도약합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Kalista_Passive.png"
+display_name = "전투 태세"
+description = "칼리스타가 기본 공격이나 꿰뚫는 창의 준비 동작을 하는 동안 이동 명령을 하면, 칼리스타가 기본 공격과 함께 해당 위치로 도약합니다."

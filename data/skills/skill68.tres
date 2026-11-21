@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_iewye"]
+
+[resource]
+script = ExtResource("1_iewye")
+id = "skill68"
+legacy_id = "nidalee_w"
+champion_id = "Nidalee"
+champion_name = "니달리"
+slot_key = "W"
+reference_name = "매복 덫 / 급습"
+reference_description = "인간 모습일 때 - 니달리가 적이 밟으면 피해를 입히며 모습을 드러내는 함정을 깝니다. 쿠거 모습일 때 - 앞으로 살짝 뛰어오르며 착지 시 주위에 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/Bushwhack.png"
+display_name = "매복 덫 / 급습"
+description = "인간 모습일 때 - 니달리가 적이 밟으면 피해를 입히며 모습을 드러내는 함정을 깝니다. 쿠거 모습일 때 - 앞으로 살짝 뛰어오르며 착지 시 주위에 피해를 입힙니다."

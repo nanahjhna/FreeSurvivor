@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_2wgux"]
+
+[resource]
+script = ExtResource("1_2wgux")
+id = "skill502"
+legacy_id = "ekko_q"
+champion_id = "Ekko"
+champion_name = "에코"
+slot_key = "Q"
+reference_name = "시간의 톱니바퀴"
+reference_description = "에코가 적 챔피언에게 맞으면 펼쳐져서 시간 왜곡 지대를 만들고, 지대 안에 있는 적 모두를 둔화시키며 피해를 입히는 시간 톱니바퀴를 던집니다. 잠시 후 톱니바퀴는 되감겨 에코에게 돌아오며, 경로 상에 있는 적에게 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/EkkoQ.png"
+display_name = "시간의 톱니바퀴"
+description = "에코가 적 챔피언에게 맞으면 펼쳐져서 시간 왜곡 지대를 만들고, 지대 안에 있는 적 모두를 둔화시키며 피해를 입히는 시간 톱니바퀴를 던집니다. 잠시 후 톱니바퀴는 되감겨 에코에게 돌아오며, 경로 상에 있는 적에게 피해를 입힙니다."

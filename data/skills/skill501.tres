@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_nwvay"]
+
+[resource]
+script = ExtResource("1_nwvay")
+id = "skill501"
+legacy_id = "ekko_p"
+champion_id = "Ekko"
+champion_name = "에코"
+slot_key = "P"
+reference_name = "Z 드라이브 공진"
+reference_description = "같은 대상에 대한 세 번째 기본 공격 및 스킬 공격마다 추가 마법 피해를 입힙니다. 대상이 챔피언일 경우, 에코의 이동 속도가 상승합니다. / /"
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Ekko_P.png"
+display_name = "Z 드라이브 공진"
+description = "같은 대상에 대한 세 번째 기본 공격 및 스킬 공격마다 추가 마법 피해를 입힙니다. 대상이 챔피언일 경우, 에코의 이동 속도가 상승합니다. / /"

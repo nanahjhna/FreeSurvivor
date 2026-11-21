@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_a68ev"]
+
+[resource]
+script = ExtResource("1_a68ev")
+id = "skill680"
+legacy_id = "karma_r"
+champion_id = "Karma"
+champion_name = "카르마"
+slot_key = "R"
+reference_name = "만트라"
+reference_description = "카르마가 다음 스킬을 강화하여 추가 효과를 부여합니다. 만트라는 1레벨부터 사용할 수 있으며 스킬 포인트가 필요 없습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KarmaMantra.png"
+display_name = "만트라"
+description = "카르마가 다음 스킬을 강화하여 추가 효과를 부여합니다. 만트라는 1레벨부터 사용할 수 있으며 스킬 포인트가 필요 없습니다."

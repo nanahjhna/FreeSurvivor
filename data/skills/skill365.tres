@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_elc1t"]
+
+[resource]
+script = ExtResource("1_elc1t")
+id = "skill365"
+legacy_id = "sett_r"
+champion_id = "Sett"
+champion_name = "세트"
+slot_key = "R"
+reference_name = "대미 장식"
+reference_description = "세트가 적 하나를 붙잡아 공중으로 도약한 후 바닥에 내리꽂아 피해를 입히고 착지 지점 근처에 있는 모든 적을 둔화시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SettR.png"
+display_name = "대미 장식"
+description = "세트가 적 하나를 붙잡아 공중으로 도약한 후 바닥에 내리꽂아 피해를 입히고 착지 지점 근처에 있는 모든 적을 둔화시킵니다."

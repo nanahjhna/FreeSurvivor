@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_63581"]
+
+[resource]
+script = ExtResource("1_63581")
+id = "skill553"
+legacy_id = "urgot_w"
+champion_id = "Urgot"
+champion_name = "우르곳"
+slot_key = "W"
+reference_name = "심판의 원"
+reference_description = "우르곳이 둔화된 상태로 주변 적을 사격합니다. 우르곳은 최근 다른 스킬을 적중시킨 적 챔피언을 우선 공격하며, 화염의 메아리를 발동시킬 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/UrgotW.png"
+display_name = "심판의 원"
+description = "우르곳이 둔화된 상태로 주변 적을 사격합니다. 우르곳은 최근 다른 스킬을 적중시킨 적 챔피언을 우선 공격하며, 화염의 메아리를 발동시킬 수 있습니다."

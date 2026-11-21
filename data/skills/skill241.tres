@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_vl77p"]
+
+[resource]
+script = ExtResource("1_vl77p")
+id = "skill241"
+legacy_id = "bard_p"
+champion_id = "Bard"
+champion_name = "바드"
+slot_key = "P"
+reference_name = "방랑자의 부름"
+reference_description = "정령: 바드에게 이끌려 모여든 정령들이 바드의 기본 공격을 도와 추가 마법 피해를 입힙니다. 바드가 고대의 종을 충분히 모으면 정령이 일정 영역에 피해를 입히며 적중당한 적을 둔화시킵니다. / / 고대의 종: 맵상의 무작위 장소에 바드가 모을 수 있는 고대의 종이 나타납니다. 고대의 종을 획득하면 경험치, 마나 회복 효과, 비전투 시 이동 속도를 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Bard_Passive.png"
+display_name = "방랑자의 부름"
+description = "정령: 바드에게 이끌려 모여든 정령들이 바드의 기본 공격을 도와 추가 마법 피해를 입힙니다. 바드가 고대의 종을 충분히 모으면 정령이 일정 영역에 피해를 입히며 적중당한 적을 둔화시킵니다. / / 고대의 종: 맵상의 무작위 장소에 바드가 모을 수 있는 고대의 종이 나타납니다. 고대의 종을 획득하면 경험치, 마나 회복 효과, 비전투 시 이동 속도를 얻습니다."

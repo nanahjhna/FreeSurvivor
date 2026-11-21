@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="1_8w60y"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_we4fe"]
+
+[resource]
+script = ExtResource("2_we4fe")
+id = "skill874"
+legacy_id = "swordsman_w"
+reference_name = "쌍검 회오리"
+reference_description = "쌍검을 휘둘러 주변 적을 베어냅니다."
+icon = "🌪️"
+display_name = "쌍검 회오리"
+description = "쌍검을 휘둘러 주변 적을 베어냅니다."
+cooldown = 5.5
+damage_ratio = 1.75
+cooldown_step = 0.16
+damage_step = 0.22
+range = 5.0
+cast_type = "spin"
+bonus_type = "area"
+effect_scene = ExtResource("1_8w60y")
+implemented = true
+support_status = "game_skill"

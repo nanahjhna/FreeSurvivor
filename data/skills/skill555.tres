@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_77hds"]
+
+[resource]
+script = ExtResource("1_77hds")
+id = "skill555"
+legacy_id = "urgot_r"
+champion_id = "Urgot"
+champion_name = "우르곳"
+slot_key = "R"
+reference_name = "불사의 공포"
+reference_description = "우르곳이 마공학 송곳 섬광탄을 발사하여 섬광탄이 처음 적중한 적 챔피언에게 꽂힙니다. 해당 챔피언의 체력이 일정 수준 이하로 떨어지면 우르곳이 그를 약자라고 판단하여 처형할 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/UrgotR.png"
+display_name = "불사의 공포"
+description = "우르곳이 마공학 송곳 섬광탄을 발사하여 섬광탄이 처음 적중한 적 챔피언에게 꽂힙니다. 해당 챔피언의 체력이 일정 수준 이하로 떨어지면 우르곳이 그를 약자라고 판단하여 처형할 수 있습니다."

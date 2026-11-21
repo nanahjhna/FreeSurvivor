@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="1_2g3o6"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_m37dl"]
+
+[resource]
+script = ExtResource("2_m37dl")
+id = "skill876"
+legacy_id = "swordsman_r"
+reference_name = "천강 낙월"
+reference_description = "강력한 검기를 폭발시켜 넓은 범위를 공격합니다."
+icon = "🌙"
+display_name = "천강 낙월"
+description = "강력한 검기를 폭발시켜 넓은 범위를 공격합니다."
+cooldown = 25.0
+damage_ratio = 4.0
+cooldown_step = 0.5
+damage_step = 0.55
+unlock_level = 8
+cast_type = "burst"
+bonus_type = "area"
+effect_scene = ExtResource("1_2g3o6")
+implemented = true
+support_status = "game_skill"

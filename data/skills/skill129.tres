@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_c2ixt"]
+
+[resource]
+script = ExtResource("1_c2ixt")
+id = "skill129"
+legacy_id = "renekton_e"
+champion_id = "Renekton"
+champion_name = "레넥톤"
+slot_key = "E"
+reference_name = "자르고 토막내기"
+reference_description = "레넥톤이 돌격을 하며 여러 적 유닛에게 피해를 입힙니다. 강화시 레넥톤은 적에게 추가 피해를 입히고 방어력을 낮출 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RenektonSliceAndDice.png"
+display_name = "자르고 토막내기"
+description = "레넥톤이 돌격을 하며 여러 적 유닛에게 피해를 입힙니다. 강화시 레넥톤은 적에게 추가 피해를 입히고 방어력을 낮출 수 있습니다."

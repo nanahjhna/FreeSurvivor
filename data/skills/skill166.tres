@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ex0q2"]
+
+[resource]
+script = ExtResource("1_ex0q2")
+id = "skill166"
+legacy_id = "leblanc_p"
+champion_id = "Leblanc"
+champion_name = "르블랑"
+slot_key = "P"
+reference_name = "거울 환영"
+reference_description = "르블랑의 체력이 40% 아래로 내려가면 1초 동안 투명 상태가 되며 거울 환영을 생성합니다. 환영은 피해를 입힐 수 없고 최대 8초까지 지속됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/LeblancP.png"
+display_name = "거울 환영"
+description = "르블랑의 체력이 40% 아래로 내려가면 1초 동안 투명 상태가 되며 거울 환영을 생성합니다. 환영은 피해를 입힐 수 없고 최대 8초까지 지속됩니다."

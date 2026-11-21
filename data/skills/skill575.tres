@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_a3uc6"]
+
+[resource]
+script = ExtResource("1_a3uc6")
+id = "skill575"
+legacy_id = "irelia_r"
+champion_id = "Irelia"
+champion_name = "이렐리아"
+slot_key = "R"
+reference_name = "선봉진격검"
+reference_description = "이렐리아가 칼날 다발을 발사합니다. 적 챔피언에게 적중하면 칼날 다발이 넓게 펼쳐지며 이때 칼날에 적중한 모든 적에게 피해를 주고 표식을 남깁니다. 또한 칼날이 형성한 결계를 적이 통과하면 피해를 입고 둔화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/IreliaR.png"
+display_name = "선봉진격검"
+description = "이렐리아가 칼날 다발을 발사합니다. 적 챔피언에게 적중하면 칼날 다발이 넓게 펼쳐지며 이때 칼날에 적중한 모든 적에게 피해를 주고 표식을 남깁니다. 또한 칼날이 형성한 결계를 적이 통과하면 피해를 입고 둔화됩니다."

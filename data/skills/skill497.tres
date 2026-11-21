@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_su5yr"]
+
+[resource]
+script = ExtResource("1_su5yr")
+id = "skill497"
+legacy_id = "yasuo_q"
+champion_id = "Yasuo"
+champion_name = "야스오"
+slot_key = "Q"
+reference_name = "강철 폭풍"
+reference_description = "전방으로 내질러 일직선 상의 모든 적에게 피해를 입힙니다. / / 적중 시, 몇 초간 폭풍 구름 효과가 1회 중첩됩니다. 2회 중첩되면 강철 폭풍 스킬이 회오리바람을 발사하여 공중으로 띄워올립니다. / / 강철 폭풍은 기본 공격으로 간주되어 같은 효과가 적용됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YasuoQ1Wrapper.png"
+display_name = "강철 폭풍"
+description = "전방으로 내질러 일직선 상의 모든 적에게 피해를 입힙니다. / / 적중 시, 몇 초간 폭풍 구름 효과가 1회 중첩됩니다. 2회 중첩되면 강철 폭풍 스킬이 회오리바람을 발사하여 공중으로 띄워올립니다. / / 강철 폭풍은 기본 공격으로 간주되어 같은 효과가 적용됩니다."

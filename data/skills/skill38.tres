@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_fkmhr"]
+
+[resource]
+script = ExtResource("1_fkmhr")
+id = "skill38"
+legacy_id = "nami_w"
+champion_id = "Nami"
+champion_name = "나미"
+slot_key = "W"
+reference_name = "밀물 썰물"
+reference_description = "밀려드는 파도를 보내 아군 및 적 챔피언을 번갈아 맞히면서, 아군은 치유하고 적에게는 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/NamiW.png"
+display_name = "밀물 썰물"
+description = "밀려드는 파도를 보내 아군 및 적 챔피언을 번갈아 맞히면서, 아군은 치유하고 적에게는 피해를 입힙니다."

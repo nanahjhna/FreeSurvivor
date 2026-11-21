@@ -5,11 +5,11 @@ extends Camera3D
 @export var camera_offset: Vector3 = Vector3(0.0, 12.0, 10.0)
 @export var look_ahead_offset: Vector3 = Vector3(0.0, 0.8, -1.0)
 
-# Optional fixed quarter-view mode, kept for compatibility with preview scenes.
+# Fixed angled top-view mode. The legacy name is retained for scene compatibility.
 @export var quarter_view_enabled: bool = false
-@export_range(4.0, 30.0, 0.5) var quarter_distance: float = 16.0
-@export_range(20.0, 70.0, 1.0) var quarter_elevation_degrees: float = 45.0
-@export_range(-180.0, 180.0, 1.0) var quarter_azimuth_degrees: float = 45.0
+@export_range(4.0, 30.0, 0.5) var quarter_distance: float = 18.0
+@export_range(20.0, 90.0, 1.0) var quarter_elevation_degrees: float = 35.0
+@export_range(-180.0, 180.0, 1.0) var quarter_azimuth_degrees: float = 0.0
 @export_range(0.5, 2.0, 0.05) var quarter_look_height: float = 1.2
 @export_range(40.0, 80.0, 1.0) var quarter_view_fov: float = 60.0
 
@@ -43,7 +43,7 @@ extends Camera3D
 @onready var _spring_arm: SpringArm3D = get_parent() as SpringArm3D
 
 var _smoothed_focus: Vector3 = Vector3.ZERO
-var _target_quarter_distance: float = 16.0
+var _target_quarter_distance: float = 18.0
 var _target_back_distance: float = 5.5
 var _camera_yaw: float = 0.0
 var _back_idle_time: float = 0.0
@@ -272,7 +272,7 @@ func adjust_zoom(steps: int) -> void:
 
 
 func reset_zoom() -> void:
-	_target_quarter_distance = 16.0
+	_target_quarter_distance = 18.0
 	_target_back_distance = 5.5
 
 

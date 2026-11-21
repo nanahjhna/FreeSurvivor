@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_y5x26"]
+
+[resource]
+script = ExtResource("1_y5x26")
+id = "skill411"
+legacy_id = "syndra_p"
+champion_id = "Syndra"
+champion_name = "신드라"
+slot_key = "P"
+reference_name = "초월"
+reference_description = "신드라가 레벨을 올리고 적에게 피해를 입혀서 분노의 조각을 획득합니다. 분노의 조각은 스킬을 강화합니다. / / 어둠 구체: 신드라가 1번의 추가 충전량을 유지할 수 있습니다. / 의지의 힘: 추가 고정 피해를 입힙니다. / 적군 와해: 스킬 적용 범위 폭이 증가하고 모든 대상을 둔화시킵니다. / 풀려난 힘: 체력이 낮은 대상을 처형합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/SyndraPassive.png"
+display_name = "초월"
+description = "신드라가 레벨을 올리고 적에게 피해를 입혀서 분노의 조각을 획득합니다. 분노의 조각은 스킬을 강화합니다. / / 어둠 구체: 신드라가 1번의 추가 충전량을 유지할 수 있습니다. / 의지의 힘: 추가 고정 피해를 입힙니다. / 적군 와해: 스킬 적용 범위 폭이 증가하고 모든 대상을 둔화시킵니다. / 풀려난 힘: 체력이 낮은 대상을 처형합니다."

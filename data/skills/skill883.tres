@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="1_ng3qx"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_4uqcu"]
+
+[resource]
+script = ExtResource("2_4uqcu")
+id = "skill883"
+legacy_id = "mage_e"
+reference_name = "비전 폭발"
+reference_description = "주변에 비전 에너지를 방출합니다."
+icon = "💥"
+display_name = "비전 폭발"
+description = "주변에 비전 에너지를 방출합니다."
+cooldown = 10.0
+damage_ratio = 2.6
+cooldown_step = 0.22
+damage_step = 0.32
+range = 9.0
+cast_type = "burst"
+bonus_type = "magic"
+effect_scene = ExtResource("1_ng3qx")
+uses_magic_power = true
+implemented = true
+support_status = "game_skill"

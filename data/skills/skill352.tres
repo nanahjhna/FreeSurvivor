@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_aa5u0"]
+
+[resource]
+script = ExtResource("1_aa5u0")
+id = "skill352"
+legacy_id = "seraphine_q"
+champion_id = "Seraphine"
+champion_name = "세라핀"
+slot_key = "Q"
+reference_name = "고음"
+reference_description = "세라핀이 대상 지역에 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SeraphineQ.png"
+display_name = "고음"
+description = "세라핀이 대상 지역에 피해를 입힙니다."

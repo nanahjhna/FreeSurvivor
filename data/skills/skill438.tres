@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_yqxrt"]
+
+[resource]
+script = ExtResource("1_yqxrt")
+id = "skill438"
+legacy_id = "aurelionsol_w"
+champion_id = "AurelionSol"
+champion_name = "아우렐리온 솔"
+slot_key = "W"
+reference_name = "별의 비행"
+reference_description = "아우렐리온 솔이 지정한 방향으로 날아갑니다. 이 상태에서 다른 스킬을 사용할 수 있습니다. 비행 중 빛의 숨결은 재사용 대기시간이나 최대 정신 집중 시간이 없으며 피해가 증가합니다. / / 아우렐리온 솔이 피해를 입힌 지 얼마 되지 않은 적 챔피언이 죽을 때마다 별의 비행의 남은 재사용 대기시간이 감소합니다. / / 별가루는 별의 비행 최대 사거리를 늘립니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AurelionSolW.png"
+display_name = "별의 비행"
+description = "아우렐리온 솔이 지정한 방향으로 날아갑니다. 이 상태에서 다른 스킬을 사용할 수 있습니다. 비행 중 빛의 숨결은 재사용 대기시간이나 최대 정신 집중 시간이 없으며 피해가 증가합니다. / / 아우렐리온 솔이 피해를 입힌 지 얼마 되지 않은 적 챔피언이 죽을 때마다 별의 비행의 남은 재사용 대기시간이 감소합니다. / / 별가루는 별의 비행 최대 사거리를 늘립니다."

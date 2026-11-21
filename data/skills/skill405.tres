@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_bg8qy"]
+
+[resource]
+script = ExtResource("1_bg8qy")
+id = "skill405"
+legacy_id = "sivir_r"
+champion_id = "Sivir"
+champion_name = "시비르"
+slot_key = "R"
+reference_name = "사냥 개시"
+reference_description = "시비르가 전장에서 아군을 이끌며 잠시 동안 이동 속도를 대폭 상승시킵니다. 또한 공격 시 시비르의 스킬 재사용 대기시간이 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SivirR.png"
+display_name = "사냥 개시"
+description = "시비르가 전장에서 아군을 이끌며 잠시 동안 이동 속도를 대폭 상승시킵니다. 또한 공격 시 시비르의 스킬 재사용 대기시간이 감소합니다."

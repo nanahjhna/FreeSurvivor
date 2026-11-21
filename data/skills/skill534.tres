@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_pn0py"]
+
+[resource]
+script = ExtResource("1_pn0py")
+id = "skill534"
+legacy_id = "olaf_e"
+champion_id = "Olaf"
+champion_name = "올라프"
+slot_key = "E"
+reference_name = "무모한 강타"
+reference_description = "올라프가 강력한 공격을 가하여 자신과 공격 대상에게 고정 피해를 입힙니다. 대상을 파괴한 경우 소모한 체력이 회복됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/OlafRecklessStrike.png"
+display_name = "무모한 강타"
+description = "올라프가 강력한 공격을 가하여 자신과 공격 대상에게 고정 피해를 입힙니다. 대상을 파괴한 경우 소모한 체력이 회복됩니다."

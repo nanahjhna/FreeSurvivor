@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_jbgxa"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_c3me8"]
+
+[resource]
+script = ExtResource("2_c3me8")
+id = "skill267"
+legacy_id = "vex_q"
+champion_id = "Vex"
+champion_name = "벡스"
+slot_key = "Q"
+reference_name = "안개 화살"
+reference_description = "피해를 입히는 화살을 발사합니다. 화살은 날아가는 동안 속도가 빨라집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VexQ.png"
+display_name = "안개 화살"
+description = "피해를 입히는 화살을 발사합니다. 화살은 날아가는 동안 속도가 빨라집니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+effect_scene = ExtResource("1_jbgxa")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_24qdx"]
+
+[resource]
+script = ExtResource("1_24qdx")
+id = "skill91"
+legacy_id = "draven_p"
+champion_id = "Draven"
+champion_name = "드레이븐"
+slot_key = "P"
+reference_name = "드레이븐의 리그"
+reference_description = "드레이븐이 회전 도끼를 받아내거나 미니언 또는 몬스터를 처치하고 포탑을 철거하면 팬들의 환호를 받습니다. 적 챔피언을 처치하면 지금까지 얻은 팬들의 환호에 비례해 추가 골드를 획득합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Draven_passive.png"
+display_name = "드레이븐의 리그"
+description = "드레이븐이 회전 도끼를 받아내거나 미니언 또는 몬스터를 처치하고 포탑을 철거하면 팬들의 환호를 받습니다. 적 챔피언을 처치하면 지금까지 얻은 팬들의 환호에 비례해 추가 골드를 획득합니다."

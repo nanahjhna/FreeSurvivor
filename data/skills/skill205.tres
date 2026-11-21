@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_hiur7"]
+
+[resource]
+script = ExtResource("1_hiur7")
+id = "skill205"
+legacy_id = "malzahar_r"
+champion_id = "Malzahar"
+champion_name = "말자하"
+slot_key = "R"
+reference_name = "황천의 손아귀"
+reference_description = "말자하가 공허의 정수를 쏟아부어 적 챔피언을 제압하고 지대를 생성해 내부의 적에게 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/MalzaharR.png"
+display_name = "황천의 손아귀"
+description = "말자하가 공허의 정수를 쏟아부어 적 챔피언을 제압하고 지대를 생성해 내부의 적에게 피해를 입힙니다."

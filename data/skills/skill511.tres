@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_0vw4i"]
+
+[resource]
+script = ExtResource("1_0vw4i")
+id = "skill511"
+legacy_id = "monkeyking_p"
+champion_id = "MonkeyKing"
+champion_name = "오공"
+slot_key = "P"
+reference_name = "바위 피부"
+reference_description = "오공이 챔피언 및 몬스터와 싸우는 동안 방어력이 점점 높아지며 최대 체력 재생 효과를 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/MonkeyKingStoneSkin.png"
+display_name = "바위 피부"
+description = "오공이 챔피언 및 몬스터와 싸우는 동안 방어력이 점점 높아지며 최대 체력 재생 효과를 얻습니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_e2dd1"]
+
+[resource]
+script = ExtResource("1_e2dd1")
+id = "skill515"
+legacy_id = "monkeyking_r"
+champion_id = "MonkeyKing"
+champion_name = "오공"
+slot_key = "R"
+reference_name = "회전격"
+reference_description = "오공이 여의봉을 늘린 후 빙빙 휘두르며 이동 속도가 증가합니다. / / 적중당한 적은 피해를 입고 공중에 떠오릅니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/MonkeyKingSpinToWin.png"
+display_name = "회전격"
+description = "오공이 여의봉을 늘린 후 빙빙 휘두르며 이동 속도가 증가합니다. / / 적중당한 적은 피해를 입고 공중에 떠오릅니다."

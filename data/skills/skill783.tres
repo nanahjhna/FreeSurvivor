@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_dvn34"]
+
+[resource]
+script = ExtResource("1_dvn34")
+id = "skill783"
+legacy_id = "talon_w"
+champion_id = "Talon"
+champion_name = "탈론"
+slot_key = "W"
+reference_name = "갈퀴손"
+reference_description = "탈론이 부메랑 단검을 여러 개 던져 명중하는 적에게 물리 피해를 줍니다. 단검이 다시 돌아올 때 맞은 적은 추가 피해를 입고 둔화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TalonW.png"
+display_name = "갈퀴손"
+description = "탈론이 부메랑 단검을 여러 개 던져 명중하는 적에게 물리 피해를 줍니다. 단검이 다시 돌아올 때 맞은 적은 추가 피해를 입고 둔화됩니다."

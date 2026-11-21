@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_8rmmc"]
+
+[resource]
+script = ExtResource("1_8rmmc")
+id = "skill574"
+legacy_id = "irelia_e"
+champion_id = "Irelia"
+champion_name = "이렐리아"
+slot_key = "E"
+reference_name = "쌍검협무"
+reference_description = "이렐리아가 칼날 두 개를 던진 후 두 칼날이 서로를 향해 날아갑니다. 날아가는 칼날에 맞은 적은 피해를 입으며 기절한 뒤 표식이 생깁니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/IreliaE.png"
+display_name = "쌍검협무"
+description = "이렐리아가 칼날 두 개를 던진 후 두 칼날이 서로를 향해 날아갑니다. 날아가는 칼날에 맞은 적은 피해를 입으며 기절한 뒤 표식이 생깁니다."

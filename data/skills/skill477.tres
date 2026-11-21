@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_s4uk2"]
+
+[resource]
+script = ExtResource("1_s4uk2")
+id = "skill477"
+legacy_id = "ambessa_q"
+champion_id = "Ambessa"
+champion_name = "암베사"
+slot_key = "Q"
+reference_name = "교활한 휩쓸기 / 파멸의 일격"
+reference_description = "암베사가 쌍둥이 용사냥개로 전방 반원을 휩쓸어 날에 적중한 적에게 추가 피해를 입힙니다. 적을 타격하면 다음에 이 스킬을 사용할 때 짧은 시간 동안 스킬이 변하며 암베사가 전방에 일직선상으로 쌍둥이 용사냥개를 내리쳐 처음 적중한 적에게 추가 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AmbessaQ.png"
+display_name = "교활한 휩쓸기 / 파멸의 일격"
+description = "암베사가 쌍둥이 용사냥개로 전방 반원을 휩쓸어 날에 적중한 적에게 추가 피해를 입힙니다. 적을 타격하면 다음에 이 스킬을 사용할 때 짧은 시간 동안 스킬이 변하며 암베사가 전방에 일직선상으로 쌍둥이 용사냥개를 내리쳐 처음 적중한 적에게 추가 피해를 입힙니다."

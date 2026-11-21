@@ -5,3 +5,8 @@
 # Keep the 249 MB source animation library local; ship the reduced game asset.
 /assets/char/char01/*
 !/assets/char/char01/.gdignore
+
+# App signing keys and passwords (never commit)
+*.keystore
+*.jks
+tools/*.pw.txt

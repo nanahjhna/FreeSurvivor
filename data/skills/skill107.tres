@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_42yr7"]
+
+[resource]
+script = ExtResource("1_42yr7")
+id = "skill107"
+legacy_id = "rammus_q"
+champion_id = "Rammus"
+champion_name = "람머스"
+slot_key = "Q"
+reference_name = "대회전"
+reference_description = "람머스가 공 모양으로 적을 향해 굴러가며 충돌 시 피해를 입히고 적의 이동 속도를 늦춥니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/PowerBall.png"
+display_name = "대회전"
+description = "람머스가 공 모양으로 적을 향해 굴러가며 충돌 시 피해를 입히고 적의 이동 속도를 늦춥니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_q0pim"]
+
+[resource]
+script = ExtResource("1_q0pim")
+id = "skill811"
+legacy_id = "twistedfate_p"
+champion_id = "TwistedFate"
+champion_name = "트위스티드 페이트"
+slot_key = "P"
+reference_name = "사기 주사위"
+reference_description = "트위스티드 페이트는 유닛을 하나 처치할 때마다 '행운'의 주사위를 굴려 1에서 6까지의 골드를 추가로 얻습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Cardmaster_SealFate.png"
+display_name = "사기 주사위"
+description = "트위스티드 페이트는 유닛을 하나 처치할 때마다 '행운'의 주사위를 굴려 1에서 6까지의 골드를 추가로 얻습니다."

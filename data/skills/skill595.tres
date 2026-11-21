@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_x7k70"]
+
+[resource]
+script = ExtResource("1_x7k70")
+id = "skill595"
+legacy_id = "jarvaniv_r"
+champion_id = "JarvanIV"
+champion_name = "자르반 4세"
+slot_key = "R"
+reference_name = "대격변"
+reference_description = "자르반 4세가 적을 향해 엄청난 기세로 뛰어들어 주변 지역을 투기장으로 만들어버립니다. 착지하는 순간 주위 적들에게 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JarvanIVCataclysm.png"
+display_name = "대격변"
+description = "자르반 4세가 적을 향해 엄청난 기세로 뛰어들어 주변 지역을 투기장으로 만들어버립니다. 착지하는 순간 주위 적들에게 피해를 입힙니다."

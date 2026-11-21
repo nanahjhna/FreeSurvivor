@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_0cvmt"]
+
+[resource]
+script = ExtResource("1_0cvmt")
+id = "skill169"
+legacy_id = "leblanc_e"
+champion_id = "Leblanc"
+champion_name = "르블랑"
+slot_key = "E"
+reference_name = "환영 사슬"
+reference_description = "르블랑이 사슬을 던져 처음 명중한 적을 옭아맵니다. 대상이 1.5초 동안 사슬에 묶일 경우 대상을 속박하고 추가 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/LeblancE.png"
+display_name = "환영 사슬"
+description = "르블랑이 사슬을 던져 처음 명중한 적을 옭아맵니다. 대상이 1.5초 동안 사슬에 묶일 경우 대상을 속박하고 추가 피해를 입힙니다."

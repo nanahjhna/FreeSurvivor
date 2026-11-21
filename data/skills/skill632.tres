@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_snepw"]
+
+[resource]
+script = ExtResource("1_snepw")
+id = "skill632"
+legacy_id = "xerath_q"
+champion_id = "Xerath"
+champion_name = "제라스"
+slot_key = "Q"
+reference_name = "비전 파동"
+reference_description = "긴 사거리를 지닌 에너지 포를 쏘아 적중한 모든 적에게 마법 피해를 줍니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/XerathArcanopulseChargeUp.png"
+display_name = "비전 파동"
+description = "긴 사거리를 지닌 에너지 포를 쏘아 적중한 모든 적에게 마법 피해를 줍니다."

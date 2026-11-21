@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_dqd68"]
+
+[resource]
+script = ExtResource("1_dqd68")
+id = "skill122"
+legacy_id = "renata_q"
+champion_id = "Renata"
+champion_name = "레나타 글라스크"
+slot_key = "Q"
+reference_name = "악수"
+reference_description = "레나타가 미사일을 발사해 처음 적중하는 적을 속박합니다. 스킬을 재사용해 대상을 지정한 방향으로 던질 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RenataQ.png"
+display_name = "악수"
+description = "레나타가 미사일을 발사해 처음 적중하는 적을 속박합니다. 스킬을 재사용해 대상을 지정한 방향으로 던질 수 있습니다."

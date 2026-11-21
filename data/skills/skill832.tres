@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ebcqt"]
+
+[resource]
+script = ExtResource("1_ebcqt")
+id = "skill832"
+legacy_id = "pantheon_q"
+champion_id = "Pantheon"
+champion_name = "판테온"
+slot_key = "Q"
+reference_name = "혜성의 창"
+reference_description = "판테온이 지정 방향으로 창을 찌르거나 던집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/PantheonQ.png"
+display_name = "혜성의 창"
+description = "판테온이 지정 방향으로 창을 찌르거나 던집니다."

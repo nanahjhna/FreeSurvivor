@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_vir5m"]
+
+[resource]
+script = ExtResource("1_vir5m")
+id = "skill403"
+legacy_id = "sivir_w"
+champion_id = "Sivir"
+champion_name = "시비르"
+slot_key = "W"
+reference_name = "튕기는 부메랑"
+reference_description = "시비르의 다음 몇 번의 기본 공격은 공격 속도가 증가하고 첫 번째 목표물에 적중한 후 주위 적들에게 튕기며, 튕겼을 때는 감소된 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SivirW.png"
+display_name = "튕기는 부메랑"
+description = "시비르의 다음 몇 번의 기본 공격은 공격 속도가 증가하고 첫 번째 목표물에 적중한 후 주위 적들에게 튕기며, 튕겼을 때는 감소된 피해를 입힙니다."

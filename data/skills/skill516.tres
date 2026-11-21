@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_tcb81"]
+
+[resource]
+script = ExtResource("1_tcb81")
+id = "skill516"
+legacy_id = "aurora_p"
+champion_id = "Aurora"
+champion_name = "오로라"
+slot_key = "P"
+reference_name = "영혼 방호술"
+reference_description = "오로라가 스킬 또는 공격으로 피해를 입힌 적의 영혼을 제령합니다. 제령된 영혼은 오로라 주위를 따라다니며 체력을 회복시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/AuroraPassive.png"
+display_name = "영혼 방호술"
+description = "오로라가 스킬 또는 공격으로 피해를 입힌 적의 영혼을 제령합니다. 제령된 영혼은 오로라 주위를 따라다니며 체력을 회복시킵니다."

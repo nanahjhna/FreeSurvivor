@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_65p6t"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_d0lvw"]
+
+[resource]
+script = ExtResource("2_d0lvw")
+id = "skill726"
+legacy_id = "caitlyn_p"
+champion_id = "Caitlyn"
+champion_name = "케이틀린"
+slot_key = "P"
+reference_name = "헤드샷"
+reference_description = "케이틀린은 덫 또는 투망에 걸린 대상을 공격할 때나 일정 횟수 이상의 기본 공격을 했을 때 헤드샷을 발사하여 치명타 확률에 비례한 추가 피해를 입힙니다. 덫에 걸리거나 투망에 맞은 대상에게는 케이틀린의 헤드샷 공격 사거리가 두 배가 됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Caitlyn_Headshot.png"
+display_name = "헤드샷"
+description = "케이틀린은 덫 또는 투망에 걸린 대상을 공격할 때나 일정 횟수 이상의 기본 공격을 했을 때 헤드샷을 발사하여 치명타 확률에 비례한 추가 피해를 입힙니다. 덫에 걸리거나 투망에 맞은 대상에게는 케이틀린의 헤드샷 공격 사거리가 두 배가 됩니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+effect_scene = ExtResource("1_65p6t")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

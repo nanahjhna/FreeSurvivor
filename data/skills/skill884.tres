@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="1_7asq0"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_n8yym"]
+
+[resource]
+script = ExtResource("2_n8yym")
+id = "skill884"
+legacy_id = "mage_r"
+reference_name = "유성 낙하"
+reference_description = "거대한 마력 폭발로 넓은 범위의 적을 섬멸합니다."
+icon = "☄️"
+display_name = "유성 낙하"
+description = "거대한 마력 폭발로 넓은 범위의 적을 섬멸합니다."
+cooldown = 26.0
+damage_ratio = 4.5
+cooldown_step = 0.5
+damage_step = 0.55
+range = 11.0
+unlock_level = 8
+cast_type = "burst"
+bonus_type = "magic"
+effect_scene = ExtResource("1_7asq0")
+uses_magic_power = true
+implemented = true
+support_status = "game_skill"

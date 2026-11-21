@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_6ydka"]
+
+[resource]
+script = ExtResource("1_6ydka")
+id = "skill201"
+legacy_id = "malzahar_p"
+champion_id = "Malzahar"
+champion_name = "말자하"
+slot_key = "P"
+reference_name = "공허 태세"
+reference_description = "일정 시간 동안 군중 제어기에 적중당하거나 피해를 입지 않으면 받는 피해량이 큰 폭으로 감소하고 군중 제어기에 면역이 됩니다. 이 효과는 피해를 입거나 군중 제어기에 적중당하면 잠시 후 사라집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Malzahar_Passive.png"
+display_name = "공허 태세"
+description = "일정 시간 동안 군중 제어기에 적중당하거나 피해를 입지 않으면 받는 피해량이 큰 폭으로 감소하고 군중 제어기에 면역이 됩니다. 이 효과는 피해를 입거나 군중 제어기에 적중당하면 잠시 후 사라집니다."

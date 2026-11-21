@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ud45r"]
+
+[resource]
+script = ExtResource("1_ud45r")
+id = "skill688"
+legacy_id = "kassadin_w"
+champion_id = "Kassadin"
+champion_name = "카사딘"
+slot_key = "W"
+reference_name = "황천의 검"
+reference_description = "기본 지속 효과: 카사딘의 기본 공격이 추가 마법 피해를 입힙니다. 사용 시: 카사딘의 다음 기본 공격이 큰 추가 마법 피해를 입히고 마나가 회복됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/NetherBlade.png"
+display_name = "황천의 검"
+description = "기본 지속 효과: 카사딘의 기본 공격이 추가 마법 피해를 입힙니다. 사용 시: 카사딘의 다음 기본 공격이 큰 추가 마법 피해를 입히고 마나가 회복됩니다."

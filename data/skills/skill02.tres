@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_pdxc3"]
+
+[resource]
+script = ExtResource("1_pdxc3")
+id = "skill02"
+legacy_id = "garen_q"
+champion_id = "Garen"
+champion_name = "가렌"
+slot_key = "Q"
+reference_name = "결정타"
+reference_description = "가렌의 이동 속도가 큰 폭으로 증가하고 현재 걸려 있는 모든 둔화 효과가 제거됩니다. 가렌의 다음 공격은 적의 급소를 가격하여 추가 피해를 입히고 침묵시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GarenQ.png"
+display_name = "결정타"
+description = "가렌의 이동 속도가 큰 폭으로 증가하고 현재 걸려 있는 모든 둔화 효과가 제거됩니다. 가렌의 다음 공격은 적의 급소를 가격하여 추가 피해를 입히고 침묵시킵니다."

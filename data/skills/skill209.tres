@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_kd1ej"]
+
+[resource]
+script = ExtResource("1_kd1ej")
+id = "skill209"
+legacy_id = "malphite_e"
+champion_id = "Malphite"
+champion_name = "말파이트"
+slot_key = "E"
+reference_name = "지면 강타"
+reference_description = "말파이트가 땅을 내리쳐 충격파를 만들어 냅니다. 충격파는 말파이트 방어력의 일부에 해당하는 마법 피해를 입히며, 이에 맞은 적은 잠시 동안 공격 속도가 감소합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/Landslide.png"
+display_name = "지면 강타"
+description = "말파이트가 땅을 내리쳐 충격파를 만들어 냅니다. 충격파는 말파이트 방어력의 일부에 해당하는 마법 피해를 입히며, 이에 맞은 적은 잠시 동안 공격 속도가 감소합니다."

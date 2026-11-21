@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_qotqp"]
+
+[resource]
+script = ExtResource("1_qotqp")
+id = "skill672"
+legacy_id = "chogath_q"
+champion_id = "Chogath"
+champion_name = "초가스"
+slot_key = "Q"
+reference_name = "파열"
+reference_description = "선택한 지역의 지면을 파열시켜 해당 지역에 있는 적을 공중으로 띄워 피해를 입히고 이동 속도를 늦춥니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/Rupture.png"
+display_name = "파열"
+description = "선택한 지역의 지면을 파열시켜 해당 지역에 있는 적을 공중으로 띄워 피해를 입히고 이동 속도를 늦춥니다."

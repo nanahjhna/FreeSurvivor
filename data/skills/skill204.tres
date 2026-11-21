@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ikssa"]
+
+[resource]
+script = ExtResource("1_ikssa")
+id = "skill204"
+legacy_id = "malzahar_e"
+champion_id = "Malzahar"
+champion_name = "말자하"
+slot_key = "E"
+reference_name = "재앙의 환상"
+reference_description = "말자하가 대상의 머릿속에 최후의 광경을 보여주며 지속적으로 피해를 입힙니다. 말자하가 대상에게 다른 스킬을 사용하면 환상의 지속시간이 초기화됩니다. / / 이 동안 대상이 쓰러지면 환상은 주변 적에게 옮겨가고, 말자하는 마나를 획득합니다. 말자하의 공허충은 환상으로 오염된 대상에게 몰려갑니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/MalzaharE.png"
+display_name = "재앙의 환상"
+description = "말자하가 대상의 머릿속에 최후의 광경을 보여주며 지속적으로 피해를 입힙니다. 말자하가 대상에게 다른 스킬을 사용하면 환상의 지속시간이 초기화됩니다. / / 이 동안 대상이 쓰러지면 환상은 주변 적에게 옮겨가고, 말자하는 마나를 획득합니다. 말자하의 공허충은 환상으로 오염된 대상에게 몰려갑니다."

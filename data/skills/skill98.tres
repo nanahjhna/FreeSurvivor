@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_wypu0"]
+
+[resource]
+script = ExtResource("1_wypu0")
+id = "skill98"
+legacy_id = "ryze_w"
+champion_id = "Ryze"
+champion_name = "라이즈"
+slot_key = "W"
+reference_name = "룬 감옥"
+reference_description = "라이즈가 대상을 룬 감옥에 가두고 피해를 입히며 이동 속도를 늦춥니다. 대상에게 전이 표식이 있으면 이동 속도를 늦추는 대신 속박합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RyzeW.png"
+display_name = "룬 감옥"
+description = "라이즈가 대상을 룬 감옥에 가두고 피해를 입히며 이동 속도를 늦춥니다. 대상에게 전이 표식이 있으면 이동 속도를 늦추는 대신 속박합니다."

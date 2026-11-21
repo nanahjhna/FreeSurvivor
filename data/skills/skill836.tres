@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_8hm7x"]
+
+[resource]
+script = ExtResource("1_8hm7x")
+id = "skill836"
+legacy_id = "fiddlesticks_p"
+champion_id = "Fiddlesticks"
+champion_name = "피들스틱"
+slot_key = "P"
+reference_name = "무해한 허수아비"
+reference_description = "피들스틱의 장신구는 허수아비로 대체됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/FiddlesticksP.png"
+display_name = "무해한 허수아비"
+description = "피들스틱의 장신구는 허수아비로 대체됩니다."

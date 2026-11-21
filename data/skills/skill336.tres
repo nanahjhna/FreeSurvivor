@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_17tbt"]
+
+[resource]
+script = ExtResource("1_17tbt")
+id = "skill336"
+legacy_id = "sylas_p"
+champion_id = "Sylas"
+champion_name = "사일러스"
+slot_key = "P"
+reference_name = "페트리사이트 폭발"
+reference_description = "스킬 사용 후 사일러스가 페트리사이트 폭발을 1회 충전합니다. 다음 기본 공격 시 충전량을 하나 소모하여 사슬을 세차게 휘두르며 적중한 적들에게 추가 마법 피해를 입힙니다. 페트리사이트 폭발이 충전되어 있으면 사일러스의 공격 속도가 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/SylasP.png"
+display_name = "페트리사이트 폭발"
+description = "스킬 사용 후 사일러스가 페트리사이트 폭발을 1회 충전합니다. 다음 기본 공격 시 충전량을 하나 소모하여 사슬을 세차게 휘두르며 적중한 적들에게 추가 마법 피해를 입힙니다. 페트리사이트 폭발이 충전되어 있으면 사일러스의 공격 속도가 증가합니다."

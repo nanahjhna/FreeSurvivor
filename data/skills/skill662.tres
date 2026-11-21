@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_ya6kn"]
+
+[resource]
+script = ExtResource("1_ya6kn")
+id = "skill662"
+legacy_id = "zilean_q"
+champion_id = "Zilean"
+champion_name = "질리언"
+slot_key = "Q"
+reference_name = "시한 폭탄"
+reference_description = "대상 위치에 가까이 오는 유닛(챔피언 우선)에게 들러붙는 폭탄을 던집니다. 폭탄은 3초 뒤 폭발하여 적에게만 광역 피해를 입힙니다. 다른 시한 폭탄 때문에 시한 폭탄이 일찍 폭발하면 적을 기절시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ZileanQ.png"
+display_name = "시한 폭탄"
+description = "대상 위치에 가까이 오는 유닛(챔피언 우선)에게 들러붙는 폭탄을 던집니다. 폭탄은 3초 뒤 폭발하여 적에게만 광역 피해를 입힙니다. 다른 시한 폭탄 때문에 시한 폭탄이 일찍 폭발하면 적을 기절시킵니다."

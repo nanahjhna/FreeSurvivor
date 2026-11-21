@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_gpbl5"]
+
+[resource]
+script = ExtResource("1_gpbl5")
+id = "skill667"
+legacy_id = "jinx_q"
+champion_id = "Jinx"
+champion_name = "징크스"
+slot_key = "Q"
+reference_name = "휘릭휘릭!"
+reference_description = "징크스는 '빵야빵야' 미니건과 '생선대가리' 로켓 런처 중에서 원하는 것을 선택하여 기본 공격을 변경할 수 있습니다. 미니건으로 공격하면 공격 속도가 상승하고, 로켓 런처로 공격하면 광역 피해를 입히고 사거리가 증가하지만 마나가 소모되고 공격 속도가 느려집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JinxQ.png"
+display_name = "휘릭휘릭!"
+description = "징크스는 '빵야빵야' 미니건과 '생선대가리' 로켓 런처 중에서 원하는 것을 선택하여 기본 공격을 변경할 수 있습니다. 미니건으로 공격하면 공격 속도가 상승하고, 로켓 런처로 공격하면 광역 피해를 입히고 사거리가 증가하지만 마나가 소모되고 공격 속도가 느려집니다."

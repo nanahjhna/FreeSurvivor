@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_dp4st"]
+
+[resource]
+script = ExtResource("1_dp4st")
+id = "skill490"
+legacy_id = "anivia_r"
+champion_id = "Anivia"
+champion_name = "애니비아"
+slot_key = "R"
+reference_name = "얼음 폭풍"
+reference_description = "애니비아가 얼음의 비와 폭풍우를 소환하여 적에게 피해를 입히고 이동 속도를 늦춥니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GlacialStorm.png"
+display_name = "얼음 폭풍"
+description = "애니비아가 얼음의 비와 폭풍우를 소환하여 적에게 피해를 입히고 이동 속도를 늦춥니다."

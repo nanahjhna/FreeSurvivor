@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_gkdvo"]
+
+[resource]
+script = ExtResource("1_gkdvo")
+id = "skill24"
+legacy_id = "graves_e"
+champion_id = "Graves"
+champion_name = "그레이브즈"
+slot_key = "E"
+reference_name = "빨리 뽑기"
+reference_description = "그레이브즈가 전방으로 돌진하여 몇 초 동안 방어력과 마법 저항력이 상승하며, 적 챔피언을 향해 돌진할 경우에는 진정한 용기가 두 번 중첩됩니다. 기본 공격으로 적을 명중시키면 스킬 재사용 대기시간이 감소하고 추가 방어력 및 마법 저항력 지속시간이 초기화됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GravesMove.png"
+display_name = "빨리 뽑기"
+description = "그레이브즈가 전방으로 돌진하여 몇 초 동안 방어력과 마법 저항력이 상승하며, 적 챔피언을 향해 돌진할 경우에는 진정한 용기가 두 번 중첩됩니다. 기본 공격으로 적을 명중시키면 스킬 재사용 대기시간이 감소하고 추가 방어력 및 마법 저항력 지속시간이 초기화됩니다."

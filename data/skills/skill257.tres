@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_6o7cd"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_hxg5i"]
+
+[resource]
+script = ExtResource("2_hxg5i")
+id = "skill257"
+legacy_id = "veigar_q"
+champion_id = "Veigar"
+champion_name = "베이가"
+slot_key = "Q"
+reference_name = "사악한 일격"
+reference_description = "베이가가 어둠의 에너지를 발사하여 처음 맞은 적 둘에게 마법 피해를 입힙니다. 이 스킬로 적 유닛을 처치하면 베이가의 주문력이 영구적으로 상승합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VeigarBalefulStrike.png"
+display_name = "사악한 일격"
+description = "베이가가 어둠의 에너지를 발사하여 처음 맞은 적 둘에게 마법 피해를 입힙니다. 이 스킬로 적 유닛을 처치하면 베이가의 주문력이 영구적으로 상승합니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+bonus_type = "magic"
+effect_scene = ExtResource("1_6o7cd")
+effect_color = Color(0.45882353, 0.6666667, 1, 1)
+implemented = true
+support_status = "generic_effect_ready"

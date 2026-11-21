@@ -1,8 +1,8 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://l5ekj7ts66ro"]
 
-[ext_resource type="Script" path="res://scenes/stages/stage_grassland.gd" id="1_stage"]
+[ext_resource type="Script" uid="uid://u01yidnkrxie" path="res://scenes/stages/stage_grassland.gd" id="1_stage"]
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
-[ext_resource type="Script" path="res://scenes/skills/skill_manager.gd" id="3_skills"]
+[ext_resource type="Script" uid="uid://c6bqs8quvlm7n" path="res://scenes/skills/skill_manager.gd" id="3_skills"]
 [ext_resource type="PackedScene" path="res://scenes/monsters/monster_spawner.tscn" id="4_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/level_up_panel.tscn" id="6_lvl"]
@@ -37,44 +37,43 @@ size = Vector2(250, 250)
 albedo_color = Color(0.28, 0.62, 0.22, 1)
 roughness = 0.85
 
-[node name="StageGrassland" type="Node3D"]
+[node name="StageGrassland" type="Node3D" unique_id=142234939]
 script = ExtResource("1_stage")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1125159998]
 environment = SubResource("Environment_stage")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1116252630]
 transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 30, 0)
-shadow_enabled = true
 light_color = Color(1, 0.98, 0.92, 1)
 light_energy = 1.15
+shadow_enabled = true
 
-[node name="Ground" type="StaticBody3D" parent="."]
+[node name="Ground" type="StaticBody3D" parent="." unique_id=1344512022]
 collision_layer = 32
 collision_mask = 3
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground" unique_id=1597525066]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
 shape = SubResource("BoxShape3D_ground")
 
-[node name="GroundMesh" type="MeshInstance3D" parent="Ground"]
+[node name="GroundMesh" type="MeshInstance3D" parent="Ground" unique_id=2078736404]
 mesh = SubResource("PlaneMesh_ground")
 surface_material_override/0 = SubResource("StandardMaterial3D_grass")
 
-[node name="Player" parent="." instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+[node name="Player" parent="." unique_id=2136970243 instance=ExtResource("2_player")]
 
-[node name="SkillManager" type="Node" parent="Player"]
+[node name="SkillManager" type="Node" parent="Player" unique_id=931945968]
 script = ExtResource("3_skills")
 
-[node name="MonsterSpawner" parent="." instance=ExtResource("4_spawner")]
+[node name="MonsterSpawner" parent="." unique_id=943737388 instance=ExtResource("4_spawner")]
 
-[node name="HUD" parent="." instance=ExtResource("5_hud")]
+[node name="HUD" parent="." unique_id=179035746 instance=ExtResource("5_hud")]
 
-[node name="LevelUpPanel" parent="." instance=ExtResource("6_lvl")]
+[node name="LevelUpPanel" parent="." unique_id=1025212984 instance=ExtResource("6_lvl")]
 
-[node name="PauseMenu" parent="." instance=ExtResource("7_pause")]
+[node name="PauseMenu" parent="." unique_id=498743958 instance=ExtResource("7_pause")]
 
-[node name="GameOverScreen" parent="." instance=ExtResource("8_over")]
+[node name="GameOverScreen" parent="." unique_id=1314248047 instance=ExtResource("8_over")]
 
-[node name="VictoryScreen" parent="." instance=ExtResource("9_vic")]
+[node name="VictoryScreen" parent="." unique_id=1271140102 instance=ExtResource("9_vic")]

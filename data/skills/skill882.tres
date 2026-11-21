@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/flame_attack.tscn" id="1_2ygyk"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_0wull"]
+
+[resource]
+script = ExtResource("2_0wull")
+id = "skill882"
+legacy_id = "mage_w"
+reference_name = "잿불 폭풍"
+reference_description = "전방에 불꽃 폭풍을 일으킵니다."
+icon = "🌋"
+display_name = "잿불 폭풍"
+description = "전방에 불꽃 폭풍을 일으킵니다."
+cooldown = 7.0
+damage_ratio = 2.1
+cooldown_step = 0.18
+damage_step = 0.28
+range = 8.0
+cast_type = "flame"
+bonus_type = "fire"
+effect_scene = ExtResource("1_2ygyk")
+uses_magic_power = true
+implemented = true
+support_status = "game_skill"

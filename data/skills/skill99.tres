@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="1_h1fi3"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_po0n0"]
+
+[resource]
+script = ExtResource("2_po0n0")
+id = "skill99"
+legacy_id = "ryze_e"
+champion_id = "Ryze"
+champion_name = "라이즈"
+slot_key = "E"
+reference_name = "주문 전이"
+reference_description = "라이즈가 순수한 마법의 구체를 던져 적에게 피해를 입히고 주변 모든 적에게 표식을 남깁니다. 표식이 남은 적에게 라이즈가 스킬을 사용하면 추가 효과가 적용됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/RyzeE.png"
+display_name = "주문 전이"
+description = "라이즈가 순수한 마법의 구체를 던져 적에게 피해를 입히고 주변 모든 적에게 표식을 남깁니다. 표식이 남은 적에게 라이즈가 스킬을 사용하면 추가 효과가 적용됩니다."
+cost = 180
+cooldown = 7.0
+damage_ratio = 1.4
+range = 14.0
+cast_type = "wave"
+bonus_type = "magic"
+effect_scene = ExtResource("1_h1fi3")
+effect_color = Color(0.45882353, 0.6666667, 1, 1)
+implemented = true
+support_status = "generic_effect_ready"

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_jc8re"]
+
+[resource]
+script = ExtResource("1_jc8re")
+id = "skill526"
+legacy_id = "orianna_p"
+champion_id = "Orianna"
+champion_name = "오리아나"
+slot_key = "P"
+reference_name = "시계태엽 감기"
+reference_description = "오리아나의 기본 공격은 추가 마법 피해를 입힙니다. 같은 적을 연속으로 공격할수록 추가 마법 피해량도 커집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/OriannaPassive.png"
+display_name = "시계태엽 감기"
+description = "오리아나의 기본 공격은 추가 마법 피해를 입힙니다. 같은 적을 연속으로 공격할수록 추가 마법 피해량도 커집니다."

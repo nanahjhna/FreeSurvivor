@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_eys7f"]
+
+[resource]
+script = ExtResource("1_eys7f")
+id = "skill720"
+legacy_id = "kalista_r"
+champion_id = "Kalista"
+champion_name = "칼리스타"
+slot_key = "R"
+reference_name = "운명의 부름"
+reference_description = "칼리스타가 계약을 맺은 아군을 자신에게로 순간 이동시킵니다. 계약자는 지정한 위치로 돌진하여 적 챔피언을 뒤로 밀어내는 스킬을 사용할 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KalistaRx.png"
+display_name = "운명의 부름"
+description = "칼리스타가 계약을 맺은 아군을 자신에게로 순간 이동시킵니다. 계약자는 지정한 위치로 돌진하여 적 챔피언을 뒤로 밀어내는 스킬을 사용할 수 있습니다."

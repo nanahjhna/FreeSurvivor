@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_cpfci"]
+
+[resource]
+script = ExtResource("1_cpfci")
+id = "skill479"
+legacy_id = "ambessa_e"
+champion_id = "Ambessa"
+champion_name = "암베사"
+slot_key = "E"
+reference_name = "찢어 가르기"
+reference_description = "암베사가 주변으로 쌍둥이 용사냥개를 휘둘러 피해를 입히고 주변 적을 둔화시킵니다. 이 스킬로 용사냥개의 발걸음이 개시되면 돌진이 끝나고 암베사가 한 번 더 일격을 가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AmbessaE.png"
+display_name = "찢어 가르기"
+description = "암베사가 주변으로 쌍둥이 용사냥개를 휘둘러 피해를 입히고 주변 적을 둔화시킵니다. 이 스킬로 용사냥개의 발걸음이 개시되면 돌진이 끝나고 암베사가 한 번 더 일격을 가합니다."

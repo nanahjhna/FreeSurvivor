@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_jnus7"]
+
+[resource]
+script = ExtResource("1_jnus7")
+id = "skill865"
+legacy_id = "hwei_r"
+champion_id = "Hwei"
+champion_name = "흐웨이"
+slot_key = "R"
+reference_name = "절망의 소용돌이"
+reference_description = "흐웨이가 순수한 절망의 환상을 그립니다. 처음 맞은 적을 중심으로 그림이 점점 커지며 주변 적을 둔화시키고 피해를 입힙니다. 환상은 최대 크기가 되거나 챔피언이 죽으면 폭발합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/HweiR.png"
+display_name = "절망의 소용돌이"
+description = "흐웨이가 순수한 절망의 환상을 그립니다. 처음 맞은 적을 중심으로 그림이 점점 커지며 주변 적을 둔화시키고 피해를 입힙니다. 환상은 최대 크기가 되거나 챔피언이 죽으면 폭발합니다."

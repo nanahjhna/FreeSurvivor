@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_t1dhc"]
+
+[resource]
+script = ExtResource("1_t1dhc")
+id = "skill504"
+legacy_id = "ekko_e"
+champion_id = "Ekko"
+champion_name = "에코"
+slot_key = "E"
+reference_name = "시간 도약"
+reference_description = "에코가 회피하며 굴러 Z 드라이브를 충전합니다. 다음 번 공격은 추가 피해를 입히며 시공간을 왜곡하여 에코가 대상 쪽으로 순간이동합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/EkkoE.png"
+display_name = "시간 도약"
+description = "에코가 회피하며 굴러 Z 드라이브를 충전합니다. 다음 번 공격은 추가 피해를 입히며 시공간을 왜곡하여 에코가 대상 쪽으로 순간이동합니다."

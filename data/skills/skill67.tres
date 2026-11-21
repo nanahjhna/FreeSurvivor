@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_watxq"]
+
+[resource]
+script = ExtResource("1_watxq")
+id = "skill67"
+legacy_id = "nidalee_q"
+champion_id = "Nidalee"
+champion_name = "니달리"
+slot_key = "Q"
+reference_name = "창 투척 / 숨통 끊기"
+reference_description = "인간 모습일 때 - 니달리가 가시 달린 창을 대상에게 던집니다. 창이 날아가는 동안 피해가 더욱 커집니다. 쿠거 모습일 때 - 다음 공격 시 적에게 치명적인 공격을 가합니다. 대상의 체력이 낮을수록 더 큰 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JavelinToss.png"
+display_name = "창 투척 / 숨통 끊기"
+description = "인간 모습일 때 - 니달리가 가시 달린 창을 대상에게 던집니다. 창이 날아가는 동안 피해가 더욱 커집니다. 쿠거 모습일 때 - 다음 공격 시 적에게 치명적인 공격을 가합니다. 대상의 체력이 낮을수록 더 큰 피해를 입힙니다."

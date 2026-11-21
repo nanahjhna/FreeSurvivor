@@ -17,6 +17,7 @@ var current_sp: float = 30.0
 @export var base_attack_damage: float = 15.0
 @export var base_attack_speed: float = 1.2
 @export var attack_range: float = 3.8
+@export_range(1.0, 3.0, 0.1) var character_visual_scale: float = 1.5
 
 var current_xp: int = 0
 var xp_to_next_level: int = 10
@@ -125,6 +126,10 @@ func _handle_movement(delta: float):
 		var start_down: Vector3 = camera_node.global_basis.z if camera_node != null else Vector3.BACK
 		start_right.y = 0.0
 		start_down.y = 0.0
+		if start_right.length_squared() < 0.001:
+			start_right = Vector3.RIGHT
+		if start_down.length_squared() < 0.001:
+			start_down = Vector3.BACK
 		_move_camera_right = start_right.normalized()
 		_move_camera_down = start_down.normalized()
 	
@@ -189,6 +194,9 @@ func set_character_appearance(character_id: String):
 		child.queue_free()
 	character_model = PlayerManager.create_model(character_id, character_model_root)
 	if character_model:
+		# Match the player silhouette to the enlarged standard monsters while
+		# keeping movement and combat collision sizes unchanged.
+		character_model.scale *= Vector3.ONE * character_visual_scale
 		character_model.visible = not first_person_mode
 	if is_node_ready():
 		_setup_model_animations()
@@ -545,25 +553,15 @@ func _setup_model_animations():
 	if model_animation_player == null:
 		return
 	model_clips.clear()
-	var animation_profile := PlayerManager.get_animation_profile(current_appearance)
-	if animation_profile == "char02":
-		_map_animation_alias("Idle", ["Idle_Sword_RT", "Idle"])
-		_map_animation_alias("Walk", ["Polearm_Run_RT", "Sword_Run_RT", "Run"])
-		_map_animation_alias("Run", ["Polearm_Run_RT", "Sword_Run_RT", "Run"])
-		_map_animation_alias("Attack", ["Sword_Regular_A_RT", "Sword_Attack_RT", "Sword_Attack_A_RT"])
-		_map_animation_alias("AttackAlt", ["Sword_Regular_B_RT", "Sword_Attack_B_RT", "Sword_Regular_A_RT"])
-		_map_animation_alias("Kick", ["Sword_Attack_RT", "Sword_Regular_A_RT"])
-	elif animation_profile == "fighter":
-		_map_animation_alias("Idle", ["Breathing_Idle_RT"])
-		_map_animation_alias("Walk", ["Run_Female_RT"])
-		_map_animation_alias("Run", ["Run_Female_RT"])
-		_map_animation_alias("Attack", ["Standing_1H_Magic_Attack_01_RT", "Standing_1H_Magic_Attack_03_RT"])
-		_map_animation_alias("AttackAlt", ["Standing_1H_Magic_Attack_03_RT", "Standing_1H_Magic_Attack_01_RT"])
-		_map_animation_alias("Kick", ["Standing_2H_Magic_Area_Attack_02_RT", "Standing_2H_Magic_Attack_01_RT"])
-		_map_animation_alias("Hit", ["Hit_Chest_RT"])
-		_map_animation_alias("Death", ["Livershot_Knockdown_RT"])
-		if not model_clips.has("Idle") and model_animation_player.has_animation("Armature|Armature|Armature|mixamo.com|Layer0"):
-			model_clips["Idle"] = "Armature|Armature|Armature|mixamo.com|Layer0"
+	var configured_aliases := PlayerManager.get_animation_aliases(current_appearance)
+	if not configured_aliases.is_empty():
+		for alias in configured_aliases:
+			_map_animation_alias(str(alias), configured_aliases[alias])
+	else:
+		_map_animation_alias("Idle", ["Idle"])
+		_map_animation_alias("Walk", ["Walk", "Run"])
+		_map_animation_alias("Run", ["Run", "Walk"])
+		_map_animation_alias("AttackAlt", ["Attack"])
 	for clip_key in ["Idle", "Walk", "Run"]:
 		if model_clips.has(clip_key):
 			var clip := model_animation_player.get_animation(model_clips[clip_key])
@@ -573,8 +571,10 @@ func _setup_model_animations():
 		model_animation_player.animation_finished.connect(_on_model_animation_finished)
 	_play_model_animation("Idle")
 
-func _map_animation_alias(alias: String, candidates: Array[String]):
-	for candidate in candidates:
+
+func _map_animation_alias(alias: String, candidates: Variant):
+	var candidate_list: Array = candidates if candidates is Array else [str(candidates)]
+	for candidate in candidate_list:
 		if model_animation_player != null and model_animation_player.has_animation(candidate):
 			model_clips[alias] = candidate
 			return
@@ -600,5 +600,6 @@ func _play_model_animation(clip_key: String, action: bool = false) -> bool:
 	return true
 
 
-func play_skill_animation(skill_key: String):
-	_play_model_animation("Kick" if skill_key == "w" else "AttackAlt", true)
+func play_skill_animation(skill_key: String, skill_id: String = ""):
+	var animation_key := PlayerManager.get_skill_animation_key(skill_id, skill_key) if not skill_id.is_empty() else ("Kick" if skill_key == "w" else "AttackAlt")
+	_play_model_animation(animation_key, true)

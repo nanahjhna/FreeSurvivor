@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_1ehao"]
+
+[resource]
+script = ExtResource("1_1ehao")
+id = "skill233"
+legacy_id = "missfortune_w"
+champion_id = "MissFortune"
+champion_name = "미스 포츈"
+slot_key = "W"
+reference_name = "활보"
+reference_description = "미스 포츈은 얼마 동안 피해를 입지 않으면 이동 속도가 점점 올라갑니다. 이 스킬을 활성화하면 잠깐 동안 미스 포츈의 공격 속도가 높아집니다. 재사용 대기 중일 때는 사랑의 한 방을 활용해 활보의 재사용 대기시간을 줄일 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/MissFortuneViciousStrikes.png"
+display_name = "활보"
+description = "미스 포츈은 얼마 동안 피해를 입지 않으면 이동 속도가 점점 올라갑니다. 이 스킬을 활성화하면 잠깐 동안 미스 포츈의 공격 속도가 높아집니다. 재사용 대기 중일 때는 사랑의 한 방을 활용해 활보의 재사용 대기시간을 줄일 수 있습니다."

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_lejmd"]
+
+[resource]
+script = ExtResource("1_lejmd")
+id = "skill656"
+legacy_id = "jhin_p"
+champion_id = "Jhin"
+champion_name = "진"
+slot_key = "P"
+reference_name = "속삭임"
+reference_description = "'속삭임'이라고 불리는 진의 총은 우월한 살상력을 위해 설계된 정밀 기계입니다. 발사 속도는 고정되어 있으며 총탄은 네 발만 장전됩니다. 네 발째 총탄은 진의 어두운 마법에 물들어 항상 치명타를 입히며 잃은 체력에 비례한 피해를 추가로 입힙니다. 속삭임으로 치명타를 발동시키면, 진의 이동 속도가 잠깐 동안 크게 상승합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Jhin_P.png"
+display_name = "속삭임"
+description = "'속삭임'이라고 불리는 진의 총은 우월한 살상력을 위해 설계된 정밀 기계입니다. 발사 속도는 고정되어 있으며 총탄은 네 발만 장전됩니다. 네 발째 총탄은 진의 어두운 마법에 물들어 항상 치명타를 입히며 잃은 체력에 비례한 피해를 추가로 입힙니다. 속삭임으로 치명타를 발동시키면, 진의 이동 속도가 잠깐 동안 크게 상승합니다."

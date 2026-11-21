@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_wt5np"]
+
+[resource]
+script = ExtResource("1_wt5np")
+id = "skill430"
+legacy_id = "ahri_r"
+champion_id = "Ahri"
+champion_name = "아리"
+slot_key = "R"
+reference_name = "혼령 질주"
+reference_description = "아리가 전방으로 질주하며 근처 적 챔피언들에게 혼령의 정기를 쏘아냅니다. 재사용 대기시간이 적용되기 전에 최대 세 번까지 사용할 수 있으며, 적 챔피언 처치 관여 시 재사용 가능 횟수가 늘어납니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/AhriR.png"
+display_name = "혼령 질주"
+description = "아리가 전방으로 질주하며 근처 적 챔피언들에게 혼령의 정기를 쏘아냅니다. 재사용 대기시간이 적용되기 전에 최대 세 번까지 사용할 수 있으며, 적 챔피언 처치 관여 시 재사용 가능 횟수가 늘어납니다."

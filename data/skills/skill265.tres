@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_euvbi"]
+
+[resource]
+script = ExtResource("1_euvbi")
+id = "skill265"
+legacy_id = "vayne_r"
+champion_id = "Vayne"
+champion_name = "베인"
+slot_key = "R"
+reference_name = "결전의 시간"
+reference_description = "격렬한 전투에 대비한 베인이 공격력을 높이고 구르기 시 투명 상태가 되며 구르기의 재사용 대기시간이 줄어듭니다. 어둠 사냥꾼의 이동 속도 증가량이 더 늘어납니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VayneInquisition.png"
+display_name = "결전의 시간"
+description = "격렬한 전투에 대비한 베인이 공격력을 높이고 구르기 시 투명 상태가 되며 구르기의 재사용 대기시간이 줄어듭니다. 어둠 사냥꾼의 이동 속도 증가량이 더 늘어납니다."

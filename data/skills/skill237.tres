@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_5ew3c"]
+
+[resource]
+script = ExtResource("1_5ew3c")
+id = "skill237"
+legacy_id = "milio_q"
+champion_id = "Milio"
+champion_name = "밀리오"
+slot_key = "Q"
+reference_name = "초특급 불꽃 킥"
+reference_description = "적을 밀쳐내는 공을 걷어찹니다. 적중한 공은 위로 날아가 적을 향해 떨어지며 충돌한 영역 주변에 있는 적들에게 피해를 입히고 둔화시킵니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/MilioQ.png"
+display_name = "초특급 불꽃 킥"
+description = "적을 밀쳐내는 공을 걷어찹니다. 적중한 공은 위로 날아가 적을 향해 떨어지며 충돌한 영역 주변에 있는 적들에게 피해를 입히고 둔화시킵니다."

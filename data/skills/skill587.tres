@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_opv8j"]
+
+[resource]
+script = ExtResource("1_opv8j")
+id = "skill587"
+legacy_id = "illaoi_q"
+champion_id = "Illaoi"
+champion_name = "일라오이"
+slot_key = "Q"
+reference_name = "촉수 강타"
+reference_description = "촉수의 피해량이 증가합니다. 사용 시 일라오이가 촉수로 내리쳐 물리 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/IllaoiQ.png"
+display_name = "촉수 강타"
+description = "촉수의 피해량이 증가합니다. 사용 시 일라오이가 촉수로 내리쳐 물리 피해를 입힙니다."

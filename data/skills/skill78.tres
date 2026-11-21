@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_0rtun"]
+
+[resource]
+script = ExtResource("1_0rtun")
+id = "skill78"
+legacy_id = "nilah_w"
+champion_id = "Nilah"
+champion_name = "닐라"
+slot_key = "W"
+reference_name = "승리의 장막"
+reference_description = "자신을 안개로 감싸 이동 속도를 얻고 우아하게 모든 기본 공격을 회피합니다. 안개 지속시간 중 닐라에게 닿은 아군에게도 이 효과가 적용됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/NilahW.png"
+display_name = "승리의 장막"
+description = "자신을 안개로 감싸 이동 속도를 얻고 우아하게 모든 기본 공격을 회피합니다. 안개 지속시간 중 닐라에게 닿은 아군에게도 이 효과가 적용됩니다."

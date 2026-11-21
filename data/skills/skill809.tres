@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_uy7im"]
+
+[resource]
+script = ExtResource("1_uy7im")
+id = "skill809"
+legacy_id = "tryndamere_e"
+champion_id = "Tryndamere"
+champion_name = "트린다미어"
+slot_key = "E"
+reference_name = "회전 베기"
+reference_description = "트린다미어가 공격 경로에 있는 적 유닛을 칼로 베어 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/TryndamereE.png"
+display_name = "회전 베기"
+description = "트린다미어가 공격 경로에 있는 적 유닛을 칼로 베어 피해를 입힙니다."

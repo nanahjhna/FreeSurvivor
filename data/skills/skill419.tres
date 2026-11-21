@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_jpva8"]
+
+[resource]
+script = ExtResource("1_jpva8")
+id = "skill419"
+legacy_id = "singed_e"
+champion_id = "Singed"
+champion_name = "신지드"
+slot_key = "E"
+reference_name = "던져넘기기"
+reference_description = "적을 신지드 뒤편으로 높이 던지며 피해를 줍니다. 신지드가 뒤로 던진 대상이 초강력 접착제 위에 착지하면 속박 효과가 적용됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/Fling.png"
+display_name = "던져넘기기"
+description = "적을 신지드 뒤편으로 높이 던지며 피해를 줍니다. 신지드가 뒤로 던진 대상이 초강력 접착제 위에 착지하면 속박 효과가 적용됩니다."

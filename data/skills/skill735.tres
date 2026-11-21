@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_bwbse"]
+
+[resource]
+script = ExtResource("1_bwbse")
+id = "skill735"
+legacy_id = "kayn_r"
+champion_id = "Kayn"
+champion_name = "케인"
+slot_key = "R"
+reference_name = "그림자의 지배"
+reference_description = "케인이 적에게 파고들었다가 빠져나오면서 큰 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KaynR.png"
+display_name = "그림자의 지배"
+description = "케인이 적에게 파고들었다가 빠져나오면서 큰 피해를 입힙니다."

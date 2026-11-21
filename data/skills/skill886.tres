@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="1_ih3gj"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_tsahx"]
+
+[resource]
+script = ExtResource("2_tsahx")
+id = "skill886"
+legacy_id = "paladin_w"
+reference_name = "수호의 회전"
+reference_description = "방패와 검을 휘둘러 주변의 적을 밀어냅니다."
+icon = "🛡️"
+display_name = "수호의 회전"
+description = "방패와 검을 휘둘러 주변의 적을 밀어냅니다."
+cooldown = 6.0
+damage_ratio = 1.55
+cooldown_step = 0.16
+damage_step = 0.2
+range = 5.2
+cast_type = "spin"
+bonus_type = "area"
+effect_scene = ExtResource("1_ih3gj")
+implemented = true
+support_status = "game_skill"

@@ -31,9 +31,9 @@ func _ready():
 		var cam := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 		if cam:
 			cam.set("quarter_view_enabled", true)
-			cam.set("quarter_distance", 16.0)
-			cam.set("quarter_elevation_degrees", 45.0)
-			cam.set("quarter_azimuth_degrees", 45.0)
+			cam.set("quarter_distance", 18.0)
+			cam.set("quarter_elevation_degrees", 35.0)
+			cam.set("quarter_azimuth_degrees", 0.0)
 			cam.set("back_view_enabled", false)
 			cam.set("first_person_enabled", false)
 			cam.fov = 60.0
@@ -310,6 +310,10 @@ func _process_auto_move(delta: float):
 	var screen_down := camera.global_basis.z if camera else Vector3.BACK
 	screen_right.y = 0.0
 	screen_down.y = 0.0
+	if screen_right.length_squared() < 0.001:
+		screen_right = Vector3.RIGHT
+	if screen_down.length_squared() < 0.001:
+		screen_down = Vector3.BACK
 	screen_right = screen_right.normalized()
 	screen_down = screen_down.normalized()
 	var movement_input := Vector2(direction.dot(screen_right), direction.dot(screen_down)).limit_length(1.0)

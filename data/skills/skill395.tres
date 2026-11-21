@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_cylrk"]
+
+[resource]
+script = ExtResource("1_cylrk")
+id = "skill395"
+legacy_id = "swain_r"
+champion_id = "Swain"
+champion_name = "스웨인"
+slot_key = "R"
+reference_name = "악의 승천"
+reference_description = "스웨인이 악마로 변신해 근처 적 챔피언, 미니언, 중립 몬스터에게서 생명력을 흡수합니다. 악의 불길을 사용하면 주변 적을 학살하고 둔화시킵니다. 이 형태는 스웨인이 적 챔피언을 흡수하는 한 무기한 지속됩니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/SwainR.png"
+display_name = "악의 승천"
+description = "스웨인이 악마로 변신해 근처 적 챔피언, 미니언, 중립 몬스터에게서 생명력을 흡수합니다. 악의 불길을 사용하면 주변 적을 학살하고 둔화시킵니다. 이 형태는 스웨인이 적 챔피언을 흡수하는 한 무기한 지속됩니다."

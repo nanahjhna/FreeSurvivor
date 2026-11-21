@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_d4l76"]
+
+[resource]
+script = ExtResource("1_d4l76")
+id = "skill422"
+legacy_id = "thresh_q"
+champion_id = "Thresh"
+champion_name = "쓰레쉬"
+slot_key = "Q"
+reference_name = "사형 선고"
+reference_description = "쓰레쉬가 쇠사슬로 적을 묶어 자신 쪽으로 당겨옵니다. 스킬을 다시 사용하면 쓰레쉬가 적 쪽으로 당겨집니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/ThreshQ.png"
+display_name = "사형 선고"
+description = "쓰레쉬가 쇠사슬로 적을 묶어 자신 쪽으로 당겨옵니다. 스킬을 다시 사용하면 쓰레쉬가 적 쪽으로 당겨집니다."

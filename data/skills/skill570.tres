@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_o2mhr"]
+
+[resource]
+script = ExtResource("1_o2mhr")
+id = "skill570"
+legacy_id = "yuumi_r"
+champion_id = "Yuumi"
+champion_name = "유미"
+slot_key = "R"
+reference_name = "대단원"
+reference_description = "유미가 정신을 집중해 파동을 다섯 번 발사합니다. 파동은 적에게 피해를 입히고 아군의 체력을 회복시킵니다. 정신을 집중하는 동안 이동하거나 밀착할 수 있으며, 슈우우웅! 스킬도 사용할 수 있습니다. 단짝에게 붙어있으면 마우스로 이 스킬을 조종할 수 있습니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/YuumiR.png"
+display_name = "대단원"
+description = "유미가 정신을 집중해 파동을 다섯 번 발사합니다. 파동은 적에게 피해를 입히고 아군의 체력을 회복시킵니다. 정신을 집중하는 동안 이동하거나 밀착할 수 있으며, 슈우우웅! 스킬도 사용할 수 있습니다. 단짝에게 붙어있으면 마우스로 이 스킬을 조종할 수 있습니다."
+cost = 400
+cooldown = 25.0
+range = 0.0
+unlock_level = 8
+cast_type = "heal"
+bonus_type = "healing"
+effect_color = Color(0.32156864, 0.9019608, 0.627451, 1)
+heal_ratio = 0.2
+implemented = true
+support_status = "generic_effect_ready"

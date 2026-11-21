@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_mp1uk"]
+
+[resource]
+script = ExtResource("1_mp1uk")
+id = "skill18"
+legacy_id = "gragas_w"
+champion_id = "Gragas"
+champion_name = "그라가스"
+slot_key = "W"
+reference_name = "취중 분노"
+reference_description = "그라가스가 1초 동안 가장 최근에 주조한 술을 맛봅니다. 술을 맛본 그라가스는 요란하고 난폭해져 받는 피해가 줄어들고 다음번 기본 공격 시 근처의 모든 대상에게 추가 마법 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GragasW.png"
+display_name = "취중 분노"
+description = "그라가스가 1초 동안 가장 최근에 주조한 술을 맛봅니다. 술을 맛본 그라가스는 요란하고 난폭해져 받는 피해가 줄어들고 다음번 기본 공격 시 근처의 모든 대상에게 추가 마법 피해를 입힙니다."

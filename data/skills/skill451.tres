@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_gbfnc"]
+
+[resource]
+script = ExtResource("1_gbfnc")
+id = "skill451"
+legacy_id = "akali_p"
+champion_id = "Akali"
+champion_name = "아칼리"
+slot_key = "P"
+reference_name = "암살자의 표식"
+reference_description = "스킬 공격으로 챔피언에게 피해를 입히면 해당 챔피언의 주변에 원이 생깁니다. 이 원의 경계를 넘어가면 다음 기본 공격의 사거리가 길어지고 추가 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Akali_P.png"
+display_name = "암살자의 표식"
+description = "스킬 공격으로 챔피언에게 피해를 입히면 해당 챔피언의 주변에 원이 생깁니다. 이 원의 경계를 넘어가면 다음 기본 공격의 사거리가 길어지고 추가 피해를 입힙니다."

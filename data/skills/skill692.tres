@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="1_efmjt"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_67ddx"]
+
+[resource]
+script = ExtResource("2_67ddx")
+id = "skill692"
+legacy_id = "karthus_q"
+champion_id = "Karthus"
+champion_name = "카서스"
+slot_key = "Q"
+reference_name = "황폐화"
+reference_description = "카서스가 특정 위치에 잠시 후 폭발을 일으켜 근처 적에게 피해를 입힙니다. 단일 대상에게는 더 큰 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/KarthusLayWasteA1.png"
+display_name = "황폐화"
+description = "카서스가 특정 위치에 잠시 후 폭발을 일으켜 근처 적에게 피해를 입힙니다. 단일 대상에게는 더 큰 피해를 입힙니다."
+cost = 180
+cooldown = 18.0
+damage_ratio = 2.4
+cast_type = "burst"
+bonus_type = "area"
+effect_scene = ExtResource("1_efmjt")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

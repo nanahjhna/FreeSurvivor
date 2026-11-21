@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="MonsterData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/monsters/skeleton/skeleton_enemy.tscn" id="1_r4rvw"]
+[ext_resource type="Script" path="res://scripts/resources/monster_data.gd" id="2_jyiam"]
+
+[resource]
+script = ExtResource("2_jyiam")
+id = "monster07"
+legacy_id = "skeleton"
+display_name = "스켈레톤"
+model_scene = ExtResource("1_r4rvw")
+hp = 25.0
+speed = 2.6
+damage = 8.0
+attack_range = 8.0
+attack_interval = 2.0
+xp = 2
+gold = 35
+loot = {
+"gold": 35,
+"potion_chance": 0.5,
+"xp": 2
+}
+potion_chance = 0.5

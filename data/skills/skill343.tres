@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_225tw"]
+
+[resource]
+script = ExtResource("1_225tw")
+id = "skill343"
+legacy_id = "shaco_w"
+champion_id = "Shaco"
+champion_name = "샤코"
+slot_key = "W"
+reference_name = "깜짝 상자"
+reference_description = "샤코가 깜짝 상자를 숨깁니다. 상자가 발동되면 주변의 적들을 공포 상태에 빠뜨린 다음 공격합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/JackInTheBox.png"
+display_name = "깜짝 상자"
+description = "샤코가 깜짝 상자를 숨깁니다. 상자가 발동되면 주변의 적들을 공포 상태에 빠뜨린 다음 공격합니다."

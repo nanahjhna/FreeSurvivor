@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_g0mi2"]
+
+[resource]
+script = ExtResource("1_g0mi2")
+id = "skill269"
+legacy_id = "vex_e"
+champion_id = "Vex"
+champion_name = "벡스"
+slot_key = "E"
+reference_name = "커지는 어둠"
+reference_description = "피해를 입히고 둔화시키는 영역을 소환하며 적에게 우울을 적용합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/VexE.png"
+display_name = "커지는 어둠"
+description = "피해를 입히고 둔화시키는 영역을 소환하며 적에게 우울을 적용합니다."

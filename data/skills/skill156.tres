@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_etofp"]
+
+[resource]
+script = ExtResource("1_etofp")
+id = "skill156"
+legacy_id = "lucian_p"
+champion_id = "Lucian"
+champion_name = "루시안"
+slot_key = "P"
+reference_name = "빛의 사수"
+reference_description = "루시안이 스킬을 사용할 때마다 다음 공격이 2연속으로 발사됩니다. 아군이 루시안에게 회복 또는 보호막 효과를 부여하거나, 근처 적 챔피언이 이동 불가 상태가 되면 루시안의 다음 기본 공격 2회가 추가 마법 피해를 입힙니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/passive/Lucian_Passive.png"
+display_name = "빛의 사수"
+description = "루시안이 스킬을 사용할 때마다 다음 공격이 2연속으로 발사됩니다. 아군이 루시안에게 회복 또는 보호막 효과를 부여하거나, 근처 적 챔피언이 이동 불가 상태가 되면 루시안의 다음 기본 공격 2회가 추가 마법 피해를 입힙니다."

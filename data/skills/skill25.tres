@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/skills/explosion.tscn" id="1_18ov7"]
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="2_yv6yo"]
+
+[resource]
+script = ExtResource("2_yv6yo")
+id = "skill25"
+legacy_id = "graves_r"
+champion_id = "Graves"
+champion_name = "그레이브즈"
+slot_key = "R"
+reference_name = "무고한 희생자"
+reference_description = "그레이브즈가 폭발성 탄환을 발사하여 처음 맞은 챔피언에게 큰 피해를 입힙니다. 탄환은 챔피언을 맞히거나 사거리 끝까지 날아간 다음 폭발하여 원뿔 형태의 범위에 피해를 줍니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/GravesChargeShot.png"
+display_name = "무고한 희생자"
+description = "그레이브즈가 폭발성 탄환을 발사하여 처음 맞은 챔피언에게 큰 피해를 입힙니다. 탄환은 챔피언을 맞히거나 사거리 끝까지 날아간 다음 폭발하여 원뿔 형태의 범위에 피해를 줍니다."
+cost = 400
+cooldown = 18.0
+damage_ratio = 2.4
+unlock_level = 8
+cast_type = "burst"
+bonus_type = "area"
+effect_scene = ExtResource("1_18ov7")
+effect_color = Color(1, 0.7607843, 0.2784314, 1)
+implemented = true
+support_status = "generic_effect_ready"

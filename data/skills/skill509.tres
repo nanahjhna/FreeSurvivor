@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_md3t2"]
+
+[resource]
+script = ExtResource("1_md3t2")
+id = "skill509"
+legacy_id = "elise_e"
+champion_id = "Elise"
+champion_name = "엘리스"
+slot_key = "E"
+reference_name = "고치 / 줄타기"
+reference_description = "인간 형태: 처음 적중한 적 유닛을 기절시키고 은신 상태가 아닐 경우 모습을 드러내 줍니다. / / 거미 형태: 엘리스와 새끼 거미들이 공중으로 올라간 다음 적에게 하강해 덮칩니다. 적을 덮친 후 거미 여왕의 추가 피해량과 회복량이 증가합니다."
+icon_url = "https://ddragon.leagueoflegends.com/cdn/16.22.1/img/spell/EliseHumanE.png"
+display_name = "고치 / 줄타기"
+description = "인간 형태: 처음 적중한 적 유닛을 기절시키고 은신 상태가 아닐 경우 모습을 드러내 줍니다. / / 거미 형태: 엘리스와 새끼 거미들이 공중으로 올라간 다음 적에게 하강해 덮칩니다. 적을 덮친 후 거미 여왕의 추가 피해량과 회복량이 증가합니다."
