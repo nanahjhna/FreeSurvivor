@@ -7,9 +7,6 @@ path="res://.godot/imported/Female_Leather_Suit_40.png-4ebf1fae720406b8a099b323f
 metadata={
 "vram_texture": false
 }
-generator_parameters={
-"md5": "bcbe3365e6ac95ea2c0343a2395834dd"
-}
 
 [deps]
 
@@ -26,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
