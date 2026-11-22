@@ -34,13 +34,13 @@
 ## 4. 매핑 예시
 ```gdscript
 animation_aliases = {
-    "Idle": ["Idle", "Rifle_Idle_RT"],
-    "Walk": ["Walk", "Rifle_Walk_RT"],
-    "Run": ["Run", "Rifle_Run_RT"],
-    "Attack": ["Attack", "Rifle_Fire_RT"],
-    "AttackAlt": ["AttackAlt", "Rifle_Fire_RT"],
-    "Hit": ["Hit", "Rifle_Hit_To_Back_RT"],
-    "Death": ["Death", "Rifle_Run_To_Dying_RT"]
+	"Idle": ["Idle", "Rifle_Idle_RT"],
+	"Walk": ["Walk", "Rifle_Walk_RT"],
+	"Run": ["Run", "Rifle_Run_RT"],
+	"Attack": ["Attack", "Rifle_Fire_RT"],
+	"AttackAlt": ["AttackAlt", "Rifle_Fire_RT"],
+	"Hit": ["Hit", "Rifle_Hit_To_Back_RT"],
+	"Death": ["Death", "Rifle_Run_To_Dying_RT"]
 }
 ```
 
