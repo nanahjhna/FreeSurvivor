@@ -10,6 +10,7 @@ const ZOOM_STEP := 10.0
 
 var player: Node3D = null
 var portal: Node3D = null
+var _village_pins: Dictionary = {}
 var _redraw_timer: float = 0.0
 @onready var zoom_label: Label = $ZoomLabel
 @onready var portal_distance_label: Label = $PortalDistance
@@ -25,11 +26,16 @@ func _process(delta: float):
 	_redraw_timer = 0.0
 	if player == null or not is_instance_valid(player):
 		player = get_tree().get_first_node_in_group("player")
-	
+	var stage := get_tree().current_scene
+	if stage == null:
+		return
+	if _village_pins.is_empty() and stage.has_method("get_village_landmarks"):
+		_village_pins = stage.call("get_village_landmarks")
+
 	if portal == null or not is_instance_valid(portal):
-		portal = get_tree().current_scene.find_child("ReturnPortal", true, false)
+		portal = stage.find_child("ReturnPortal", true, false)
 		if portal == null:
-			portal = get_tree().current_scene.find_child("BattlePortal", true, false)
+			portal = stage.find_child("BattlePortal", true, false)
 	if portal_distance_label:
 		if portal and is_instance_valid(portal) and player and is_instance_valid(player):
 			portal_distance_label.text = "포털 %.0fm" % player.global_position.distance_to(portal.global_position)
@@ -71,22 +77,26 @@ func _draw():
 	_draw_player_arrow(center)
 
 func _draw_village_elements(center: Vector2, radius: float, p_pos: Vector3):
-	# Fountain at world (0, 0, 0)
-	var f_pos = _world_to_map(Vector3(0, 0, 0), p_pos, center, radius)
-	if _inside_map(f_pos):
-		draw_circle(f_pos, 4.5, Color(0.2, 0.6, 0.9, 0.9))
-	
-	# Important Village landmarks
-	var landmarks = [
-		{"pos": Vector3(-22, 0, 0), "color": Color(0.8, 0.5, 0.2), "size": 5.0}, # Blacksmith
-		{"pos": Vector3(22, 0, 0), "color": Color(0.3, 0.7, 0.9), "size": 5.0},  # Weapon Shop
-		{"pos": Vector3(18, 0, 20), "color": Color(0.5, 0.4, 0.8), "size": 6.0}, # Inn
-		{"pos": Vector3(0, 0, -40), "color": Color(0.7, 0.7, 0.75), "size": 7.0}  # North Gate
-	]
-	for lm in landmarks:
-		var pos_2d = _world_to_map(lm["pos"], p_pos, center, radius)
-		if _inside_map(pos_2d):
-			draw_rect(Rect2(pos_2d - Vector2(lm["size"]*0.5, lm["size"]*0.5), Vector2(lm["size"], lm["size"])), lm["color"])
+	var colors := {
+		"fountain": Color(0.28, 0.72, 0.78),
+		"forge": Color(0.88, 0.52, 0.24),
+		"shop": Color(0.47, 0.77, 0.93),
+		"inn": Color(0.86, 0.52, 0.49),
+		"quest": Color(1.0, 0.81, 0.43),
+		"card_dungeon": Color(0.82, 0.5, 1.0),
+	}
+	for id in colors:
+		if not _village_pins.has(id):
+			continue
+		var pin := _world_to_map(_village_pins[id], p_pos, center, radius)
+		if not _inside_map(pin):
+			continue
+		if id == "card_dungeon":
+			_draw_diamond(pin, 5.0, colors[id])
+		elif id == "fountain":
+			draw_circle(pin, 4.5, colors[id])
+		else:
+			draw_rect(Rect2(pin - Vector2(2.7, 2.7), Vector2(5.4, 5.4)), colors[id])
 	
 	# NPCs (Green/Cyan dots)
 	var npcs = get_tree().get_nodes_in_group("npcs")
@@ -96,15 +106,10 @@ func _draw_village_elements(center: Vector2, radius: float, p_pos: Vector3):
 			if _inside_map(n_pos):
 				draw_circle(n_pos, 2.8, Color(0.25, 0.9, 0.4, 0.9))
 	
-	# Battle Portal Indicator (Always clamped to circle edge if outside!)
-	var portal_world = Vector3(0, 0, -40)
 	if portal and is_instance_valid(portal):
-		portal_world = portal.global_position
-	
-	var portal_map_pos = _world_to_map_clamped_square(portal_world, p_pos, center, radius - 6.0)
-	# Draw glowing portal diamond
-	_draw_diamond(portal_map_pos, 7.0, Color(0.95, 0.2, 0.95, 1.0))
-	_draw_diamond(portal_map_pos, 4.0, Color(1.0, 0.85, 1.0, 1.0))
+		var portal_map_pos := _world_to_map_clamped_square(portal.global_position, p_pos, center, radius - 6.0)
+		_draw_diamond(portal_map_pos, 7.0, Color(0.23, 0.7, 1.0))
+		_draw_diamond(portal_map_pos, 4.0, Color(0.83, 0.95, 1.0))
 
 func _draw_battle_elements(center: Vector2, radius: float, p_pos: Vector3):
 	# XP Gems (small yellow-green dots)

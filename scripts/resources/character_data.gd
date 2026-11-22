@@ -16,6 +16,12 @@ extends Resource
 ## Semantic action name -> ordered clip-name candidates from this model's AnimationPlayer.
 ## Example: {"AttackAlt": ["Bow_Release_RT", "Attack"]}
 @export var animation_aliases: Dictionary = {}
+## Reference ground speeds for the imported walk and run clips at the model's original scale.
+## A value of zero uses the class's base movement speed to estimate the cadence.
+@export var walk_animation_speed: float = 0.0
+@export var run_animation_speed: float = 0.0
+## Top leg bones whose locomotion tracks can be retained during a moving ranged attack.
+@export var moving_attack_leg_roots: PackedStringArray = []
 @export var base_str: int = 1
 @export var base_agi: int = 1
 @export var base_vit: int = 1
@@ -34,6 +40,25 @@ extends Resource
 @export_storage var skill_loadout: Dictionary = {}
 @export var signature_skill: String = ""
 @export var weapon_name: String = ""
+@export var weapon_scene: PackedScene
+@export var weapon_bone_name: String = ""
+## Point to align with the mount, measured from the weapon scene root.
+@export var weapon_grip_position: Vector3 = Vector3.ZERO
+@export var weapon_hidden_nodes: PackedStringArray = []
+## Offset on the hand, measured in character model units.
+@export var weapon_mount_position: Vector3 = Vector3.ZERO
+@export var weapon_mount_rotation_degrees: Vector3 = Vector3.ZERO
+@export var weapon_mount_scale: Vector3 = Vector3.ONE
+## Optional second grip. The supporting wrist's parents form the forearm and upper arm.
+@export var weapon_support_bone_name: String = ""
+## Contact point on the weapon, relative to the weapon scene root.
+@export var weapon_support_grip_position: Vector3 = Vector3.ZERO
+## Contact point relative to the supporting wrist, in character model units.
+@export var weapon_support_palm_offset: Vector3 = Vector3.ZERO
+## Supporting wrist rotation relative to the weapon.
+@export var weapon_support_rotation_degrees: Vector3 = Vector3.ZERO
+## Imported animation names that use the second grip. Empty applies to all clips.
+@export var weapon_support_clips: PackedStringArray = []
 @export var combat_style: String = ""
 @export_multiline var description: String = ""
 @export var appearance: String = ""
@@ -87,6 +112,11 @@ func to_legacy_dictionary() -> Dictionary:
 		"skill_loadout": skill_loadout.duplicate(true),
 		"signature_skill": signature_skill,
 		"weapon_name": weapon_name,
+		"weapon_scene": weapon_scene.resource_path if weapon_scene != null else "",
+		"weapon_bone_name": weapon_bone_name,
+		"weapon_mount_position": weapon_mount_position,
+		"weapon_mount_rotation_degrees": weapon_mount_rotation_degrees,
+		"weapon_mount_scale": weapon_mount_scale,
 		"combat_style": combat_style,
 		"desc": description,
 		"appearance": appearance,

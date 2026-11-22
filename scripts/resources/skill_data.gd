@@ -30,6 +30,7 @@ extends Resource
 @export var cast_pattern: String = ""
 @export var projectile_count: int = 1
 @export var spread_radians: float = 0.0
+@export var projectile_pierce: int = 1
 @export var heal_ratio: float = 0.0
 @export var passive_handler: String = ""
 @export var regen_delay: float = 0.0
@@ -59,6 +60,7 @@ func to_game_dictionary() -> Dictionary:
 		"cast_pattern": cast_pattern,
 		"projectile_count": projectile_count,
 		"spread_radians": spread_radians,
+		"projectile_pierce": projectile_pierce,
 		"heal_ratio": heal_ratio,
 		"passive_handler": passive_handler,
 		"regen_delay": regen_delay,

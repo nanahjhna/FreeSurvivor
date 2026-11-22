@@ -3,11 +3,11 @@ extends Control
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/player.tscn")
 const CLASS_GROWTH := {
 	"fighter": "기동성과 근접 타격", "char02": "빠른 근접 전투와 연속 베기",
-	"archer": "원거리 관통과 빠른 연사", "mage": "마법 광역 공격과 원소 폭발",
+	"archer": "라이플 단발, 연사, 관통 사격", "mage": "마법 광역 공격과 원소 폭발",
 	"paladin": "높은 체력과 방어, 자가 회복"
 }
 const CLASS_WEAPONS := {
-	"fighter": "권갑", "char02": "쌍검", "archer": "장궁", "mage": "원소 지팡이",
+	"fighter": "권갑", "char02": "쌍검", "archer": "쌍드럼 라이플", "mage": "원소 지팡이",
 	"paladin": "성검과 방패"
 }
 const FIRST_NAMES: Array[String] = ["아린", "시온", "하린", "도윤", "유나", "태오", "세린", "라온"]
@@ -36,7 +36,7 @@ var create_button: Button
 
 var preview_container: SubViewportContainer
 var preview_viewport: SubViewport
-var preview_player: CharacterBody3D
+var preview_player: PlayerCharacter
 var preview_camera: Camera3D
 var preview_visual: Node3D
 var preview_camera_base_offset: Vector3 = Vector3(0.0, 4.5, 5.5)
@@ -394,7 +394,11 @@ func _get_profile_equipment(profile: Dictionary) -> Dictionary:
 	var gear_by_class: Dictionary = gear_value if gear_value is Dictionary else {}
 	var equipped_value: Variant = gear_by_class.get(class_id, {})
 	var equipped: Dictionary = equipped_value if equipped_value is Dictionary else {}
-	var result := {"weapon": "없음", "armor": "없음"}
+	var registered_character := CharacterRegistry.get_by_id(class_id)
+	var default_weapon := "없음"
+	if registered_character != null and registered_character.weapon_scene != null:
+		default_weapon = registered_character.weapon_name
+	var result := {"weapon": default_weapon, "armor": "없음"}
 	for item in state.get("inventory", []):
 		if not item is Dictionary:
 			continue
@@ -492,7 +496,11 @@ func _select_class(class_id: String):
 			"기본 능력치\nSTR %d   AGI %d   VIT %d\nINT %d   DEX %d   LUK %d\n\n초기 전투 수치\nHP %d\n물리 공격 %.1f   마법 공격 %.1f\n물리 방어 %.1f   마법 방어 %.1f"
 			% [stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"), stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK"),
 			stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.mag_atk(), stats.phys_def(), stats.mag_def()])
-	detail_equipment.text = "대표 무기  %s\n대표 스킬  %s" % [str(character.get("weapon_name", CLASS_WEAPONS.get(class_id, "기본 무기"))), str(character.get("signature_skill", ""))]
+	var registered_character := CharacterRegistry.get_by_id(class_id)
+	var weapon_name := str(character.get("weapon_name", CLASS_WEAPONS.get(class_id, "기본 무기")))
+	if registered_character != null and registered_character.weapon_scene != null:
+		weapon_name = registered_character.weapon_name
+	detail_equipment.text = "대표 무기  %s\n대표 스킬  %s" % [weapon_name, str(character.get("signature_skill", ""))]
 	detail_progress.text = "%s\n\n전투 스타일: %s" % [str(character.get("desc", "")), str(character.get("combat_style", CLASS_GROWTH.get(class_id, "균형 성장")))]
 	for child in class_list.get_children():
 		if child is Button:
@@ -606,40 +614,28 @@ func _build_preview(parent: VBoxContainer):
 	floor_material.albedo_color = Color(0.075, 0.045, 0.04)
 	floor.material_override = floor_material
 	preview_viewport.add_child(floor)
-	preview_player = PLAYER_SCENE.instantiate() as CharacterBody3D
+	preview_player = PLAYER_SCENE.instantiate() as PlayerCharacter
+	preview_player.preview_only = true
 	preview_player.process_mode = Node.PROCESS_MODE_DISABLED
-	preview_player.set("is_combat_enabled", false)
+	preview_player.is_combat_enabled = false
 	preview_viewport.add_child(preview_player)
 	preview_visual = preview_player.get_node("VisualRoot")
 	preview_camera = preview_player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 	if preview_camera != null:
 		preview_camera.set("camera_offset", preview_camera_base_offset)
 		preview_camera.call("snap_to_target")
-	var preview_animation := preview_player.get("model_animation_player") as AnimationPlayer
-	if preview_animation:
-		preview_animation.process_mode = Node.PROCESS_MODE_ALWAYS
 
 
 func _set_preview_class(class_id: String, character: Dictionary):
-	if preview_visual == null:
+	if not is_instance_valid(preview_visual) or not is_instance_valid(preview_player):
 		return
 	var fallback := GameData.get_class_template_data(class_id)
 	var color_value: Variant = character.get("color", fallback.get("color", Color(0.25, 0.55, 0.9)))
-	if preview_player.has_method("set_character_appearance"):
-		preview_player.call("set_character_appearance", class_id)
-		var selected_animation := preview_player.get("model_animation_player") as AnimationPlayer
-		if selected_animation:
-			selected_animation.process_mode = Node.PROCESS_MODE_ALWAYS
-	elif preview_player.has_method("set_character_2d_mode"):
-		preview_player.call("set_character_2d_mode", class_id == "fighter_2d")
-	# Registered 3D characters keep their authored textures and materials in the preview.
+	preview_player.set_character_appearance(class_id)
 	if class_id == "fighter_2d":
 		_update_preview_color(color_value if color_value is Color else Color(0.25, 0.55, 0.9))
-	else:
-		for mesh in preview_visual.find_children("*", "MeshInstance3D", true, false):
-			(mesh as MeshInstance3D).material_override = null
 	_update_preview_weapon(class_id)
-	_preview_rotation = 0.0
+	_preview_rotation = deg_to_rad(28.0) if class_id in ["archer", "char01"] else 0.0
 	_idle_time = 0.0
 
 
@@ -649,23 +645,21 @@ func _update_preview_color(color: Color):
 	material.metallic = 0.25
 	material.roughness = 0.45
 	for node in preview_visual.find_children("*", "MeshInstance3D", true, false):
-		if not node.has_meta("preview_prop"):
+		if is_instance_valid(node) and not node.has_meta("preview_prop"):
 			(node as MeshInstance3D).material_override = material
 
 
 func _update_preview_weapon(class_id: String):
+	if not is_instance_valid(preview_visual):
+		return
 	for child in preview_visual.get_children():
 		if child.has_meta("preview_prop"):
 			child.queue_free()
-	var sword := preview_visual.get_node_or_null("ArmR/Sword") as MeshInstance3D
+	var sword_node := preview_visual.get_node_or_null("ArmR/Sword")
+	var sword: MeshInstance3D = sword_node as MeshInstance3D if is_instance_valid(sword_node) else null
 	if sword:
 		sword.visible = class_id in ["warrior", "paladin"]
 	match class_id:
-		"archer":
-			var bow := TorusMesh.new()
-			bow.inner_radius = 0.34
-			bow.outer_radius = 0.4
-			_add_preview_prop(bow, Vector3(0.55, 1.0, -0.16), Vector3(0, 0, 0.35), Color(0.55, 0.31, 0.12))
 		"mage": _add_preview_staff(Color(0.95, 0.35, 0.2))
 		"paladin":
 			var shield := BoxMesh.new()

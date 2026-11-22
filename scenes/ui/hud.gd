@@ -65,6 +65,8 @@ func _ready():
 	_build_mobile_dpad()
 	_register_hud_controls()
 	_load_active_hud_layout()
+	if GameActions.is_mobile():
+		_apply_mobile_combat_layout()
 	GameActions.action_requested.connect(_on_action_requested)
 	GameActions.input_mode_changed.connect(_build_mobile_dpad)
 	GameManager.boss_defeated.connect(_on_boss_defeated)
@@ -298,6 +300,26 @@ func _load_active_hud_layout():
 	_hud_preset = clampi(int(config.get_value("meta", "active_preset", 0)), 0, 3)
 	if _hud_preset > 0:
 		_load_hud_layout(_hud_preset)
+
+func _apply_mobile_combat_layout() -> void:
+	# Old desktop HUD presets can place the right-side skills off a portrait
+	# viewport. Preserve the saved preset, but clamp the active mobile layout.
+	var screen := get_viewport().get_visible_rect().size
+	if action_dock:
+		action_dock.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+		action_dock.offset_left = -100.0
+		action_dock.offset_right = -8.0
+		action_dock.offset_top = -205.0
+		action_dock.offset_bottom = 205.0
+		action_dock.visible = true
+		action_dock.modulate = Color.WHITE
+		action_dock.scale = Vector2.ONE
+	for skill_panel in _skill_panels.values():
+		var panel := skill_panel as Control
+		panel.custom_minimum_size = Vector2(48.0, 48.0)
+		panel.visible = GameData.is_survival_skill_unlocked(GameData.get_equipped_skill(str(panel.name.trim_prefix("Skill").to_lower())))
+	if auto_battle_button:
+		auto_battle_button.custom_minimum_size = Vector2(minf(84.0, screen.x * 0.24), 32.0)
 
 func _load_hud_layout(index: int):
 	var config := ConfigFile.new()

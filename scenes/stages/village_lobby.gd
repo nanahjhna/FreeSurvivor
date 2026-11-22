@@ -1,19 +1,21 @@
 extends Node3D
 
-@onready var player: CharacterBody3D = $Player
+@onready var player: PlayerCharacter = $Player
 @onready var battle_portal: Area3D = $BattlePortal
 @onready var battle_prep_ui = $BattlePreparationUI
 @onready var hud = $VillageHUD
+@onready var environment = $VillageEnvironment
 
 var interactables: Array[Dictionary] = []
 var nearest_interaction: Dictionary = {}
 var _last_prompt_id: String = ""
 var _highlighted_interactable: Node3D = null
 var _auto_move_entry: Dictionary = {}
-var _auto_move_last_input := Vector2.ZERO
 var _auto_move_waypoints: Array[Vector3] = []
-const VILLAGE_ASSET_ROOT := "res://assets/map/Medieval Village MegaKit[Standard]/glTF/"
-var _village_asset_cache: Dictionary = {}
+var _auto_move_stall_time := 0.0
+var _auto_move_last_position := Vector3.ZERO
+var _auto_move_goal := Vector3.ZERO
+var _auto_move_replanned := false
 
 func _ready():
 	GameManager.current_location = GameManager.Location.LOBBY
@@ -27,9 +29,6 @@ func _ready():
 			player.call("set_head_hp_bar_visible", false)
 		if player.has_method("set_first_person_mode"):
 			player.call("set_first_person_mode", false)
-		# Set player at town central plaza
-		player.global_position = Vector3(0, 0.2, 5.0)
-		# Use the same third-person back view while exploring the village.
 		var cam := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 		if cam:
 			cam.set("quarter_view_enabled", GameData.camera_view_mode != "follow")
@@ -42,7 +41,6 @@ func _ready():
 			cam.call("snap_to_target")
 	
 	_build_village_environment()
-	_register_interactable(battle_portal, "battle_start", "성문으로 이동하여 전투 준비", 8.0)
 
 func _on_battle_requested():
 	if is_auto_moving():
@@ -68,6 +66,10 @@ func _register_interactable(node: Node3D, id: String, label: String, radius: flo
 		"radius": radius
 	})
 
+func _physics_process(delta: float) -> void:
+	if GameManager.current_location == GameManager.Location.LOBBY and is_instance_valid(player) and is_auto_moving():
+		_process_auto_move(delta)
+
 func _process(_delta: float):
 	if GameManager.current_location != GameManager.Location.LOBBY:
 		return
@@ -75,8 +77,6 @@ func _process(_delta: float):
 		return
 	if player == null or not is_instance_valid(player):
 		return
-	_process_auto_move(_delta)
-
 	var best: Dictionary = {}
 	var best_dist := INF
 	for entry in interactables:
@@ -257,22 +257,41 @@ func start_auto_move_to(interaction_id: String) -> bool:
 			closest_distance = distance
 	if closest.is_empty():
 		return false
+	var approach: Vector3 = closest["node"].global_position
+	match interaction_id:
+		"forge": approach += Vector3(6, 0, 0)
+		"shop", "inn": approach += Vector3(-6, 0, 0)
+		"quest": approach += Vector3(0, 0, 2)
+		"battle_start": approach += Vector3(0, 0, 3)
+		"card_dungeon": approach += Vector3(0, 0, -3)
+	var route := _auto_move_route(approach)
+	if route.is_empty():
+		return false
+	if is_auto_moving():
+		cancel_auto_move()
 	_auto_move_entry = closest
-	_auto_move_last_input = Vector2.ZERO
-	_auto_move_waypoints.clear()
-	if interaction_id == "card_dungeon":
-		# Approach the portal north of the residential building, then cross to it.
-		_auto_move_waypoints = [Vector3(-9.0, player.global_position.y, 12.0), Vector3(-12.0, player.global_position.y, 26.0)]
+	_auto_move_waypoints = route
+	_auto_move_goal = approach
+	_auto_move_replanned = false
+	_auto_move_last_position = player.global_position
+	_auto_move_stall_time = 0.0
 	return true
+
+func _auto_move_route(goal: Vector3) -> Array[Vector3]:
+	var occupied := PackedVector2Array()
+	for npc in get_tree().get_nodes_in_group("npcs"):
+		if npc is Node3D:
+			var pos: Vector3 = npc.global_position
+			occupied.append(Vector2(pos.x, pos.z))
+	return environment.walking_path(player.global_position, goal, occupied)
 
 func is_auto_moving() -> bool:
 	return not _auto_move_entry.is_empty()
 
 func cancel_auto_move():
-	if player and is_instance_valid(player) and player.touch_move_vector.distance_to(_auto_move_last_input) < 0.15:
-		player.touch_move_vector = Vector2.ZERO
-	_auto_move_entry.clear()
-	_auto_move_last_input = Vector2.ZERO
+	if is_instance_valid(player):
+		player.set_auto_move_direction(Vector3.ZERO)
+	_auto_move_entry = {}
 	_auto_move_waypoints.clear()
 	if hud and hud.has_method("clear_interaction_prompt"):
 		hud.call("clear_interaction_prompt")
@@ -289,732 +308,83 @@ func _process_auto_move(delta: float):
 	if target == null or not is_instance_valid(target):
 		cancel_auto_move()
 		return
-	var current_input: Vector2 = player.touch_move_vector
-	if current_input.length() > 0.1 and current_input.distance_to(_auto_move_last_input) > 0.2:
+	if player.touch_move_vector.length_squared() > 0.01:
 		cancel_auto_move()
 		return
-	while not _auto_move_waypoints.is_empty() and player.global_position.distance_to(_auto_move_waypoints[0]) <= 2.0:
+	if _auto_move_last_position.distance_to(player.global_position) > 0.45:
+		_auto_move_last_position = player.global_position
+		_auto_move_stall_time = 0.0
+	else:
+		_auto_move_stall_time += delta
+	if _auto_move_stall_time > 0.75 and not _auto_move_replanned:
+		_auto_move_replanned = true
+		var detour := _auto_move_route(_auto_move_goal)
+		if not detour.is_empty():
+			_auto_move_waypoints = detour
+	if _auto_move_stall_time > 2.5:
+		cancel_auto_move()
+		return
+	var player_xz := Vector2(player.global_position.x, player.global_position.z)
+	while not _auto_move_waypoints.is_empty():
+		var next := _auto_move_waypoints[0]
+		if player_xz.distance_to(Vector2(next.x, next.z)) > 0.56:
+			break
 		_auto_move_waypoints.pop_front()
-	var movement_target := _auto_move_waypoints[0] if not _auto_move_waypoints.is_empty() else target.global_position
-	var target_delta := movement_target - player.global_position
-	target_delta.y = 0.0
-	var arrival_distance := maxf(1.5, float(_auto_move_entry.get("radius", 5.0)) * 0.68)
-	if _auto_move_waypoints.is_empty() and target_delta.length() <= arrival_distance:
+	if _auto_move_waypoints.is_empty():
 		var arrived_entry := _auto_move_entry
-		player.touch_move_vector = Vector2.ZERO
-		_auto_move_entry.clear()
-		_auto_move_last_input = Vector2.ZERO
+		player.set_auto_move_direction(Vector3.ZERO)
+		_auto_move_entry = {}
 		_interact(arrived_entry)
 		return
-	var direction := target_delta.normalized()
-	var camera := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
-	var screen_right := camera.global_basis.x if camera else Vector3.RIGHT
-	var screen_down := camera.global_basis.z if camera else Vector3.BACK
-	screen_right.y = 0.0
-	screen_down.y = 0.0
-	if screen_right.length_squared() < 0.001:
-		screen_right = Vector3.RIGHT
-	if screen_down.length_squared() < 0.001:
-		screen_down = Vector3.BACK
-	screen_right = screen_right.normalized()
-	screen_down = screen_down.normalized()
-	var movement_input := Vector2(direction.dot(screen_right), direction.dot(screen_down)).limit_length(1.0)
-	player.touch_move_vector = movement_input
-	_auto_move_last_input = movement_input
+	var target_delta := _auto_move_waypoints[0] - player.global_position
+	target_delta.y = 0.0
+	player.set_auto_move_direction(target_delta.normalized())
 
-func _build_village_environment():
-	var root = Node3D.new()
-	root.name = "VillageProps"
-	add_child(root)
-	# Village walls removed per user request.
-	_build_village_roads(root)
-	
-	# 1. Central Fountain
-	_build_fountain(root, Vector3(0, 0, 0))
-	
-	# 2. Street Lamps around plaza
-	_create_lamp(root, Vector3(-9, 0, -9))
-	_create_lamp(root, Vector3(9, 0, -9))
-	_create_lamp(root, Vector3(-9, 0, 9))
-	_create_lamp(root, Vector3(9, 0, 9))
-	
-	# 3. Benches around plaza
-	_create_bench(root, Vector3(-6, 0, 0), 0.0)
-	_create_bench(root, Vector3(6, 0, 0), PI)
-	_create_bench(root, Vector3(0, 0, -6), PI * 0.5)
-	
-	# 4. Notice Board
-	_create_notice_board(root, Vector3(8, 0, 4), -PI * 0.25)
-	
-	# 5. Blacksmith Shop (West: X=-20, Z=0)
-	_create_building(root, Vector3(-22, 0, 0), Vector3(10, 5, 8), Color(0.4, 0.42, 0.45), Color(0.2, 0.2, 0.25), "대장간\n[Blacksmith]", true, "forge", "대장간 이용하기", 9.0)
-	
-	# 6. Weapon & Equipment Shop (East: X=20, Z=0)
-	_create_building(root, Vector3(22, 0, 0), Vector3(10, 5, 8), Color(0.7, 0.65, 0.55), Color(0.65, 0.2, 0.18), "무기 상점\n[Equipment Shop]", false, "shop", "무기 상점 열기", 9.0)
-	
-	# 7. Inn / Tavern (South-East: X=18, Z=18)
-	_create_building(root, Vector3(18, 0, 20), Vector3(12, 7, 10), Color(0.55, 0.42, 0.3), Color(0.2, 0.35, 0.55), "여관\n[Tavern & Inn]", false, "inn", "여관에서 휴식하기", 10.0)
-	
-	# 8. Residential Houses
-	_create_building(root, Vector3(-18, 0, 18), Vector3(18, 10, 15), Color(0.75, 0.72, 0.65), Color(0.75, 0.3, 0.15), "마을 주택 A")
-	_create_building(root, Vector3(-20, 0, -18), Vector3(18, 10, 15), Color(0.7, 0.7, 0.65), Color(0.25, 0.45, 0.25), "마을 주택 B")
-	_create_building(root, Vector3(20, 0, -18), Vector3(18, 10, 15), Color(0.72, 0.68, 0.6), Color(0.5, 0.25, 0.4), "마을 주택 C")
-	
-	# North gate / town wall removed per user request.
+func _build_village_environment() -> void:
+	environment.build(battle_portal.position)
+	battle_portal.get_node("PortalGate").hide()
+	battle_portal.get_node("SignPost").hide()
+	environment.decorate_portal(battle_portal, "서바이벌 던전", Color(0.23, 0.7, 1.0))
+	_register_interactable(battle_portal, "battle_start", "서바이벌 던전 입장", 7.0)
 
-	# Card deck dungeon entrance (independent from the survival gate)
-	_create_card_dungeon_portal(root, Vector3(-28, 0, 25))
-	
-	# 11. Crates & Barrels
-	_create_crate_stack(root, Vector3(-16, 0, -4))
-	_create_crate_stack(root, Vector3(16, 0, -4))
-	_create_crate_stack(root, Vector3(14, 0, 15))
-	
-	# 12. Flowers along roads
-	_populate_nature(root)
-	_add_map_asset(root, "Prop_Wagon", Vector3(-24, 0, 14), PI * 0.5, Vector3.ONE)
-	_add_map_asset(root, "Prop_Crate", Vector3(-14, 0, -7), 0.2, Vector3.ONE)
-	_add_map_asset(root, "Prop_Crate", Vector3(-12.8, 0, -7.1), -0.15, Vector3(0.9, 0.9, 0.9))
-	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-27, 0, 22), PI * 0.5, Vector3(1.4, 1.0, 1.0))
-	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-27, 0, 20), PI * 0.5, Vector3(1.4, 1.0, 1.0))
-	_add_map_asset(root, "Prop_WoodenFence_Single", Vector3(-27, 0, 18), PI * 0.5, Vector3(1.4, 1.0, 1.0))
-	
-	# 13. Spawn NPCs
+	_register_interactable(environment.destinations["forge"], "forge", "대장간 이용하기", 8.0)
+	_register_interactable(environment.destinations["shop"], "shop", "무기 상점 열기", 8.0)
+	_register_interactable(environment.destinations["inn"], "inn", "여관에서 휴식하기", 8.0)
+	_register_interactable(environment.destinations["quest"], "quest", "게시판 보기", 4.5)
+	_create_card_dungeon_portal()
 	_spawn_npcs()
 
-func _create_village_boundary(parent: Node3D):
-	var boundary := Node3D.new()
-	boundary.name = "VisibleVillageBoundary"
-	# Align the village wall with the dungeon entrance direction.
-	boundary.rotation.y = atan2(-28.0, 25.0)
-	parent.add_child(boundary)
-	_create_boundary_segment(boundary, Vector3(0, 2, 32), Vector3(64, 4, 1.5))
-	_create_boundary_segment(boundary, Vector3(-20, 2, -32), Vector3(24, 4, 1.5))
-	_create_boundary_segment(boundary, Vector3(20, 2, -32), Vector3(24, 4, 1.5))
-	_create_boundary_segment(boundary, Vector3(32, 2, 0), Vector3(1.5, 4, 64))
-	_create_boundary_segment(boundary, Vector3(-32, 2, 0), Vector3(1.5, 4, 64))
+func get_village_landmarks() -> Dictionary:
+	var pins := {"fountain": environment.FOUNTAIN}
+	for entry in interactables:
+		var id: String = entry["id"]
+		if not id.begins_with("npc_"):
+			pins[id] = entry["node"].global_position
+	return pins
 
-func _create_boundary_segment(parent: Node3D, position_value: Vector3, size_value: Vector3):
-	var body := StaticBody3D.new()
-	body.position = position_value
-	body.collision_layer = 32
-	body.collision_mask = 1
-	var mesh_instance := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = size_value
-	mesh_instance.mesh = mesh
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.48, 0.49, 0.52)
-	material.roughness = 0.9
-	mesh_instance.material_override = material
-	body.add_child(mesh_instance)
-	var collision := CollisionShape3D.new()
-	var shape := BoxShape3D.new()
-	shape.size = size_value
-	collision.shape = shape
-	body.add_child(collision)
-	parent.add_child(body)
-
-func _build_village_roads(parent: Node3D) -> void:
-	# Lay a broad cobblestone avenue from the plaza to the gate, plus a cross street.
-	for row in range(10):
-		var z := -27.0 + float(row) * 6.0
-		for x in [-4.0, 0.0, 4.0]:
-			_add_map_asset(parent, "Floor_UnevenBrick", Vector3(x, 0.015, z), 0.0, Vector3(2.0, 1.0, 3.0))
-	for x in [-24.0, -12.0, 0.0, 12.0, 24.0]:
-		_add_map_asset(parent, "Floor_UnevenBrick", Vector3(x, 0.02, 0.0), 0.0, Vector3(6.0, 1.0, 2.0))
-
-func _add_map_asset(parent: Node3D, asset_name: String, position_value: Vector3, rotation_y: float = 0.0, scale_value: Vector3 = Vector3.ONE) -> Node3D:
-	var packed: PackedScene = _village_asset_cache.get(asset_name) as PackedScene
-	if packed == null:
-		var loaded: Resource = load(VILLAGE_ASSET_ROOT + asset_name + ".gltf")
-		packed = loaded as PackedScene
-		if packed == null:
-			push_warning("마을 에셋을 불러오지 못했습니다: " + asset_name)
-			return null
-		_village_asset_cache[asset_name] = packed
-	var instance := packed.instantiate() as Node3D
-	if instance == null:
-		return null
-	instance.position = position_value
-	instance.rotation.y = rotation_y
-	instance.scale = scale_value
-	parent.add_child(instance)
-	return instance
-
-func _build_modular_building_shell(parent: Node3D, size: Vector3):
-	var front_count := maxi(3, roundi(size.x / 2.0))
-	var side_count := maxi(3, roundi(size.z / 2.0))
-	var front_spacing := size.x / float(front_count)
-	var side_spacing := size.z / float(side_count)
-	for side in [0, 1, 2, 3]:
-		var count := front_count if side < 2 else side_count
-		var spacing := front_spacing if side < 2 else side_spacing
-		for index in range(count):
-			var piece := "Wall_Plaster_Straight"
-			if side == 0 and index == count / 2:
-				piece = "Wall_Plaster_Door_Round"
-			elif side == 0 and (index == 1 or index == count - 2):
-				piece = "Wall_Plaster_Window_Wide_Round"
-			elif side >= 2 and index == count / 2:
-				piece = "Wall_Plaster_Window_Wide_Round"
-			var piece_position := Vector3.ZERO
-			var rotation_y := 0.0
-			var wall_height_scale := maxf(1.0, size.y / 6.0)
-			var piece_scale := Vector3(spacing * 0.5, wall_height_scale, 1.0)
-			match side:
-				0:
-					piece_position = Vector3(-size.x * 0.5 + spacing * (float(index) + 0.5), 0.0, size.z * 0.5)
-				1:
-					piece_position = Vector3(size.x * 0.5 - spacing * (float(index) + 0.5), 0.0, -size.z * 0.5)
-					rotation_y = PI
-				2:
-					piece_position = Vector3(size.x * 0.5, 0.0, size.z * 0.5 - spacing * (float(index) + 0.5))
-					rotation_y = PI * 0.5
-				3:
-					piece_position = Vector3(-size.x * 0.5, 0.0, -size.z * 0.5 + spacing * (float(index) + 0.5))
-					rotation_y = -PI * 0.5
-					piece_scale.x = spacing * 0.5
-			_add_map_asset(parent, piece, piece_position, rotation_y, piece_scale)
-	var roof_height := maxf(3.7, size.y * 0.65)
-	_add_map_asset(parent, "Roof_RoundTiles_8x8", Vector3(0, roof_height, 0), 0.0, Vector3(size.x / 9.9, 0.7, size.z / 9.9))
-
-# ----------------- BUILDINGS & STRUCTURES -----------------
-
-func _build_fountain(parent: Node3D, pos: Vector3):
-	var f = StaticBody3D.new()
-	f.position = pos
-	f.collision_layer = 32
-	f.collision_mask = 3
-	
-	# Outer Basin (Ring / Cylinder)
-	var basin = MeshInstance3D.new()
-	var basin_mesh = CylinderMesh.new()
-	basin_mesh.top_radius = 3.2
-	basin_mesh.bottom_radius = 3.4
-	basin_mesh.height = 0.8
-	basin.mesh = basin_mesh
-	var stone_mat = StandardMaterial3D.new()
-	stone_mat.albedo_color = Color(0.65, 0.65, 0.68)
-	stone_mat.roughness = 0.8
-	basin.material_override = stone_mat
-	basin.position.y = 0.4
-	f.add_child(basin)
-	
-	# Water surface
-	var water = MeshInstance3D.new()
-	var water_mesh = CylinderMesh.new()
-	water_mesh.top_radius = 2.9
-	water_mesh.bottom_radius = 2.9
-	water_mesh.height = 0.1
-	water.mesh = water_mesh
-	var water_mat = StandardMaterial3D.new()
-	water_mat.albedo_color = Color(0.2, 0.6, 0.9, 0.8)
-	water_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	water_mat.roughness = 0.1
-	water.material_override = water_mat
-	water.position.y = 0.65
-	f.add_child(water)
-	
-	# Center Pillar & Top Spout
-	var pillar = MeshInstance3D.new()
-	var p_mesh = CylinderMesh.new()
-	p_mesh.top_radius = 0.6
-	p_mesh.bottom_radius = 0.8
-	p_mesh.height = 2.2
-	pillar.mesh = p_mesh
-	pillar.material_override = stone_mat
-	pillar.position.y = 1.1
-	f.add_child(pillar)
-	
-	var spout = MeshInstance3D.new()
-	var sp_mesh = SphereMesh.new()
-	sp_mesh.radius = 0.5
-	sp_mesh.height = 0.8
-	spout.mesh = sp_mesh
-	var spout_mat = StandardMaterial3D.new()
-	spout_mat.albedo_color = Color(0.4, 0.8, 1.0, 0.9)
-	spout_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	spout_mat.emission_enabled = true
-	spout_mat.emission = Color(0.3, 0.7, 1.0)
-	spout_mat.emission_energy_multiplier = 1.5
-	spout.material_override = spout_mat
-	spout.position.y = 2.3
-	f.add_child(spout)
-	
-	var col = CollisionShape3D.new()
-	var shape = CylinderShape3D.new()
-	shape.radius = 3.3
-	shape.height = 1.2
-	col.shape = shape
-	col.position.y = 0.6
-	f.add_child(col)
-	
-	parent.add_child(f)
-
-func _create_building(parent: Node3D, pos: Vector3, size: Vector3, wall_color: Color, roof_color: Color, title: String, is_forge: bool = false, interaction_id: String = "", interaction_label: String = "", interaction_radius: float = 8.0) -> StaticBody3D:
-	var b = StaticBody3D.new()
-	b.position = pos
-	b.collision_layer = 32
-	b.collision_mask = 3
-	
-	_build_modular_building_shell(b, size)
-	if size.y >= 9.0:
-		# Upper-floor balconies give the larger homes the timbered, lived-in
-		# silhouette shown in the asset pack preview.
-		for balcony_x in [-4.0, 4.0]:
-			_add_map_asset(
-				b,
-				"Balcony_Simple_Straight",
-				Vector3(balcony_x, size.y * 0.42, size.z * 0.5 + 0.75),
-				0.0,
-				Vector3(2.0, 1.4, 1.2)
-			)
-	
-	# Signboard with 3D Text
-	var sign_lbl = Label3D.new()
-	sign_lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sign_lbl.no_depth_test = true
-	sign_lbl.text = title
-	sign_lbl.font_size = 32
-	sign_lbl.outline_size = 8
-	sign_lbl.outline_modulate = Color(0, 0, 0, 1)
-	sign_lbl.position = Vector3(0, size.y + 1.2, size.z * 0.5 + 1.0)
-	b.add_child(sign_lbl)
-	
-	if is_forge:
-		_add_map_asset(b, "Prop_Chimney", Vector3(-size.x * 0.32, 3.5, -size.z * 0.25), 0.0, Vector3.ONE)
-		
-		# Anvil
-		var anvil = MeshInstance3D.new()
-		var a_mesh = BoxMesh.new()
-		a_mesh.size = Vector3(0.8, 0.7, 0.5)
-		anvil.mesh = a_mesh
-		var a_mat = StandardMaterial3D.new()
-		a_mat.albedo_color = Color(0.15, 0.15, 0.18)
-		a_mat.metallic = 0.9
-		anvil.material_override = a_mat
-		anvil.position = Vector3(2.5, 0.35, size.z * 0.5 + 1.5)
-		b.add_child(anvil)
-	
-	# Collision
-	var col = CollisionShape3D.new()
-	var shape = BoxShape3D.new()
-	shape.size = size
-	col.shape = shape
-	col.position.y = size.y * 0.5
-	b.add_child(col)
-	
-	parent.add_child(b)
-	if interaction_id != "":
-		_register_interactable(b, interaction_id, interaction_label, interaction_radius)
-	return b
-
-func _create_lamp(parent: Node3D, pos: Vector3):
-	var lamp = StaticBody3D.new()
-	lamp.position = pos
-	lamp.collision_layer = 32
-	lamp.collision_mask = 3
-	
-	# Pole
-	var pole = MeshInstance3D.new()
-	var p_mesh = CylinderMesh.new()
-	p_mesh.top_radius = 0.1
-	p_mesh.bottom_radius = 0.15
-	p_mesh.height = 3.6
-	pole.mesh = p_mesh
-	var p_mat = StandardMaterial3D.new()
-	p_mat.albedo_color = Color(0.2, 0.2, 0.22)
-	p_mat.metallic = 0.8
-	pole.material_override = p_mat
-	pole.position.y = 1.8
-	lamp.add_child(pole)
-	
-	# Lantern Head
-	var head = MeshInstance3D.new()
-	var h_mesh = BoxMesh.new()
-	h_mesh.size = Vector3(0.5, 0.6, 0.5)
-	head.mesh = h_mesh
-	var h_mat = StandardMaterial3D.new()
-	h_mat.albedo_color = Color(1.0, 0.85, 0.4)
-	h_mat.emission_enabled = true
-	h_mat.emission = Color(1.0, 0.85, 0.4)
-	h_mat.emission_energy_multiplier = 2.5
-	head.material_override = h_mat
-	head.position.y = 3.6
-	lamp.add_child(head)
-	
-	# Warm Light
-	var light = OmniLight3D.new()
-	light.light_color = Color(1.0, 0.85, 0.5)
-	light.light_energy = 1.5
-	light.omni_range = 9.0
-	light.position.y = 3.5
-	lamp.add_child(light)
-	
-	var col = CollisionShape3D.new()
-	var shape = CylinderShape3D.new()
-	shape.radius = 0.2
-	shape.height = 3.6
-	col.shape = shape
-	col.position.y = 1.8
-	lamp.add_child(col)
-	
-	parent.add_child(lamp)
-
-func _create_bench(parent: Node3D, pos: Vector3, rot_y: float):
-	var b = StaticBody3D.new()
-	b.position = pos
-	b.rotation.y = rot_y
-	b.collision_layer = 32
-	b.collision_mask = 3
-	
-	var seat = MeshInstance3D.new()
-	var s_mesh = BoxMesh.new()
-	s_mesh.size = Vector3(2.2, 0.15, 0.6)
-	seat.mesh = s_mesh
-	var w_mat = StandardMaterial3D.new()
-	w_mat.albedo_color = Color(0.48, 0.32, 0.18)
-	seat.material_override = w_mat
-	seat.position.y = 0.5
-	b.add_child(seat)
-	
-	var back = MeshInstance3D.new()
-	var bk_mesh = BoxMesh.new()
-	bk_mesh.size = Vector3(2.2, 0.6, 0.1)
-	back.mesh = bk_mesh
-	back.material_override = w_mat
-	back.position = Vector3(0, 0.9, -0.25)
-	b.add_child(back)
-	
-	var col = CollisionShape3D.new()
-	var shape = BoxShape3D.new()
-	shape.size = Vector3(2.2, 0.9, 0.6)
-	col.shape = shape
-	col.position.y = 0.45
-	b.add_child(col)
-	
-	parent.add_child(b)
-
-func _create_notice_board(parent: Node3D, pos: Vector3, rot_y: float) -> StaticBody3D:
-	var nb = StaticBody3D.new()
-	nb.position = pos
-	nb.rotation.y = rot_y
-	nb.collision_layer = 32
-	nb.collision_mask = 3
-	
-	var board = MeshInstance3D.new()
-	var b_mesh = BoxMesh.new()
-	b_mesh.size = Vector3(2.5, 1.8, 0.2)
-	board.mesh = b_mesh
-	var b_mat = StandardMaterial3D.new()
-	b_mat.albedo_color = Color(0.45, 0.3, 0.18)
-	board.material_override = b_mat
-	board.position.y = 1.8
-	nb.add_child(board)
-	
-	var post1 = MeshInstance3D.new()
-	var p_mesh = BoxMesh.new()
-	p_mesh.size = Vector3(0.2, 2.0, 0.2)
-	post1.mesh = p_mesh
-	post1.material_override = b_mat
-	post1.position = Vector3(-1.0, 1.0, 0)
-	nb.add_child(post1)
-	
-	var post2 = MeshInstance3D.new()
-	post2.mesh = p_mesh
-	post2.material_override = b_mat
-	post2.position = Vector3(1.0, 1.0, 0)
-	nb.add_child(post2)
-	
-	var lbl = Label3D.new()
-	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	lbl.no_depth_test = true
-	lbl.text = "📜 마을 게시판 📜\n\"최근 북쪽 숲에 몬스터가 출몰 중!\n모험가들의 활약을 기대합니다.\""
-	lbl.font_size = 24
-	lbl.outline_size = 6
-	lbl.outline_modulate = Color(0, 0, 0, 1)
-	lbl.position = Vector3(0, 2.0, 0.15)
-	nb.add_child(lbl)
-	
-	var col = CollisionShape3D.new()
-	var shape = BoxShape3D.new()
-	shape.size = Vector3(2.5, 2.2, 0.4)
-	col.shape = shape
-	col.position.y = 1.1
-	nb.add_child(col)
-	
-	parent.add_child(nb)
-	_register_interactable(nb, "quest", "게시판 보기", 4.5)
-	return nb
-
-func _create_pond(parent: Node3D, pos: Vector3):
-	var pond = Node3D.new()
-	pond.position = pos
-	
-	var water = MeshInstance3D.new()
-	var w_mesh = CylinderMesh.new()
-	w_mesh.top_radius = 5.0
-	w_mesh.bottom_radius = 4.8
-	w_mesh.height = 0.1
-	water.mesh = w_mesh
-	var w_mat = StandardMaterial3D.new()
-	w_mat.albedo_color = Color(0.15, 0.55, 0.75, 0.8)
-	w_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	w_mat.roughness = 0.15
-	water.material_override = w_mat
-	water.position.y = 0.05
-	pond.add_child(water)
-	
-	# Surrounding stones
-	for i in range(16):
-		var stone = MeshInstance3D.new()
-		var s_mesh = BoxMesh.new()
-		var sz = randf_range(0.6, 1.2)
-		s_mesh.size = Vector3(sz, sz * 0.6, sz)
-		stone.mesh = s_mesh
-		var s_mat = StandardMaterial3D.new()
-		s_mat.albedo_color = Color(0.5, 0.52, 0.55)
-		stone.material_override = s_mat
-		var a = (float(i) / 16.0) * TAU
-		stone.position = Vector3(cos(a) * 5.2, sz * 0.3, sin(a) * 5.2)
-		pond.add_child(stone)
-	
-	parent.add_child(pond)
-
-func _create_castle_gate(parent: Node3D, pos: Vector3) -> StaticBody3D:
-	var gate = StaticBody3D.new()
-	gate.position = pos
-	gate.collision_layer = 32
-	gate.collision_mask = 3
-	
-	var s_mat = StandardMaterial3D.new()
-	s_mat.albedo_color = Color(0.48, 0.48, 0.52)
-	s_mat.roughness = 0.9
-	
-	# Left Tower
-	var tower_l = MeshInstance3D.new()
-	var t_mesh = BoxMesh.new()
-	t_mesh.size = Vector3(4.0, 9.0, 4.0)
-	tower_l.mesh = t_mesh
-	tower_l.material_override = s_mat
-	tower_l.position = Vector3(-6.0, 4.5, 0)
-	gate.add_child(tower_l)
-	
-	# Right Tower
-	var tower_r = MeshInstance3D.new()
-	tower_r.mesh = t_mesh
-	tower_r.material_override = s_mat
-	tower_r.position = Vector3(6.0, 4.5, 0)
-	gate.add_child(tower_r)
-	
-	# Top Arch Span
-	var arch = MeshInstance3D.new()
-	var a_mesh = BoxMesh.new()
-	a_mesh.size = Vector3(12.0, 2.0, 3.5)
-	arch.mesh = a_mesh
-	arch.material_override = s_mat
-	arch.position = Vector3(0, 7.5, 0)
-	gate.add_child(arch)
-	
-	# Sign on the gate
-	var lbl = Label3D.new()
-	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	lbl.no_depth_test = true
-	lbl.text = "⚔️ 서바이벌 던전 입구 ⚔️\n[E / 터치: 출격]"
-	lbl.font_size = 32
-	lbl.outline_size = 8
-	lbl.outline_modulate = Color(0, 0, 0, 1)
-	lbl.position = Vector3(0, 5.0, 2.2)
-	gate.add_child(lbl)
-	
-	# Perimeter walls extending left and right
-	var wall_l = MeshInstance3D.new()
-	var w_mesh = BoxMesh.new()
-	w_mesh.size = Vector3(30.0, 5.5, 2.0)
-	wall_l.mesh = w_mesh
-	wall_l.material_override = s_mat
-	wall_l.position = Vector3(-23.0, 2.75, 0)
-	gate.add_child(wall_l)
-	
-	var wall_r = MeshInstance3D.new()
-	wall_r.mesh = w_mesh
-	wall_r.material_override = s_mat
-	wall_r.position = Vector3(23.0, 2.75, 0)
-	gate.add_child(wall_r)
-	
-	# Collisions
-	var col_l = CollisionShape3D.new()
-	var col_l_shape = BoxShape3D.new()
-	col_l_shape.size = Vector3(34.0, 8.0, 4.0)
-	col_l.shape = col_l_shape
-	col_l.position = Vector3(-21.0, 4.0, 0)
-	gate.add_child(col_l)
-	
-	var col_r = CollisionShape3D.new()
-	col_r.shape = col_l_shape
-	col_r.position = Vector3(21.0, 4.0, 0)
-	gate.add_child(col_r)
-	
-	parent.add_child(gate)
-	_register_interactable(gate, "battle_start", "성문으로 이동하여 전투 준비", 8.0)
-	return gate
-
-func _create_card_dungeon_portal(parent: Node3D, pos: Vector3) -> Area3D:
+func _create_card_dungeon_portal() -> void:
 	var portal := Area3D.new()
-	portal.position = pos
+	portal.name = "CardDungeonPortal"
+	portal.position = environment.CARD_GATE
 	portal.collision_layer = 32
 	portal.collision_mask = 1
-	portal.monitoring = true
-	portal.body_entered.connect(_on_card_portal_body_entered)
-	var base := MeshInstance3D.new()
-	var base_mesh := CylinderMesh.new()
-	base_mesh.top_radius = 2.8
-	base_mesh.bottom_radius = 3.2
-	base_mesh.height = 0.5
-	base.mesh = base_mesh
-	base.position.y = 0.25
-	var base_mat := StandardMaterial3D.new()
-	base_mat.albedo_color = Color(0.18, 0.12, 0.28)
-	base_mat.emission_enabled = true
-	base_mat.emission = Color(0.35, 0.12, 0.65)
-	base_mat.emission_energy_multiplier = 1.2
-	base.material_override = base_mat
-	portal.add_child(base)
-	var marker := MeshInstance3D.new()
-	var marker_mesh := BoxMesh.new()
-	marker_mesh.size = Vector3(3.6, 4.2, 0.35)
-	marker.mesh = marker_mesh
-	marker.position.y = 2.3
-	var marker_mat := StandardMaterial3D.new()
-	marker_mat.albedo_color = Color(0.15, 0.08, 0.25, 0.82)
-	marker_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	marker_mat.emission_enabled = true
-	marker_mat.emission = Color(0.65, 0.25, 1.0)
-	marker_mat.emission_energy_multiplier = 2.0
-	marker.material_override = marker_mat
-	portal.add_child(marker)
-	var label := Label3D.new()
-	label.position = Vector3(0, 4.9, 0)
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.no_depth_test = true
-	label.text = "🃏 카드 덱 던전\n[E / 클릭 / 터치] 입장"
-	label.font_size = 30
-	label.outline_size = 9
-	label.outline_modulate = Color(0.03, 0.01, 0.07, 1)
-	portal.add_child(label)
 	var collision := CollisionShape3D.new()
+	collision.name = "CollisionShape3D"
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(5.0, 4.8, 1.4)
+	shape.size = Vector3(5.0, 4.0, 1.6)
 	collision.shape = shape
-	collision.position.y = 2.4
+	collision.position.y = 2.0
 	portal.add_child(collision)
-	parent.add_child(portal)
-	_register_interactable(portal, "card_dungeon", "카드 덱 던전 입장", 7.0)
-	return portal
+	portal.body_entered.connect(_on_card_portal_body_entered)
+	add_child(portal)
+	environment.decorate_portal(portal, "카드 덱 던전", Color(0.78, 0.43, 1.0))
+	_register_interactable(portal, "card_dungeon", "카드 덱 던전 입장", 6.0)
 
-func _on_card_portal_body_entered(body: Node3D):
+func _on_card_portal_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player") and GameManager.current_location == GameManager.Location.LOBBY:
 		if is_auto_moving():
 			cancel_auto_move()
 		GameManager.go_to_deck_builder()
-
-func _create_crate_stack(parent: Node3D, pos: Vector3):
-	var stack = StaticBody3D.new()
-	stack.position = pos
-	stack.collision_layer = 32
-	stack.collision_mask = 3
-	
-	var c_mat = StandardMaterial3D.new()
-	c_mat.albedo_color = Color(0.55, 0.38, 0.22)
-	
-	var c1 = MeshInstance3D.new()
-	var m = BoxMesh.new()
-	m.size = Vector3(1.2, 1.2, 1.2)
-	c1.mesh = m
-	c1.material_override = c_mat
-	c1.position = Vector3(-0.6, 0.6, 0)
-	stack.add_child(c1)
-	
-	var c2 = MeshInstance3D.new()
-	c2.mesh = m
-	c2.material_override = c_mat
-	c2.position = Vector3(0.6, 0.6, 0)
-	stack.add_child(c2)
-	
-	var c3 = MeshInstance3D.new()
-	c3.mesh = m
-	c3.material_override = c_mat
-	c3.position = Vector3(0, 1.8, 0)
-	stack.add_child(c3)
-	
-	var col = CollisionShape3D.new()
-	var shape = BoxShape3D.new()
-	shape.size = Vector3(2.4, 2.4, 1.4)
-	col.shape = shape
-	col.position.y = 1.2
-	stack.add_child(col)
-	
-	parent.add_child(stack)
-
-func _populate_nature(parent: Node3D):
-	seed(101)
-	for i in range(40):
-		var flower = _create_village_flower()
-		var pos = Vector3(randf_range(-30, 30), 0, randf_range(-40, 30))
-		flower.position = pos
-		parent.add_child(flower)
-
-func _create_village_tree() -> StaticBody3D:
-	var tree = StaticBody3D.new()
-	tree.collision_layer = 32
-	tree.collision_mask = 3
-	
-	var trunk = MeshInstance3D.new()
-	var t_mesh = CylinderMesh.new()
-	t_mesh.top_radius = 0.25
-	t_mesh.bottom_radius = 0.35
-	t_mesh.height = 2.4
-	trunk.mesh = t_mesh
-	var t_mat = StandardMaterial3D.new()
-	t_mat.albedo_color = Color(0.42, 0.28, 0.16)
-	trunk.material_override = t_mat
-	trunk.position.y = 1.2
-	tree.add_child(trunk)
-	
-	var foliage = MeshInstance3D.new()
-	var f_mesh = BoxMesh.new()
-	var s = randf_range(2.2, 3.0)
-	f_mesh.size = Vector3(s, s * 0.9, s)
-	foliage.mesh = f_mesh
-	var f_mat = StandardMaterial3D.new()
-	f_mat.albedo_color = Color(0.2, 0.6 + randf() * 0.1, 0.25)
-	foliage.material_override = f_mat
-	foliage.position.y = 2.8
-	tree.add_child(foliage)
-	
-	var col = CollisionShape3D.new()
-	var shape = CylinderShape3D.new()
-	shape.radius = 0.4
-	shape.height = 2.4
-	col.shape = shape
-	col.position.y = 1.2
-	tree.add_child(col)
-	return tree
-
-func _create_village_flower() -> Node3D:
-	var flower = Node3D.new()
-	var f_mesh = MeshInstance3D.new()
-	var b_mesh = BoxMesh.new()
-	b_mesh.size = Vector3(0.25, 0.25, 0.25)
-	f_mesh.mesh = b_mesh
-	var f_mat = StandardMaterial3D.new()
-	var colors = [Color(1, 0.4, 0.4), Color(1, 0.85, 0.2), Color(0.8, 0.4, 1), Color(0.3, 0.8, 1)]
-	f_mat.albedo_color = colors[randi() % colors.size()]
-	f_mesh.material_override = f_mat
-	f_mesh.position.y = 0.12
-	flower.add_child(f_mesh)
-	return flower
 
 # ----------------- NPCS -----------------
 
@@ -1032,7 +402,7 @@ func _spawn_npcs():
 	bs.npc_name = "헤파이스토"
 	bs.npc_role = "대장장이"
 	bs.outfit_color = Color(0.6, 0.35, 0.15)
-	bs.position = Vector3(-16, 0, 2)
+	bs.position = Vector3(-12.35, 0, -1.5)
 	npc_root.add_child(bs)
 	_register_interactable(bs, "npc_blacksmith", "헤파이스토와 대화하기", 3.8)
 	
@@ -1041,7 +411,7 @@ func _spawn_npcs():
 	shop.npc_name = "마커스"
 	shop.npc_role = "무기 상인"
 	shop.outfit_color = Color(0.25, 0.35, 0.65)
-	shop.position = Vector3(16, 0, 2)
+	shop.position = Vector3(12.35, 0, -1.5)
 	npc_root.add_child(shop)
 	_register_interactable(shop, "npc_merchant", "마커스와 대화하기", 3.8)
 	
@@ -1050,7 +420,7 @@ func _spawn_npcs():
 	inn.npc_name = "엘레나"
 	inn.npc_role = "여관 주인"
 	inn.outfit_color = Color(0.65, 0.25, 0.45)
-	inn.position = Vector3(14, 0, 16)
+	inn.position = Vector3(12.1, 0, 15.6)
 	npc_root.add_child(inn)
 	_register_interactable(inn, "npc_innkeeper", "엘레나와 대화하기", 3.8)
 	
@@ -1059,7 +429,7 @@ func _spawn_npcs():
 	guard1.npc_name = "경비병 카일"
 	guard1.npc_role = "외곽 경비병"
 	guard1.outfit_color = Color(0.5, 0.55, 0.6)
-	guard1.position = Vector3(-3.2, 0, -30)
+	guard1.position = battle_portal.position + Vector3(-3.1, 0, 4)
 	npc_root.add_child(guard1)
 	_register_interactable(guard1, "npc_guard", "경비병과 대화하기", 3.8)
 	
@@ -1067,7 +437,7 @@ func _spawn_npcs():
 	guard2.npc_name = "경비병 레오"
 	guard2.npc_role = "외곽 경비병"
 	guard2.outfit_color = Color(0.5, 0.55, 0.6)
-	guard2.position = Vector3(3.2, 0, -30)
+	guard2.position = battle_portal.position + Vector3(3.1, 0, 4)
 	npc_root.add_child(guard2)
 	_register_interactable(guard2, "npc_guard", "경비병과 대화하기", 3.8)
 	
@@ -1076,9 +446,9 @@ func _spawn_npcs():
 	v1.npc_name = "토마스"
 	v1.npc_role = "산책 중인 주민"
 	v1.is_patrolling = true
-	v1.patrol_radius = 7.0
+	v1.patrol_radius = 2.6
 	v1.outfit_color = Color(0.3, 0.55, 0.3)
-	v1.position = Vector3(-4, 0, -3)
+	v1.position = Vector3(-4.5, 0, -5.8)
 	npc_root.add_child(v1)
 	_register_interactable(v1, "npc_villager", "토마스와 대화하기", 3.2)
 	
@@ -1086,8 +456,8 @@ func _spawn_npcs():
 	v2.npc_name = "클로이"
 	v2.npc_role = "여행자"
 	v2.is_patrolling = true
-	v2.patrol_radius = 8.0
+	v2.patrol_radius = 2.8
 	v2.outfit_color = Color(0.7, 0.45, 0.2)
-	v2.position = Vector3(4, 0, -3)
+	v2.position = Vector3(5.1, 0, 3.6)
 	npc_root.add_child(v2)
 	_register_interactable(v2, "npc_villager", "클로이와 대화하기", 3.2)

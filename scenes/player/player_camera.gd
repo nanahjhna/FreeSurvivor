@@ -17,7 +17,7 @@ extends Camera3D
 @export var back_view_enabled: bool = false
 @export_range(3.0, 10.0, 0.1) var back_distance: float = 5.5
 @export_range(25.0, 55.0, 0.5) var back_elevation_degrees: float = 40.0
-@export_range(-180.0, 180.0, 0.5) var back_yaw_offset_degrees: float = 180.0
+@export_range(-180.0, 180.0, 0.5) var back_yaw_offset_degrees: float = 0.0
 @export_range(0.8, 2.2, 0.05) var back_look_height: float = 1.6
 @export_range(0.0, 1.0, 0.05) var back_look_ahead: float = 0.3
 @export_range(0.0, 2.0, 0.05) var back_view_recenter_delay: float = 0.5
@@ -49,13 +49,17 @@ var _camera_yaw: float = 0.0
 var _back_idle_time: float = 0.0
 var _rig_mode: String = ""
 var _manual_orbit_timer: float = 0.0
+var _movement_yaw_offset: float = 0.0
 var _orbit_touch_id: int = -1
 var _orbit_mouse_active: bool = false
+var _follow_visual: Node3D
 
 
 func _ready() -> void:
 	if follow_target == null:
 		follow_target = get_node_or_null("../../..") as Node3D
+	if follow_target:
+		_follow_visual = follow_target.get_node_or_null("VisualRoot") as Node3D
 	_target_quarter_distance = quarter_distance
 	_target_back_distance = back_distance
 	_configure_rig()
@@ -65,6 +69,7 @@ func _ready() -> void:
 
 func _configure_rig() -> void:
 	_rig_mode = _current_rig_mode()
+	_movement_yaw_offset = 0.0
 	if first_person_enabled:
 		top_level = false
 		_camera_pivot.top_level = true
@@ -144,12 +149,21 @@ func snap_to_target() -> void:
 
 
 func _player_forward() -> Vector3:
-	var visual_root := follow_target.get_node_or_null("VisualRoot") as Node3D
-	var forward: Vector3 = visual_root.global_basis.z if visual_root else follow_target.global_basis.z
+	var forward: Vector3 = _follow_visual.global_basis.z if is_instance_valid(_follow_visual) else follow_target.global_basis.z
 	forward.y = 0.0
 	if forward.length_squared() < 0.001:
 		return Vector3.FORWARD
 	return forward.normalized()
+
+func get_movement_right() -> Vector3:
+	if back_view_enabled or first_person_enabled:
+		# Automatic follow yaw depends on the player facing. Using it as input would
+		# make held directions rotate in a loop. Only manual orbit changes the reference.
+		var yaw := deg_to_rad(quarter_azimuth_degrees) + _movement_yaw_offset
+		return Vector3(cos(yaw), 0.0, -sin(yaw))
+	var right := global_basis.x
+	right.y = 0.0
+	return right.normalized() if right.length_squared() > 0.001 else Vector3.RIGHT
 
 
 func _player_yaw() -> float:
@@ -190,9 +204,7 @@ func _physics_process(delta: float) -> void:
 	if first_person_enabled:
 		_update_back_yaw(delta, 0.0)
 		_camera_pivot.rotation = Vector3(0.0, _camera_yaw, 0.0)
-		_camera_pivot.global_position = _camera_pivot.global_position.lerp(
-			_first_person_position(_smoothed_focus), position_weight
-		)
+		_camera_pivot.global_position = _first_person_position(_smoothed_focus)
 		_spring_arm.spring_length = 0.0
 		rotation = Vector3.ZERO
 		fov = first_person_fov
@@ -205,9 +217,7 @@ func _physics_process(delta: float) -> void:
 			_spring_arm.spring_length, _target_back_distance, 1.0 - exp(-6.0 * delta)
 		)
 		back_distance = _spring_arm.spring_length
-		_camera_pivot.global_position = _camera_pivot.global_position.lerp(
-			_pivot_target_position(_smoothed_focus, back_distance), position_weight
-		)
+		_camera_pivot.global_position = _pivot_target_position(_smoothed_focus, back_distance)
 		fov = back_view_fov
 		return
 	if quarter_view_enabled:
@@ -216,9 +226,7 @@ func _physics_process(delta: float) -> void:
 		_camera_pivot.rotation = Vector3.ZERO
 		_spring_arm.rotation = Vector3(-deg_to_rad(quarter_elevation_degrees), deg_to_rad(quarter_azimuth_degrees), 0.0)
 		_spring_arm.spring_length = quarter_distance
-		_camera_pivot.global_position = _camera_pivot.global_position.lerp(
-			_smoothed_focus + Vector3.UP * quarter_look_height, position_weight
-		)
+		_camera_pivot.global_position = _smoothed_focus + Vector3.UP * quarter_look_height
 		rotation = Vector3.ZERO
 		projection = Camera3D.PROJECTION_PERSPECTIVE
 		fov = quarter_view_fov
@@ -313,6 +321,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _apply_orbit_drag(relative: Vector2) -> void:
 	_camera_yaw -= relative.x * orbit_sensitivity
+	_movement_yaw_offset = wrapf(_camera_yaw + PI - deg_to_rad(quarter_azimuth_degrees), -PI, PI)
 	back_elevation_degrees = clampf(
 		back_elevation_degrees + relative.y * orbit_pitch_sensitivity,
 		25.0,

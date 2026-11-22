@@ -1,10 +1,28 @@
 extends Node
 
-## Runtime factory for character visuals. GameData.characters is the player
-## registry; adding a character there makes its model loadable by ID.
+## Runtime factory for registered character visuals.
+const FALLBACK_CHARACTER_MODEL := "res://assets/char/char03/char03.glb"
+
 func get_definition(player_id: String) -> Dictionary:
-	var definition: Variant = GameData.characters.get(player_id, {})
-	return definition.duplicate(true) if definition is Dictionary else {}
+	var character := CharacterRegistry.get_by_id(player_id)
+	var lookup_id := player_id
+	if character != null and not character.legacy_id.is_empty():
+		lookup_id = character.legacy_id
+	var definition: Variant = GameData.characters.get(lookup_id, {})
+	if not definition is Dictionary:
+		return {}
+	var resolved: Dictionary = definition.duplicate(true)
+	if character != null and character.model_scene != null:
+		resolved["model_scene"] = character.model_scene.resource_path
+		resolved["model_scale"] = character.model_scale
+	var scene_path := str(resolved.get("model_scene", ""))
+	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
+		if ResourceLoader.exists(FALLBACK_CHARACTER_MODEL):
+			push_warning("캐릭터 모델을 찾지 못해 기본 모델을 사용합니다: %s -> %s" % [scene_path, FALLBACK_CHARACTER_MODEL])
+			resolved["model_scene"] = FALLBACK_CHARACTER_MODEL
+		else:
+			push_warning("캐릭터 모델과 기본 대체 모델이 모두 없습니다: %s" % scene_path)
+	return resolved
 
 
 func has_model_definition(player_id: String) -> bool:
@@ -15,7 +33,7 @@ func has_model_definition(player_id: String) -> bool:
 func create_model(player_id: String, parent: Node3D) -> Node3D:
 	var definition := get_definition(player_id)
 	var scene_path := str(definition.get("model_scene", ""))
-	if not has_model_definition(player_id):
+	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
 		push_warning("플레이어 모델이 등록되지 않았습니다: %s" % player_id)
 		return null
 	var model_scene := load(scene_path) as PackedScene

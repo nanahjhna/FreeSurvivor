@@ -197,13 +197,13 @@ var characters: Dictionary = {
 		"appearance": "char02", "desc": "새로 추가된 3D 캐릭터 모델을 사용하는 쌍검 검사."
 	},
 	"archer": {
-		"id": "archer", "name": "추적자", "title": "황야의 명사수", "role": "궁수",
-		"grade": "R", "icon": "🏹", "color": Color(0.35, 0.66, 0.39), "unlocked": true,
-		"model_scene": "res://assets/char/char01/char01.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
+		"id": "archer", "name": "추적자", "title": "황야의 명사수", "role": "추적자 · 라이플 사수",
+		"grade": "R", "icon": "🔫", "color": Color(0.35, 0.66, 0.39), "unlocked": true,
+		"model_scene": "res://assets/char/char01_game.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
 		"base_attributes": {"STR": 4, "AGI": 8, "VIT": 4, "INT": 3, "DEX": 9, "LUK": 5},
 		"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0, "base_spd": 7.4,
-		"signature_skill": "관통 화살", "weapon_name": "장궁", "combat_style": "원거리 관통과 빠른 연사",
-		"desc": "먼 거리에서 약점을 노리고 관통 사격을 가하는 황야의 사냥꾼."
+		"signature_skill": "라이플 단발 사격", "weapon_name": "쌍드럼 라이플", "combat_style": "라이플 단발, 연사, 관통 사격",
+		"desc": "쌍드럼 라이플로 거리를 유지하며 정밀 사격과 탄막 공격을 가하는 추적자."
 	},
 	"mage": {
 		"id": "mage", "name": "원소술사", "title": "잿불의 계승자", "role": "마법사",

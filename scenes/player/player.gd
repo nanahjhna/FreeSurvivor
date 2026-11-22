@@ -8,6 +8,7 @@ signal leveled_up(new_level)
 signal died()
 
 @export var is_combat_enabled: bool = true
+var preview_only: bool = false
 @export var max_hp: float = 100.0
 var current_hp: float = 100.0
 @export var max_sp: float = 30.0
@@ -18,6 +19,7 @@ var current_sp: float = 30.0
 @export var base_attack_speed: float = 1.2
 @export var attack_range: float = 3.8
 @export_range(1.0, 3.0, 0.1) var character_visual_scale: float = 1.5
+@export_range(0.0, 1.0, 0.05) var ranged_attack_move_multiplier: float = 0.5
 
 var current_xp: int = 0
 var xp_to_next_level: int = 10
@@ -30,9 +32,12 @@ var auto_attack_enabled: bool = true
 var touch_move_vector: Vector2 = Vector2.ZERO
 var current_move_input: Vector2 = Vector2.ZERO
 var _moving_by_input: bool = false
-var _previous_move_input: bool = false
-var _move_camera_right: Vector3 = Vector3.RIGHT
-var _move_camera_down: Vector3 = Vector3.BACK
+var _auto_move_direction := Vector3.ZERO
+var _standing_attack_direction := Vector3.ZERO
+var _ranged_aim_direction := Vector3.ZERO
+var _ranged_aim_target: Node3D
+var _ranged_aim_hold := 0.0
+var _pending_ranged_shots: Array[Callable] = []
 var manual_attack_cooldown: float = 0.0
 var _hp_regen_timer: float = 0.0
 var _time_since_last_damage: float = 0.0
@@ -48,7 +53,9 @@ var revive_used: bool = false
 @onready var visual_root: Node3D = $VisualRoot
 @onready var character_model_root: Node3D = $VisualRoot/CharacterModelRoot
 @onready var slash_effect: Node3D = $VisualRoot/SlashEffect
-@onready var camera_node: Camera3D = $CameraPivot/SpringArm3D/Camera3D
+const PlayerCamera = preload("res://scenes/player/player_camera.gd")
+const MovingAttackLegs = preload("res://scenes/player/moving_attack_legs.gd")
+@onready var camera_node: PlayerCamera = $CameraPivot/SpringArm3D/Camera3D
 var _head_hp_fill: MeshInstance3D
 var _head_hp_background: MeshInstance3D
 var _head_hp_fill_material: StandardMaterial3D
@@ -62,11 +69,33 @@ var current_appearance := "fighter"
 var first_person_mode: bool = false
 var active_action_clip := ""
 var alternate_attack := false
+var _ranged_attack_busy: bool = false
+var _attack_animation_recovery_remaining: float = 0.0
+@export_range(0.0, 0.6, 0.01) var rifle_attack_recovery_time: float = 0.18
+var equipped_weapon_animation_player: AnimationPlayer
+var _weapon_fire_animation_busy: bool = false
+var _character_attack_animation_finished: bool = false
+const WEAPON_IDLE_ANIMATION := "akidle"
+const WEAPON_FIRE_ANIMATION := ""
+const LOCOMOTION_BLEND_TIME := 0.22
+const ATTACK_BLEND_TIME := 0.14
+const HIT_REACTION_TIME := 0.28
+const RANGED_ACTIONS := ["Attack", "AttackAlt", "AttackBase", "Cast", "Kick"]
+const RANGED_AIM_TURN_SPEED := 17.0
+var _has_ranged_weapon := false
+var _gait := "Idle"
+var _gait_rate := 1.0
+var _walk_reference_speed := 2.7
+var _run_reference_speed := 6.8
+var _attack_legs: MovingAttackLegs
 
 var damage_number_scene: PackedScene = preload("res://scenes/effects/damage_number.tscn")
+const RIFLE_PROJECTILE_SCENE: PackedScene = preload("res://scenes/skills/rifle_projectile.tscn")
 var stat_manager: StatManager = StatManager.new()
 
 func _ready():
+	if preview_only:
+		return
 	add_to_group("player")
 	set_character_appearance(GameData.get_leader_id())
 	first_person_mode = false
@@ -98,11 +127,16 @@ func _ready():
 func _physics_process(delta: float):
 	if is_dead:
 		return
+	if _attack_animation_recovery_remaining > 0.0:
+		_attack_animation_recovery_remaining = maxf(0.0, _attack_animation_recovery_remaining - delta)
+		if _attack_animation_recovery_remaining <= 0.0:
+			_ranged_attack_busy = false
 	
 	if manual_attack_cooldown > 0.0:
 		manual_attack_cooldown = max(0.0, manual_attack_cooldown - delta)
 	
 	_handle_movement(delta)
+	_release_aimed_shots()
 	_update_hp_regeneration(delta)
 	_update_survival_shield(delta)
 	_update_sp_regeneration(delta)
@@ -119,47 +153,65 @@ func _process(_delta: float) -> void:
 func set_touch_move(value: Vector2):
 	touch_move_vector = value.limit_length(1.0)
 
+func set_auto_move_direction(direction: Vector3) -> void:
+	_auto_move_direction = direction.limit_length(1.0)
+
 func has_camera_move_input() -> bool:
 	return _moving_by_input
+
+func get_facing_direction() -> Vector3:
+	var forward := visual_root.global_basis.z.slide(Vector3.UP)
+	return forward.normalized() if not forward.is_zero_approx() else Vector3.BACK
+
+func queue_ranged_shot(direction: Vector3, target: Node3D, release: Callable) -> bool:
+	if is_dead or not is_combat_enabled:
+		return false
+	var aim := direction.slide(Vector3.UP).normalized()
+	if aim.is_zero_approx():
+		aim = get_facing_direction()
+	if not _pending_ranged_shots.is_empty():
+		if _ranged_aim_target != target or _ranged_aim_direction.dot(aim) < 0.99:
+			return false
+	else:
+		_ranged_aim_direction = aim
+		_ranged_aim_target = target
+	_pending_ranged_shots.append(release)
+	return true
+
+func _release_aimed_shots() -> void:
+	if _pending_ranged_shots.is_empty() or get_facing_direction().dot(_ranged_aim_direction) < 0.9999:
+		return
+	var shots := _pending_ranged_shots
+	var direction := _ranged_aim_direction
+	var target := _ranged_aim_target
+	_pending_ranged_shots = []
+	_ranged_aim_target = null
+	_ranged_aim_hold = 0.16
+	for release in shots:
+		if release.is_valid():
+			release.call(direction, target if is_instance_valid(target) else null)
 
 func _handle_movement(delta: float):
 	# Mobile joystick and PC arrow keys share the same camera-relative movement path.
 	var input_vec: Vector2 = touch_move_vector
 	if input_vec == Vector2.ZERO:
-		if Input.is_action_pressed("move_up"):
-			input_vec.y -= 1.0
-		if Input.is_action_pressed("move_down"):
-			input_vec.y += 1.0
-		if Input.is_action_pressed("move_left"):
-			input_vec.x -= 1.0
-		if Input.is_action_pressed("move_right"):
-			input_vec.x += 1.0
-	input_vec = input_vec.limit_length(1.0)
+		input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	current_move_input = input_vec
-	_moving_by_input = input_vec != Vector2.ZERO
-	if _moving_by_input and not _previous_move_input:
-		var start_right: Vector3 = camera_node.global_basis.x if camera_node != null else Vector3.RIGHT
-		var start_down: Vector3 = camera_node.global_basis.z if camera_node != null else Vector3.BACK
-		start_right.y = 0.0
-		start_down.y = 0.0
-		if start_right.length_squared() < 0.001:
-			start_right = Vector3.RIGHT
-		if start_down.length_squared() < 0.001:
-			start_down = Vector3.BACK
-		_move_camera_right = start_right.normalized()
-		_move_camera_down = start_down.normalized()
-	
-	var effective_speed = base_move_speed * GameData.move_speed_mult * (1.0 + GameData.get_survival_bonus("move_speed"))
+	var move_direction := _auto_move_direction
+	if input_vec != Vector2.ZERO:
+		var right := camera_node.get_movement_right() if camera_node else Vector3.RIGHT
+		var down := Vector3(-right.z, 0.0, right.x)
+		move_direction = right * input_vec.x + down * input_vec.y
+	_moving_by_input = move_direction.length_squared() > 0.0001
+	var effective_speed: float = base_move_speed * GameData.move_speed_mult * (1.0 + GameData.get_survival_bonus("move_speed"))
 	if Input.is_key_pressed(KEY_SHIFT) and _moving_by_input:
 		effective_speed *= 1.45
 	if speed_boost_timer > 0.0:
 		effective_speed *= 1.5
 		speed_boost_timer -= delta
-	
-	var move_dir := Vector3.ZERO
-	if _moving_by_input:
-		move_dir = (_move_camera_right * input_vec.x + _move_camera_down * input_vec.y).normalized()
-	
+	if _ranged_attack_busy:
+		effective_speed *= ranged_attack_move_multiplier
+
 	# Gravity
 	if not is_on_floor():
 		velocity.y -= 19.6 * delta
@@ -167,35 +219,63 @@ func _handle_movement(delta: float):
 		velocity.y = 0.0
 	
 	# Smooth acceleration and deceleration
-	var target_vel_x = move_dir.x * effective_speed
-	var target_vel_z = move_dir.z * effective_speed
+	var target_velocity := move_direction * effective_speed
 	var acceleration_weight: float = 1.0 - exp(-14.0 * delta)
-	velocity.x = lerpf(velocity.x, target_vel_x, acceleration_weight)
-	velocity.z = lerpf(velocity.z, target_vel_z, acceleration_weight)
-	
+	velocity.x = lerpf(velocity.x, target_velocity.x, acceleration_weight)
+	velocity.z = lerpf(velocity.z, target_velocity.z, acceleration_weight)
 	move_and_slide()
-	
-	var horizontal_speed = Vector2(velocity.x, velocity.z).length()
-	var is_moving = horizontal_speed > 0.2
-	
-	# Face the camera-relative movement direction without snapping.
-	if _moving_by_input:
-		var desired_angle: float = atan2(move_dir.x, move_dir.z)
-		var turn_error: float = wrapf(desired_angle - visual_root.rotation.y, -PI, PI)
-		if is_equal_approx(absf(turn_error), PI):
-			turn_error = PI if input_vec.x >= 0.0 else -PI
-		visual_root.rotation.y = wrapf(visual_root.rotation.y + turn_error * (1.0 - exp(-12.0 * delta)), -PI, PI)
-		visual_root.rotation.z = lerpf(visual_root.rotation.z, -input_vec.x * 0.1, 1.0 - exp(-10.0 * delta))
-	else:
-		visual_root.rotation.z = lerpf(visual_root.rotation.z, 0.0, 1.0 - exp(-10.0 * delta))
-	
-	# Procedural Animation: Walk / Idle
-	_animate_character(delta, is_moving, horizontal_speed / base_move_speed)
-	_previous_move_input = _moving_by_input
 
-func _animate_character(_delta: float, is_moving: bool, speed_ratio: float):
-	var movement_clip := "Run" if speed_ratio > 1.15 else "Walk"
-	_play_model_animation(movement_clip if is_moving else "Idle")
+	if _moving_by_input:
+		_standing_attack_direction = Vector3.ZERO
+	var facing := move_direction if _moving_by_input else _standing_attack_direction
+	var aiming := not _pending_ranged_shots.is_empty()
+	_ranged_aim_hold = maxf(0.0, _ranged_aim_hold - delta)
+	if aiming and is_instance_valid(_ranged_aim_target):
+		var to_target := (_ranged_aim_target.global_position - global_position).slide(Vector3.UP)
+		if not to_target.is_zero_approx():
+			_ranged_aim_direction = to_target.normalized()
+	if _ranged_aim_direction != Vector3.ZERO and (aiming or _ranged_attack_busy or _ranged_aim_hold > 0.0):
+		facing = _ranged_aim_direction
+	if facing.length_squared() > 0.0001:
+		var local_facing := global_basis.transposed() * facing
+		var heading := atan2(local_facing.x, local_facing.z)
+		if aiming:
+			visual_root.rotation.y = rotate_toward(visual_root.rotation.y, heading, RANGED_AIM_TURN_SPEED * delta)
+		else:
+			visual_root.rotation.y = lerp_angle(visual_root.rotation.y, heading, 1.0 - exp(-9.0 * delta))
+	visual_root.rotation.z = lerpf(visual_root.rotation.z, -input_vec.x * 0.075, 1.0 - exp(-10.0 * delta))
+
+	# Actual post-collision movement, so the gait also slows when walking into walls.
+	var actual_velocity := get_real_velocity()
+	_animate_character(delta, Vector2(actual_velocity.x, actual_velocity.z).length())
+
+func _animate_character(delta: float, horizontal_speed: float) -> void:
+	if not is_instance_valid(model_animation_player):
+		return
+	var was_moving := _gait != "Idle"
+	var motion_threshold := 0.16 if was_moving else 0.28
+	if horizontal_speed < motion_threshold:
+		_gait = "Idle"
+	else:
+		var run_threshold := _run_reference_speed * (0.46 if _gait == "Run" else 0.56)
+		_gait = "Run" if horizontal_speed >= run_threshold and model_clips.has("Run") else "Walk"
+		if not model_clips.has(_gait):
+			_gait = "Run" if model_clips.has("Run") else "Idle"
+	var clip: StringName = model_clips.get(_gait, &"")
+	var gait_reference := _walk_reference_speed if _gait == "Walk" else _run_reference_speed
+	var target_rate := 1.0 if _gait == "Idle" else clampf(horizontal_speed / gait_reference, 0.25, 1.85)
+	_gait_rate = lerpf(_gait_rate, target_rate, 1.0 - exp(-14.0 * delta))
+	var in_action := not active_action_clip.is_empty()
+	var moving_attack := _ranged_attack_busy and in_action and _gait != "Idle"
+	if is_instance_valid(_attack_legs) and (moving_attack or _attack_legs.active):
+		_attack_legs.update_motion(delta, clip, _gait_rate, moving_attack)
+	if in_action:
+		return
+	var playback_rate := _gait_rate if _gait != "Idle" else 1.0
+	if not is_equal_approx(model_animation_player.speed_scale, playback_rate):
+		model_animation_player.speed_scale = playback_rate
+	_play_model_animation(_gait)
+
 
 func set_character_appearance(character_id: String):
 	var definition := PlayerManager.get_definition(character_id)
@@ -203,10 +283,29 @@ func set_character_appearance(character_id: String):
 		push_warning("등록되지 않은 플레이어 ID입니다: %s" % character_id)
 		return
 	current_appearance = character_id
+	var character_data := CharacterRegistry.get_by_id(character_id)
+	_has_ranged_weapon = character_id in ["archer", "char01"] or (character_data != null and character_data.weapon_scene != null)
 	model_animation_player = null
 	model_clips.clear()
 	active_action_clip = ""
+	_ranged_attack_busy = false
+	_gait = "Idle"
+	_gait_rate = 1.0
+	_attack_legs = null
+	_standing_attack_direction = Vector3.ZERO
+	_pending_ranged_shots.clear()
+	_ranged_aim_target = null
+	_ranged_aim_direction = Vector3.ZERO
+	_ranged_aim_hold = 0.0
+	_attack_animation_recovery_remaining = 0.0
+	if is_instance_valid(equipped_weapon_animation_player) and equipped_weapon_animation_player.animation_finished.is_connected(_on_equipped_weapon_animation_finished):
+		equipped_weapon_animation_player.animation_finished.disconnect(_on_equipped_weapon_animation_finished)
+	equipped_weapon_animation_player = null
+	_weapon_fire_animation_busy = false
+	_character_attack_animation_finished = false
+	character_model = null
 	for child in character_model_root.get_children():
+		character_model_root.remove_child(child)
 		child.queue_free()
 	character_model = PlayerManager.create_model(character_id, character_model_root)
 	if character_model:
@@ -214,8 +313,137 @@ func set_character_appearance(character_id: String):
 		# keeping movement and combat collision sizes unchanged.
 		character_model.scale *= Vector3.ONE * character_visual_scale
 		character_model.visible = not first_person_mode
-	if is_node_ready():
 		_setup_model_animations()
+		_attach_character_weapon(character_id)
+		_setup_gait(character_data, float(definition.get("base_spd", base_move_speed)))
+
+func _setup_gait(data: CharacterData, class_speed: float) -> void:
+	_walk_reference_speed = maxf(0.1, class_speed * 0.42)
+	_run_reference_speed = maxf(0.1, class_speed)
+	if data == null:
+		return
+	var model_scale := absf(character_model.scale.y)
+	if data.walk_animation_speed > 0.0:
+		_walk_reference_speed = maxf(0.1, data.walk_animation_speed * model_scale)
+	if data.run_animation_speed > 0.0:
+		_run_reference_speed = maxf(0.1, data.run_animation_speed * model_scale)
+	if model_clips.get("Walk", "") == model_clips.get("Run", ""):
+		_walk_reference_speed = _run_reference_speed
+	if not _has_ranged_weapon or preview_only or data.moving_attack_leg_roots.is_empty() or model_animation_player == null:
+		return
+	var walk_clip: StringName = model_clips.get("Walk", &"")
+	var run_clip: StringName = model_clips.get("Run", &"")
+	for node in character_model.find_children("*", "Skeleton3D", true, false):
+		var skeleton := node as Skeleton3D
+		if skeleton.find_bone(data.moving_attack_leg_roots[0]) < 0:
+			continue
+		var layer := MovingAttackLegs.new()
+		if layer.configure(skeleton, model_animation_player, data.moving_attack_leg_roots, walk_clip, run_clip):
+			skeleton.add_child(layer)
+			_attack_legs = layer
+			return
+		layer.free()
+
+
+func _attach_character_weapon(character_id: String) -> void:
+	if character_model == null:
+		return
+	var character_data := CharacterRegistry.get_by_id(character_id)
+	if character_data == null or character_data.weapon_scene == null:
+		return
+	var weapon_scene := character_data.weapon_scene
+	var weapon_bone_name := character_data.weapon_bone_name
+	var skeleton_nodes := character_model.find_children("*", "Skeleton3D", true, false)
+	var skeleton: Skeleton3D = null
+	var resolved_bone_index := -1
+	for skeleton_node in skeleton_nodes:
+		if not is_instance_valid(skeleton_node):
+			continue
+		var candidate := skeleton_node as Skeleton3D
+		if candidate == null:
+			continue
+		var bone_index := candidate.find_bone(weapon_bone_name)
+		if bone_index < 0:
+			for index in range(candidate.get_bone_count()):
+				var candidate_bone := candidate.get_bone_name(index).to_lower()
+				if candidate_bone.ends_with("_r_hand") or candidate_bone.ends_with("right_hand") or candidate_bone.ends_with("righthand"):
+					bone_index = index
+					break
+		if bone_index >= 0:
+			skeleton = candidate
+			resolved_bone_index = bone_index
+			break
+
+	var weapon_node := weapon_scene.instantiate()
+	var weapon := weapon_node as Node3D
+	if weapon == null:
+		weapon_node.queue_free()
+		push_warning("캐릭터 무기 씬의 루트가 Node3D가 아닙니다: %s" % weapon_scene.resource_path)
+		return
+
+	var attachment_parent: Node3D
+	var inherited_bone_scale := Vector3.ONE
+	var model_units_per_rig_unit := 1.0
+	if skeleton != null:
+		if preview_only:
+			skeleton.process_mode = Node.PROCESS_MODE_ALWAYS
+		# Use model space so the weapon follows the actor's display scale,
+		# without inheriting the rig's unit conversion (0.01 on char01).
+		var skeleton_to_model := character_model.global_transform.affine_inverse() * skeleton.global_transform
+		model_units_per_rig_unit = absf(skeleton_to_model.basis.get_scale().x)
+		var hand_rest := skeleton_to_model * skeleton.get_bone_global_rest(resolved_bone_index)
+		inherited_bone_scale = hand_rest.basis.get_scale().abs()
+		var attachment := BoneAttachment3D.new()
+		attachment.name = "CharacterWeaponAttachment"
+		attachment.bone_name = skeleton.get_bone_name(resolved_bone_index)
+		skeleton.add_child(attachment)
+		attachment_parent = attachment
+	else:
+		push_warning("손 뼈를 찾지 못해 캐릭터 손 위치에 무기를 고정합니다: %s (%s)" % [character_id, weapon_bone_name])
+		var fallback_mount := Node3D.new()
+		fallback_mount.name = "CharacterWeaponFallbackMount"
+		fallback_mount.position = Vector3(0.36, 1.08, -0.04)
+		character_model.add_child(fallback_mount)
+		attachment_parent = fallback_mount
+	weapon.name = "EquippedWeapon"
+	attachment_parent.add_child(weapon)
+	weapon.visible = true
+	for hidden_node_name in character_data.weapon_hidden_nodes:
+		var unwanted_mesh := weapon.find_child(hidden_node_name, true, false) as VisualInstance3D
+		if unwanted_mesh != null:
+			unwanted_mesh.visible = false
+
+	var grip_local_position := character_data.weapon_grip_position
+	var grip_point := weapon.find_child("GripPoint", true, false) as Node3D
+	if grip_point != null:
+		grip_local_position = weapon.to_local(grip_point.global_position)
+	var inverse_bone_scale := Vector3.ONE / inherited_bone_scale.maxf(0.0001)
+	var rotation_basis := Basis.from_euler(character_data.weapon_mount_rotation_degrees * PI / 180.0)
+	var mount_basis := Basis.from_scale(inverse_bone_scale) * rotation_basis * Basis.from_scale(character_data.weapon_mount_scale)
+	var palm_position := character_data.weapon_mount_position * inverse_bone_scale
+	weapon.transform = Transform3D(mount_basis, palm_position - mount_basis * grip_local_position)
+	if skeleton != null and not character_data.weapon_support_bone_name.is_empty():
+		var support := preload("res://scenes/player/weapon_support_hand.gd").new()
+		if support.configure(skeleton, resolved_bone_index, weapon, model_animation_player, character_data, model_units_per_rig_unit):
+			skeleton.add_child(support)
+		else:
+			support.free()
+
+	var weapon_animation_nodes := weapon.find_children("*", "AnimationPlayer", true, false)
+	for animation_node in weapon_animation_nodes:
+		if not is_instance_valid(animation_node):
+			continue
+		var weapon_player := animation_node as AnimationPlayer
+		if weapon_player != null and weapon_player.has_animation(WEAPON_IDLE_ANIMATION):
+			equipped_weapon_animation_player = weapon_player
+			if preview_only:
+				weapon_player.process_mode = Node.PROCESS_MODE_ALWAYS
+			var idle_animation := weapon_player.get_animation(WEAPON_IDLE_ANIMATION)
+			if idle_animation != null:
+				idle_animation.loop_mode = Animation.LOOP_LINEAR
+			weapon_player.play(WEAPON_IDLE_ANIMATION, 0.12)
+			break
+
 
 func set_first_person_mode(enabled: bool) -> void:
 	first_person_mode = enabled
@@ -276,7 +504,11 @@ func set_character_2d_mode(enabled: bool):
 	set_character_appearance("fighter_2d" if enabled else "fighter")
 
 func _handle_auto_attack(delta: float):
-	if not auto_attack_enabled:
+	if not auto_attack_enabled or _ranged_attack_busy:
+		if _ranged_attack_busy:
+			auto_attack_timer = 0.0
+		return
+	if not _pending_ranged_shots.is_empty():
 		return
 	var speed_multiplier := clampf(GameData.attack_speed_mult * (1.0 + GameData.get_survival_bonus("attack_speed") + GameData.get_survival_bonus("kill_attack_speed")), 0.5, 2.5)
 	var effective_aspd = base_attack_speed * speed_multiplier
@@ -284,13 +516,14 @@ func _handle_auto_attack(delta: float):
 	
 	if auto_attack_timer >= 1.0:
 		var target = _find_closest_enemy(attack_range * (1.0 + GameData.get_survival_bonus("attack_range")))
-		if target:
-			_perform_auto_attack(target)
+		if target and _perform_auto_attack(target):
 			auto_attack_timer = 0.0
 
 func try_manual_attack() -> bool:
 	if is_dead or not is_combat_enabled:
 		UiFeedback.show_info("지금은 공격할 수 없습니다.")
+		return false
+	if _ranged_attack_busy or not _pending_ranged_shots.is_empty():
 		return false
 	if manual_attack_cooldown > 0.0:
 		return false
@@ -298,7 +531,8 @@ func try_manual_attack() -> bool:
 	if target == null:
 		UiFeedback.show_info("공격 범위에 적이 없습니다. 조금 더 가까이 이동하세요.")
 		return false
-	_perform_auto_attack(target)
+	if not _perform_auto_attack(target):
+		return false
 	manual_attack_cooldown = 0.25
 	return true
 
@@ -319,13 +553,24 @@ func _find_closest_enemy(max_dist: float) -> Node3D:
 				closest = enemy
 	return closest
 
-func _perform_auto_attack(target: Node3D):
-	var dir_to_target = (target.global_position - global_position).normalized()
-	if not _moving_by_input:
-		visual_root.rotation.y = atan2(dir_to_target.x, dir_to_target.z)
+func _perform_auto_attack(target: Node3D) -> bool:
+	var dir_to_target := (target.global_position - global_position).normalized()
+	if _has_ranged_weapon:
+		return queue_ranged_shot(dir_to_target, target, _release_basic_attack)
+	_release_basic_attack(dir_to_target, target)
+	return true
+
+func _release_basic_attack(dir_to_target: Vector3, target: Node3D) -> void:
+	if not is_instance_valid(target) or bool(target.get("is_dead")):
+		return
+	if not _has_ranged_weapon and not _moving_by_input:
+		_standing_attack_direction = Vector3(dir_to_target.x, 0.0, dir_to_target.z)
 	_play_model_animation("AttackAlt" if alternate_attack else "Attack", true)
 	alternate_attack = not alternate_attack
-	_show_slash_effect()
+	if _has_ranged_weapon:
+		_spawn_ranged_attack_visual(target, dir_to_target)
+	else:
+		_show_slash_effect()
 	if randf() * 100.0 >= stat_manager.hit_rate():
 		_show_damage_popup(0, false, false, "MISS")
 		return
@@ -356,6 +601,18 @@ func _perform_auto_attack(target: Node3D):
 					bounced += 1
 					if bounced >= 2:
 						break
+
+
+func _spawn_ranged_attack_visual(target: Node3D, direction: Vector3) -> void:
+	var effect := RIFLE_PROJECTILE_SCENE.instantiate() as SkillEffectBase
+	if effect == null:
+		return
+	get_tree().current_scene.add_child(effect)
+	effect.cast(self, target, direction, 0.0, {
+		"visual_color": Color(1.0, 0.58, 0.16, 1.0).to_html(false),
+		"projectile_pierce": 1,
+		"visual_only": true
+	})
 
 func on_monster_killed(_monster: Node):
 	GameData.survival_kills += 1
@@ -598,6 +855,8 @@ func die():
 	if is_dead:
 		return
 	is_dead = true
+	_pending_ranged_shots.clear()
+	_ranged_aim_target = null
 	emit_signal("died")
 	if _play_model_animation("Death", true):
 		var death_wait := create_tween()
@@ -618,6 +877,8 @@ func _setup_model_animations():
 	model_animation_player = players[0] as AnimationPlayer
 	if model_animation_player == null:
 		return
+	if preview_only:
+		model_animation_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	model_clips.clear()
 	var configured_aliases := PlayerManager.get_animation_aliases(current_appearance)
 	if not configured_aliases.is_empty():
@@ -633,6 +894,11 @@ func _setup_model_animations():
 			var clip := model_animation_player.get_animation(model_clips[clip_key])
 			if clip:
 				clip.loop_mode = Animation.LOOP_LINEAR
+	for clip_key in ["Attack", "AttackAlt", "AttackBase", "Cast", "Kick", "Hit", "Death"]:
+		if model_clips.has(clip_key):
+			var action_clip := model_animation_player.get_animation(model_clips[clip_key])
+			if action_clip:
+				action_clip.loop_mode = Animation.LOOP_NONE
 	if not model_animation_player.animation_finished.is_connected(_on_model_animation_finished):
 		model_animation_player.animation_finished.connect(_on_model_animation_finished)
 	_play_model_animation("Idle")
@@ -649,6 +915,26 @@ func _map_animation_alias(alias: String, candidates: Variant):
 func _on_model_animation_finished(animation_name: StringName):
 	if str(animation_name) == active_action_clip:
 		active_action_clip = ""
+		if _ranged_attack_busy:
+			_character_attack_animation_finished = true
+			if not _weapon_fire_animation_busy:
+				_begin_attack_animation_recovery()
+
+
+func _on_equipped_weapon_animation_finished(animation_name: StringName) -> void:
+	if str(animation_name) != WEAPON_FIRE_ANIMATION:
+		return
+	_weapon_fire_animation_busy = false
+	if _character_attack_animation_finished and _ranged_attack_busy:
+		_begin_attack_animation_recovery()
+
+
+func _begin_attack_animation_recovery() -> void:
+	if equipped_weapon_animation_player != null and equipped_weapon_animation_player.has_animation(WEAPON_IDLE_ANIMATION):
+		equipped_weapon_animation_player.play(WEAPON_IDLE_ANIMATION, 0.14)
+	_attack_animation_recovery_remaining = rifle_attack_recovery_time
+	if _attack_animation_recovery_remaining <= 0.0:
+		_ranged_attack_busy = false
 
 
 func _play_model_animation(clip_key: String, action: bool = false) -> bool:
@@ -656,13 +942,55 @@ func _play_model_animation(clip_key: String, action: bool = false) -> bool:
 		return false
 	var clip_name := str(model_clips[clip_key])
 	if action:
+		if _ranged_attack_busy and clip_key != "Death":
+			return true
+		if clip_key == "Hit" and not active_action_clip.is_empty():
+			return true
+		var firing := _has_ranged_weapon and clip_key in RANGED_ACTIONS
+		if is_instance_valid(_attack_legs):
+			if firing:
+				_attack_legs.sync_phase(model_animation_player.current_animation, model_animation_player.current_animation_position)
+			elif clip_key == "Death":
+				_attack_legs.active = false
+				_attack_legs.influence = 0.0
 		active_action_clip = clip_name
-		model_animation_player.play(clip_name, 0.12)
+		_ranged_attack_busy = firing
+		_attack_animation_recovery_remaining = 0.0
+		if _ranged_attack_busy:
+			_character_attack_animation_finished = false
+			_weapon_fire_animation_busy = _play_equipped_weapon_fire_animation()
+		model_animation_player.speed_scale = 1.0
+		var clip := model_animation_player.get_animation(clip_name)
+		if clip_key == "Hit" and clip.length > HIT_REACTION_TIME:
+			model_animation_player.play_section(clip_name, 0.0, HIT_REACTION_TIME, 0.08)
+		else:
+			model_animation_player.play(clip_name, ATTACK_BLEND_TIME)
 		return true
 	if not active_action_clip.is_empty() and model_animation_player.is_playing():
 		return true
 	if str(model_animation_player.current_animation) != clip_name or not model_animation_player.is_playing():
-		model_animation_player.play(clip_name, 0.16)
+		var phase := 0.0
+		if clip_key != "Idle":
+			var previous := model_animation_player.current_animation
+			if previous == model_clips.get("Walk", "") or previous == model_clips.get("Run", ""):
+				if not previous.is_empty() and model_animation_player.current_animation_length > 0.0:
+					phase = model_animation_player.current_animation_position / model_animation_player.current_animation_length
+			elif is_instance_valid(_attack_legs) and _attack_legs.active:
+				phase = _attack_legs.gait_phase()
+		model_animation_player.play(clip_name, LOCOMOTION_BLEND_TIME)
+		if phase > 0.0:
+			model_animation_player.seek(fposmod(phase, 1.0) * model_animation_player.get_animation(clip_name).length)
+	return true
+
+
+func _play_equipped_weapon_fire_animation() -> bool:
+	if not is_instance_valid(equipped_weapon_animation_player):
+		return false
+	if WEAPON_FIRE_ANIMATION.is_empty():
+		return false
+	if not equipped_weapon_animation_player.has_animation(WEAPON_FIRE_ANIMATION):
+		return false
+	equipped_weapon_animation_player.play(WEAPON_FIRE_ANIMATION, 0.06)
 	return true
 
 

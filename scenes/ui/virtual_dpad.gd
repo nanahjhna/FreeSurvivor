@@ -10,9 +10,13 @@ var _knob_active_style: StyleBoxFlat
 var _stick_center: Vector2 = Vector2.ZERO
 var _stick_radius: float = 1.0
 var _deadzone: float = 0.14
+var _floating_mode: bool = false
+var _touch_bounds: Rect2 = Rect2()
 var _active_touch_id: int = -1
 var _mouse_pressed: bool = false
 var _move_vector: Vector2 = Vector2.ZERO
+var _last_sent_move_vector: Vector2 = Vector2.ZERO
+var _player: PlayerCharacter
 
 
 func _ready() -> void:
@@ -23,6 +27,7 @@ func _ready() -> void:
 	_knob_active_style = _make_round_style(Color(0.54, 0.27, 0.12, 0.94), Color(1.0, 0.84, 0.55, 1.0), 3)
 	_build()
 	get_viewport().size_changed.connect(_relayout)
+	_floating_mode = GameActions.is_mobile()
 	_relayout()
 
 
@@ -68,11 +73,16 @@ func _relayout() -> void:
 			safe_bottom = maxf(0.0, visible_rect.end.y - safe_end.y)
 	var left_margin: float = maxf(16.0, viewport_size.x * 0.035)
 	var bottom_margin: float = clampf(viewport_size.y * 0.12, 100.0, 175.0)
+	_touch_bounds = Rect2(
+		visible_rect.position + Vector2(safe_left, safe_top),
+		viewport_size - Vector2(safe_left, safe_top + safe_bottom)
+	)
 	_base.position = Vector2(
 		visible_rect.position.x + safe_left + left_margin,
 		maxf(visible_rect.position.y + safe_top + 16.0, visible_rect.end.y - safe_bottom - bottom_margin - side)
 	)
 	_base.size = Vector2.ONE * side
+	_base.visible = not _floating_mode
 	_stick_center = _base.size * 0.5
 	_stick_radius = side * 0.32
 	var knob_side: float = side * 0.36
@@ -82,6 +92,27 @@ func _relayout() -> void:
 
 func _base_contains(viewport_position: Vector2) -> bool:
 	return _base.get_global_rect().has_point(viewport_position)
+
+func _can_start_touch(viewport_position: Vector2) -> bool:
+	if not _floating_mode:
+		return _base_contains(viewport_position)
+	# Keep movement on the left side, where no combat/action buttons are placed.
+	var left_control_area := Rect2(
+		_touch_bounds.position,
+		Vector2(_touch_bounds.size.x * 0.58, _touch_bounds.size.y)
+	)
+	return left_control_area.has_point(viewport_position)
+
+func _place_floating_base(viewport_position: Vector2) -> void:
+	var max_position := _touch_bounds.end - _base.size
+	_base.position = Vector2(
+		clampf(viewport_position.x - _base.size.x * 0.5, _touch_bounds.position.x, max_position.x),
+		clampf(viewport_position.y - _base.size.y * 0.5, _touch_bounds.position.y, max_position.y)
+	)
+	# Anchor the stick at the finger-down point, even if the visual base was
+	# clamped near a screen edge.
+	_stick_center = _base.make_canvas_position_local(viewport_position)
+	_base.visible = true
 
 
 func _update_from_position(viewport_position: Vector2) -> void:
@@ -110,13 +141,17 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
-			if not get_tree().paused and _active_touch_id < 0 and _base_contains(touch.position):
+			if not get_tree().paused and _active_touch_id < 0 and _can_start_touch(touch.position):
 				_active_touch_id = touch.index
+				if _floating_mode:
+					_place_floating_base(touch.position)
 				_update_from_position(touch.position)
 				get_viewport().set_input_as_handled()
 		elif touch.index == _active_touch_id:
 			_active_touch_id = -1
 			_move_vector = Vector2.ZERO
+			if _floating_mode:
+				_base.visible = false
 			_update_visual()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
@@ -128,13 +163,15 @@ func _input(event: InputEvent) -> void:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
 			return
-		if mouse_event.pressed and not get_tree().paused and not _mouse_pressed and _base_contains(mouse_event.position):
+		if mouse_event.pressed and not get_tree().paused and not _mouse_pressed and _can_start_touch(mouse_event.position):
 			_mouse_pressed = true
 			_update_from_position(mouse_event.position)
 			get_viewport().set_input_as_handled()
 		elif not mouse_event.pressed and _mouse_pressed:
 			_mouse_pressed = false
 			_move_vector = Vector2.ZERO
+			if _floating_mode:
+				_base.visible = false
 			_update_visual()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and _mouse_pressed:
@@ -147,13 +184,19 @@ func _process(_delta: float) -> void:
 		_active_touch_id = -1
 		_mouse_pressed = false
 		_move_vector = Vector2.ZERO
+		if _floating_mode:
+			_base.visible = false
 		_update_visual()
-	var player := get_tree().get_first_node_in_group("player")
-	if player and player.has_method("set_touch_move"):
-		player.call("set_touch_move", _move_vector)
+	if not is_instance_valid(_player):
+		_player = get_tree().get_first_node_in_group("player") as PlayerCharacter
+		if _player == null:
+			return
+	elif _move_vector == _last_sent_move_vector:
+		return
+	_player.set_touch_move(_move_vector)
+	_last_sent_move_vector = _move_vector
 
 
 func _exit_tree() -> void:
-	var player := get_tree().get_first_node_in_group("player")
-	if player and player.has_method("set_touch_move"):
-		player.call("set_touch_move", Vector2.ZERO)
+	if is_instance_valid(_player):
+		_player.set_touch_move(Vector2.ZERO)
