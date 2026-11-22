@@ -3,12 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dqwwnrj5opyj8"
-valid=false
+uid="uid://dhosq5d16ejwt"
+path="res://.godot/imported/exported-model.glb-935252a87901c5c001da694752710995.scn"
 
 [deps]
 
-source_file="res://assets/weapon/gun01/akSAl.glb"
+source_file="res://assets/rig/exported-model.glb"
+dest_files=["res://.godot/imported/exported-model.glb-935252a87901c5c001da694752710995.scn"]
 
 [params]
 

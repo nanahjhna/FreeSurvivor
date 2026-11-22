@@ -353,6 +353,12 @@ func _is_portrait_layout() -> bool:
 func _populate_slots():
 	for child in slot_list.get_children():
 		child.queue_free()
+	var first_empty_slot := -1
+	for check_index in range(GameData.get_character_slot_count()):
+		if GameData.get_profile_at_slot(check_index).is_empty():
+			first_empty_slot = check_index
+			break
+
 	for slot_index in range(GameData.get_character_slot_count()):
 		var profile := GameData.get_profile_at_slot(slot_index)
 		var viewport_width := get_viewport_rect().size.x
@@ -363,7 +369,8 @@ func _populate_slots():
 		button.add_theme_font_size_override("font_size", 13 if _is_portrait_layout() else 14)
 		if profile.is_empty():
 			button.text = "[%02d]\n＋\n새 캐릭터" % (slot_index + 1)
-			button.tooltip_text = "이 슬롯에 새 캐릭터를 생성합니다."
+			button.tooltip_text = "이 슬롯에 새 캐릭터를 생성합니다." if slot_index == first_empty_slot else "먼저 앞 슬롯을 채워주세요."
+			button.disabled = slot_index != first_empty_slot
 		else:
 			var class_data := GameData.get_profile_class_data(profile)
 			button.text = "[%02d] %s\n%s\n%s · Lv.%d" % [
