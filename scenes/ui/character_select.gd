@@ -2,16 +2,14 @@ extends Control
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/player.tscn")
 const CLASS_GROWTH := {
-	"fighter": "기동성과 근접 타격", "char02": "빠른 근접 전투와 연속 베기",
+	"fighter": "기동성과 근접 타격", "char01": "근접 검술", "char02": "원소 마법과 광역 공격",
 	"archer": "라이플 단발, 연사, 관통 사격", "mage": "마법 광역 공격과 원소 폭발",
 	"paladin": "높은 체력과 방어, 자가 회복"
 }
 const CLASS_WEAPONS := {
-	"fighter": "권갑", "char02": "쌍검", "archer": "쌍드럼 라이플", "mage": "원소 지팡이",
+	"fighter": "권갑", "char01": "검", "char02": "지팡이", "archer": "쌍드럼 라이플", "mage": "원소 지팡이",
 	"paladin": "성검과 방패"
 }
-const FIRST_NAMES: Array[String] = ["아린", "시온", "하린", "도윤", "유나", "태오", "세린", "라온"]
-const LAST_NAMES: Array[String] = ["빛", "솔", "별", "린", "온", "하늘", "새벽", "바람"]
 
 enum ScreenMode { SELECT, CREATE }
 
@@ -30,8 +28,8 @@ var detail_equipment: Label
 var detail_progress: Label
 var feedback_label: Label
 var delete_button: Button
+var enter_button: Button
 var delete_dialog: ConfirmationDialog
-var name_edit: LineEdit
 var create_button: Button
 
 var preview_container: SubViewportContainer
@@ -48,6 +46,7 @@ var _dragging := false
 var _last_drag_position := Vector2.ZERO
 var _preview_rotation := 0.0
 var _idle_time := 0.0
+var _last_slot_press_time := 0
 
 
 func _ready():
@@ -90,9 +89,27 @@ func _show_selection(preferred_id: String = ""):
 		_build_preview(_make_section(body, 560, "선택한 캐릭터 · 드래그하여 회전"))
 		var info_section := _make_section(body, 430, "캐릭터 정보")
 		_build_detail_panel(info_section)
+		enter_button = UiStyle.make_button("⚔️ 게임 시작", Vector2(0, 50), true)
+		enter_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		enter_button.add_theme_font_size_override("font_size", 18)
+		enter_button.tooltip_text = "선택한 캐릭터로 게임에 입장합니다. [Enter]"
+		enter_button.pressed.connect(_enter_selected_character)
+		info_section.add_child(enter_button)
 		delete_button = _create_delete_button()
 		info_section.add_child(delete_button)
-	feedback_label = _add_feedback(layout, "캐릭터 슬롯을 누르면 바로 게임을 시작합니다.")
+
+	if _is_portrait_layout():
+		var action_bar := HBoxContainer.new()
+		action_bar.add_theme_constant_override("separation", 10)
+		layout.add_child(action_bar)
+		enter_button = UiStyle.make_button("⚔️ 게임 시작", Vector2(0, 56), true)
+		enter_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		enter_button.add_theme_font_size_override("font_size", 20)
+		enter_button.tooltip_text = "선택한 캐릭터로 게임에 입장합니다."
+		enter_button.pressed.connect(_enter_selected_character)
+		action_bar.add_child(enter_button)
+
+	feedback_label = _add_feedback(layout, "캐릭터를 선택하고 [게임 시작]을 누르세요. (슬롯 터치로도 입장)")
 
 	delete_dialog = ConfirmationDialog.new()
 	delete_dialog.title = "캐릭터 영구 삭제"
@@ -121,8 +138,8 @@ func _show_creation(slot_index: int):
 	_clear_screen()
 	var layout := _build_shell("새 캐릭터 만들기", "← 슬롯 선택", _show_selection)
 	var instructions := UiStyle.make_label(
-		"직업을 고르고 이름을 입력하면 빈 슬롯에 저장됩니다.\n직업 선택  →  이름 입력  →  캐릭터 생성",
-		14,
+		"원하는 직업을 선택한 후 [캐릭터 생성]을 누르면 슬롯에 저장됩니다.",
+		15,
 		UiStyle.MUTED
 	)
 	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -130,15 +147,13 @@ func _show_creation(slot_index: int):
 	layout.add_child(instructions)
 	var body := _new_body(layout)
 
-	var left := _make_section(body, 330, "1. 직업 선택")
+	var left := _make_section(body, 330, "직업 선택")
 	var scroll := ScrollContainer.new()
-	# Keep the nested class list tall enough to receive taps inside the outer
-	# portrait-page ScrollContainer. Without a minimum height the section can
-	# collapse and leave the class buttons clipped or covered on mobile layouts.
 	if _is_portrait_layout():
 		scroll.custom_minimum_size.y = clampf(get_viewport_rect().size.y * 0.30, 360.0, 400.0)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 24
 	left.add_child(scroll)
 	class_list = VBoxContainer.new()
 	class_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -147,34 +162,20 @@ func _show_creation(slot_index: int):
 	_build_preview(_make_section(body, 560, "캐릭터 미리보기 · 드래그/터치로 회전"))
 	_build_detail_panel(_make_section(body, 440, "선택한 직업 정보"))
 
-	var footer: Container = VBoxContainer.new() if _is_portrait_layout() else HBoxContainer.new()
+	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 10)
 	layout.add_child(footer)
-	footer.add_child(UiStyle.make_label("2. 캐릭터 이름", 16, Color(1.0, 0.86, 0.45)))
-	name_edit = LineEdit.new()
-	name_edit.custom_minimum_size = Vector2(360, 50)
-	name_edit.max_length = GameData.CHARACTER_NAME_MAX_LENGTH
-	name_edit.placeholder_text = "한글/영문/숫자, 최대 %d자" % GameData.CHARACTER_NAME_MAX_LENGTH
-	name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_edit.text_changed.connect(_on_name_changed)
-	name_edit.text_submitted.connect(func(_value): _create_character())
-	footer.add_child(name_edit)
-	var random_button := UiStyle.make_button("🎲 랜덤 이름", Vector2(180, 50))
-	random_button.pressed.connect(_randomize_name)
-	footer.add_child(random_button)
-	create_button = UiStyle.make_button("캐릭터 생성", Vector2(220, 50), true)
+
+	create_button = UiStyle.make_button("⚔️ 캐릭터 생성", Vector2(0, 58 if _is_portrait_layout() else 52), true)
+	create_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	create_button.add_theme_font_size_override("font_size", 20 if _is_portrait_layout() else 18)
+	create_button.tooltip_text = "선택한 직업으로 새 캐릭터를 생성합니다."
 	create_button.pressed.connect(_create_character)
 	footer.add_child(create_button)
-	if _is_portrait_layout():
-		name_edit.custom_minimum_size = Vector2(0, 56)
-		name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		for action in [random_button, create_button]:
-			action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			action.custom_minimum_size.y = 58
-	feedback_label = _add_feedback(layout, "생성 후 선택 화면으로 돌아오며 자동 접속하지 않습니다.")
+
+	feedback_label = _add_feedback(layout, "직업을 선택하고 [캐릭터 생성]을 누르세요.")
 	_populate_classes()
 	_select_class(selected_class_id)
-	name_edit.grab_focus()
 
 
 func _clear_screen():
@@ -183,6 +184,9 @@ func _clear_screen():
 	preview_visual = null
 	preview_viewport = null
 	preview_container = null
+	enter_button = null
+	delete_button = null
+	create_button = null
 	_dragging = false
 	if is_instance_valid(screen_root):
 		screen_root.free()
@@ -228,6 +232,7 @@ func _new_body(layout: VBoxContainer) -> Control:
 		var scroll := ScrollContainer.new()
 		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.scroll_deadzone = 24
 		layout.add_child(scroll)
 		var body := VBoxContainer.new()
 		body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -259,6 +264,7 @@ func _build_slot_section(parent: Control):
 	scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if _is_portrait_layout() else Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.scroll_deadzone = 24
 	section.add_child(scroll)
 	slot_list = HBoxContainer.new()
 	slot_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -317,8 +323,9 @@ func _populate_slots():
 		var profile := GameData.get_profile_at_slot(slot_index)
 		var viewport_width := get_viewport_rect().size.x
 		var card_width := clampf((viewport_width - 112.0) / 5.0, 104.0, 136.0)
-		var button := UiStyle.make_button("", Vector2(card_width, 128 if _is_portrait_layout() else 144))
-		button.toggle_mode = true
+		var is_selected := not profile.is_empty() and str(profile.get("id", "")) == selected_character_id
+		var button := UiStyle.make_button("", Vector2(card_width, 128 if _is_portrait_layout() else 144), is_selected)
+		button.toggle_mode = false
 		button.add_theme_font_size_override("font_size", 13 if _is_portrait_layout() else 14)
 		if profile.is_empty():
 			button.text = "[%02d]\n＋\n새 캐릭터" % (slot_index + 1)
@@ -328,28 +335,53 @@ func _populate_slots():
 			button.text = "[%02d] %s\n%s\n%s · Lv.%d" % [
 				slot_index + 1, str(class_data.get("icon", "⚔️")), str(profile.get("name", "이름 없음")),
 				str(class_data.get("role", profile.get("class_id", ""))), int(profile.get("best_survival_level", 1))]
-			button.tooltip_text = "누르면 이 캐릭터로 게임을 시작합니다."
-			button.button_pressed = str(profile.get("id", "")) == selected_character_id
-			if button.button_pressed:
-				button.add_theme_stylebox_override("normal", UiStyle.button_style(Color(0.22, 0.045, 0.028, 0.98), UiStyle.GOLD_BRIGHT))
+			button.tooltip_text = "선택하여 정보를 확인하거나, 다시 눌러 바로 입장합니다."
+			if is_selected:
+				button.add_theme_stylebox_override("normal", UiStyle.button_style(Color(0.24, 0.05, 0.03, 0.98), UiStyle.GOLD_BRIGHT))
 		button.pressed.connect(_on_slot_pressed.bind(slot_index))
+		button.gui_input.connect(func(event: InputEvent):
+			if event is InputEventScreenTouch and not event.pressed:
+				_on_slot_pressed(slot_index)
+		)
 		slot_list.add_child(button)
 
 
 func _on_slot_pressed(slot_index: int):
+	var now := Time.get_ticks_msec()
+	if now - _last_slot_press_time < 220:
+		return
+	_last_slot_press_time = now
+
 	var profile := GameData.get_profile_at_slot(slot_index)
 	if profile.is_empty():
 		_show_creation(slot_index)
 		return
-	selected_character_id = str(profile.get("id", ""))
-	GameData.select_character_profile(selected_character_id)
-	_enter_selected_character()
+
+	var char_id := str(profile.get("id", ""))
+	if selected_character_id == char_id:
+		# Double-tap or pressing already selected slot enters game immediately
+		_enter_selected_character()
+	else:
+		selected_character_id = char_id
+		GameData.last_selected_character_id = char_id
+		_populate_slots()
+		_update_selected_profile()
+		if feedback_label:
+			feedback_label.text = "'%s' 선택됨. [게임 시작]을 누르거나 슬롯을 한 번 더 누르면 입장합니다." % str(profile.get("name", ""))
+			feedback_label.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
 
 
 func _update_selected_profile():
 	var profile := GameData.get_character_profile(selected_character_id)
 	var exists := not profile.is_empty()
-	delete_button.disabled = not exists
+	if is_instance_valid(delete_button):
+		delete_button.disabled = not exists
+	if is_instance_valid(enter_button):
+		enter_button.disabled = not exists
+		if exists:
+			enter_button.text = "⚔️ %s (게임 시작)" % str(profile.get("name", "캐릭터"))
+		else:
+			enter_button.text = "캐릭터를 선택하세요"
 	if not exists:
 		detail_name.text = "저장된 캐릭터 없음"
 		detail_subtitle.text = "빈 슬롯을 눌러 생성하세요."
@@ -433,10 +465,23 @@ func _create_in_first_empty_slot():
 
 
 func _enter_selected_character():
-	if selected_character_id.is_empty() or not GameData.activate_character_profile(selected_character_id):
-		feedback_label.text = "캐릭터 데이터를 불러오지 못했습니다."
-		feedback_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.45))
+	if selected_character_id.is_empty():
+		if feedback_label:
+			feedback_label.text = "선택된 캐릭터가 없습니다."
 		return
+	var profile := GameData.get_character_profile(selected_character_id)
+	if profile.is_empty():
+		if feedback_label:
+			feedback_label.text = "캐릭터 데이터를 찾을 수 없습니다."
+		return
+	if not GameData.activate_character_profile(selected_character_id):
+		if feedback_label:
+			feedback_label.text = "캐릭터 데이터를 불러오지 못했습니다."
+			feedback_label.add_theme_color_override("font_color", Color(1.0, 0.55, 0.45))
+		return
+	if feedback_label:
+		feedback_label.text = "마을로 입장 중..."
+		feedback_label.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
 	GameManager.go_to_lobby()
 
 
@@ -514,44 +559,28 @@ func _select_class(class_id: String):
 	_update_create_button()
 
 
-func _randomize_name():
-	for _attempt in range(32):
-		var candidate: String = str(FIRST_NAMES.pick_random()) + str(LAST_NAMES.pick_random())
-		if GameData.get_character_name_error(candidate).is_empty():
-			name_edit.text = candidate
-			return
-	feedback_label.text = "사용 가능한 랜덤 이름을 찾지 못했습니다."
-
-
-func _on_name_changed(_new_text: String):
-	_update_create_button()
-
-
 func _update_create_button():
-	if not is_instance_valid(create_button) or not is_instance_valid(name_edit):
+	if not is_instance_valid(create_button):
 		return
-	var error := GameData.get_character_name_error(name_edit.text)
-	create_button.disabled = not error.is_empty()
-	create_button.tooltip_text = error if not error.is_empty() else "캐릭터를 슬롯에 저장합니다."
-	if name_edit.text.strip_edges().is_empty():
-		feedback_label.text = "이름을 입력하면 생성할 수 있습니다."
-	elif not error.is_empty():
-		feedback_label.text = error
-	else:
-		feedback_label.text = "사용 가능한 이름입니다."
+	var character_template := GameData.get_class_template_data(selected_class_id)
+	var job_name := str(character_template.get("name", character_template.get("role", "무도가")))
+	create_button.text = "⚔️ '%s' 캐릭터 생성" % job_name
+	create_button.disabled = false
+	create_button.tooltip_text = "'%s' 캐릭터를 생성합니다." % job_name
 
 
 func _create_character():
-	var error := GameData.get_character_name_error(name_edit.text)
-	if not error.is_empty():
-		feedback_label.text = error
-		return
-	var new_id := GameData.create_character_profile(creation_slot, selected_class_id, name_edit.text)
+	var character_template := GameData.get_class_template_data(selected_class_id)
+	var job_name := str(character_template.get("name", character_template.get("role", "무도가")))
+	var new_id := GameData.create_character_profile(creation_slot, selected_class_id, job_name)
 	if new_id.is_empty():
-		feedback_label.text = "캐릭터를 저장하지 못했습니다."
+		if feedback_label:
+			feedback_label.text = "캐릭터를 저장하지 못했습니다."
 		return
 	_show_selection(new_id)
-	feedback_label.text = "캐릭터를 생성했습니다. 슬롯을 누르면 게임을 시작합니다."
+	if feedback_label:
+		feedback_label.text = "'%s' 캐릭터를 생성했습니다. [게임 시작]을 누르면 입장합니다." % job_name
+		feedback_label.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
 
 
 func _build_preview(parent: VBoxContainer):

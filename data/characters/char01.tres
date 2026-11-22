@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://by4uujmb8456t" path="res://scripts/resources/skill_data.gd" id="2_4lpyr"]
 [ext_resource type="PackedScene" path="res://scenes/skills/rifle_projectile.tscn" id="3_rifle"]
 [ext_resource type="PackedScene" path="res://assets/weapon/gun01/akSAl.glb" id="4_gun"]
-[ext_resource type="PackedScene" path="res://assets/char/char01_game.glb" id="5_character"]
+[ext_resource type="PackedScene" uid="uid://b8ofoa0quhoax" path="res://assets/char/char01/char01.glb" id="5_character"]
 
 [sub_resource type="Resource" id="Resource_t4jxg"]
 script = ExtResource("2_4lpyr")
@@ -189,9 +189,9 @@ script = ExtResource("1_g6opw")
 id = "char01"
 legacy_id = "archer"
 model_scene = ExtResource("5_character")
-display_name = "추적자"
-title = "황야의 명사수"
-role = "라이플 사수"
+display_name = "검사"
+title = "근접 전투가"
+role = "검사"
 icon = "🔫"
 color = Color(0.35, 0.66, 0.39, 1)
 animation_profile = "archer"
@@ -230,8 +230,8 @@ base_def = 7.0
 base_spd = 7.4
 skills = Array[ExtResource("2_4lpyr")]([SubResource("Resource_t4jxg"), SubResource("Resource_mwx4j"), SubResource("Resource_e1jsb"), SubResource("Resource_2f6pg"), SubResource("Resource_4lpyr"), SubResource("Resource_ixpnj"), SubResource("Resource_vdw8w"), SubResource("Resource_bxkv4")])
 signature_skill = "라이플 단발 사격"
-weapon_name = "AK 소총"
-weapon_scene = ExtResource("4_gun")
+weapon_name = "없음"
+weapon_scene = null
 weapon_bone_name = "Amelia_SantaRL_R_Hand"
 weapon_grip_position = Vector3(-0.819, 0.552, 1.306)
 weapon_hidden_nodes = PackedStringArray("Cube", "arm")

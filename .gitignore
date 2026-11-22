@@ -21,3 +21,6 @@
 *.keystore
 *.jks
 tools/*.pw.txt
+
+upload-keystore.jks
+upload_certificate.pem

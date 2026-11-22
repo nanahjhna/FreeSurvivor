@@ -62,7 +62,7 @@ const DEFAULT_CHARACTER_STATS := {
 	"fighter_2d": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0},
 	"char02": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0}
 }
-const DEFAULT_CHARACTER_NAMES := {"fighter": "무도가", "fighter_2d": "화염권객", "char02": "유랑 검사"}
+const DEFAULT_CHARACTER_NAMES := {"fighter": "무도가", "fighter_2d": "화염권객", "char01": "검사", "char02": "마법사"}
 const PERMANENT_STAT_UPGRADE_CONFIG := {
 	"base_cost": 800,
 	"growth_rate": 1.18,
@@ -188,18 +188,27 @@ var characters: Dictionary = {
 		"appearance": "2d_sprite", "desc": "불꽃 기운을 두른 2D 무도가. 기존 무도가와 같은 조작과 스킬을 사용합니다."
 	},
 	"char02": {
-		"id": "char02", "name": "유랑 검사", "title": "쌍검 방랑자", "role": "검사",
+		"id": "char02", "name": "마법사", "title": "원소 술사", "role": "마법사",
 		"grade": "R", "icon": "⚔️", "color": Color(0.3, 0.52, 0.72), "unlocked": true,
 		"model_scene": "res://assets/char/char02/char02.glb", "model_scale": Vector3.ONE, "animation_profile": "char02",
 		"base_attributes": {"STR": 7, "AGI": 8, "VIT": 5, "INT": 3, "DEX": 6, "LUK": 4},
 		"base_hp": 112.0, "base_atk": 21.0, "base_def": 8.0, "base_spd": 7.2,
-		"signature_skill": "질풍 쌍검", "weapon_name": "쌍검", "combat_style": "빠른 근접 전투와 연속 베기",
-		"appearance": "char02", "desc": "새로 추가된 3D 캐릭터 모델을 사용하는 쌍검 검사."
+		"signature_skill": "원소 폭발", "weapon_name": "지팡이", "combat_style": "원소 마법과 광역 공격",
+		"appearance": "char02", "desc": "원소 마법을 사용하는 마법사."
+	},
+	"char01": {
+		"id": "char01", "name": "검사", "title": "황야의 검사", "role": "검사",
+		"grade": "R", "icon": "⚔️", "color": Color(0.35, 0.66, 0.39), "unlocked": true,
+		"model_scene": "res://assets/char/char01/char01.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
+		"base_attributes": {"STR": 4, "AGI": 8, "VIT": 4, "INT": 3, "DEX": 9, "LUK": 5},
+		"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0, "base_spd": 7.4,
+		"signature_skill": "검기 난무", "weapon_name": "검", "combat_style": "근접 검술",
+		"desc": "char01 모델을 사용하는 검사."
 	},
 	"archer": {
 		"id": "archer", "name": "추적자", "title": "황야의 명사수", "role": "추적자 · 라이플 사수",
 		"grade": "R", "icon": "🔫", "color": Color(0.35, 0.66, 0.39), "unlocked": true,
-		"model_scene": "res://assets/char/char01_game.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
+		"model_scene": "res://assets/char/char01/char01.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
 		"base_attributes": {"STR": 4, "AGI": 8, "VIT": 4, "INT": 3, "DEX": 9, "LUK": 5},
 		"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0, "base_spd": 7.4,
 		"signature_skill": "라이플 단발 사격", "weapon_name": "쌍드럼 라이플", "combat_style": "라이플 단발, 연사, 관통 사격",
@@ -1192,7 +1201,7 @@ func get_class_template_stat_manager(class_id: String) -> StatManager:
 	stats.setup_from_class(class_id, get_class_template_data(class_id))
 	return stats
 
-func get_character_name_error(candidate: String, ignored_character_id: String = "") -> String:
+func get_character_name_error(candidate: String, _ignored_character_id: String = "") -> String:
 	var clean_name := candidate.strip_edges()
 	if clean_name.is_empty():
 		return "이름을 입력해 주세요."
@@ -1201,15 +1210,9 @@ func get_character_name_error(candidate: String, ignored_character_id: String = 
 	var allowed_name := RegEx.new()
 	if allowed_name.compile("^[\\p{L}\\p{N}_ -]+$") != OK or allowed_name.search(clean_name) == null:
 		return "한글, 영문, 숫자, 공백, -, _ 문자만 사용할 수 있습니다."
-	for character_id in character_profiles:
-		if str(character_id) == ignored_character_id:
-			continue
-		var existing_name := str(character_profiles[character_id].get("name", ""))
-		if existing_name.to_lower() == clean_name.to_lower():
-			return "이미 사용 중인 캐릭터 이름입니다."
 	return ""
 
-func create_character_profile(slot_index: int, class_id: String, character_name: String) -> String:
+func create_character_profile(slot_index: int, class_id: String, character_name: String = "") -> String:
 	if slot_index < 0 or slot_index >= character_slot_manager.get_slot_count():
 		return ""
 	if character_slot_manager.get_slot(slot_index) != null:
@@ -1223,8 +1226,9 @@ func create_character_profile(slot_index: int, class_id: String, character_name:
 		push_warning("캐릭터 스킬 배정이 등록되지 않았습니다: %s" % class_id)
 		return ""
 	var clean_name := character_name.strip_edges()
-	if not get_character_name_error(clean_name).is_empty():
-		return ""
+	if clean_name.is_empty():
+		var template := get_class_template_data(class_id)
+		clean_name = str(template.get("name", template.get("role", "무도가")))
 	_commit_active_profile()
 	_apply_runtime_state(_default_runtime_template.duplicate(true))
 	party_slots.assign([class_id])
@@ -1285,7 +1289,8 @@ func activate_character_profile(character_id: String) -> bool:
 	recalculate_party_stats()
 	data_updated.emit()
 	party_updated.emit()
-	return save_to_disk()
+	save_to_disk()
+	return true
 
 func delete_character_profile(character_id: String) -> bool:
 	if not character_profiles.has(character_id):
@@ -1343,13 +1348,21 @@ func save_to_disk() -> bool:
 	save_dict["character_profiles"] = character_profiles
 	save_dict["last_selected_character_id"] = last_selected_character_id
 	save_dict["saved_at"] = Time.get_datetime_string_from_system(false, true)
+	var json_str := JSON.stringify(save_dict, "\t")
 	var file := FileAccess.open(SAVE_TEMP_PATH, FileAccess.WRITE)
 	if not file:
-		push_error("Could not open temporary save file (error %d)." % FileAccess.get_open_error())
+		# Direct write fallback if temporary path cannot be opened
+		file = FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
+		if not file:
+			push_error("Could not write save file (error %d)." % FileAccess.get_open_error())
+			_save_in_progress = false
+			save_status_changed.emit("failed")
+			return false
+		file.store_string(json_str)
+		file.close()
 		_save_in_progress = false
-		save_status_changed.emit("failed")
-		return false
-	var json_str := JSON.stringify(save_dict, "\t")
+		save_status_changed.emit("saved")
+		return true
 	file.store_string(json_str)
 	file.close()
 	var temp_global := ProjectSettings.globalize_path(SAVE_TEMP_PATH)
@@ -1357,20 +1370,19 @@ func save_to_disk() -> bool:
 	var backup_global := ProjectSettings.globalize_path(SAVE_BACKUP_PATH)
 	if FileAccess.file_exists(SAVE_BACKUP_PATH):
 		DirAccess.remove_absolute(backup_global)
+		if FileAccess.file_exists(SAVE_BACKUP_PATH):
+			DirAccess.remove_absolute(SAVE_BACKUP_PATH)
 	if FileAccess.file_exists(SAVE_FILE_PATH):
 		if DirAccess.rename_absolute(save_global, backup_global) != OK:
-			push_error("Could not protect the previous save file.")
-			DirAccess.remove_absolute(temp_global)
-			_save_in_progress = false
-			save_status_changed.emit("failed")
-			return false
-	if DirAccess.rename_absolute(temp_global, save_global) != OK:
-		push_error("Could not finalize the save file.")
-		if FileAccess.file_exists(SAVE_BACKUP_PATH):
-			DirAccess.rename_absolute(backup_global, save_global)
-		_save_in_progress = false
-		save_status_changed.emit("failed")
-		return false
+			DirAccess.rename_absolute(SAVE_FILE_PATH, SAVE_BACKUP_PATH)
+	if DirAccess.rename_absolute(temp_global, save_global) != OK and DirAccess.rename_absolute(SAVE_TEMP_PATH, SAVE_FILE_PATH) != OK:
+		# Direct write fallback if atomic rename is blocked (common in mobile scoped storage)
+		var direct_file := FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
+		if direct_file:
+			direct_file.store_string(json_str)
+			direct_file.close()
+		DirAccess.remove_absolute(temp_global)
+		DirAccess.remove_absolute(SAVE_TEMP_PATH)
 	_save_in_progress = false
 	save_status_changed.emit("saved")
 	return true
