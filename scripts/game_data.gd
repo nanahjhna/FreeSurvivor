@@ -13,7 +13,7 @@ const SAVE_FILE_PATH = "user://freesurvivor_save.json"
 const SAVE_TEMP_PATH = "user://freesurvivor_save.tmp"
 const SAVE_BACKUP_PATH = "user://freesurvivor_save.backup.json"
 const SAVE_SCHEMA_VERSION = 3
-const FIGHTER_ID := "fighter"
+const FIGHTER_ID := "char01"
 const CHARACTER_SKILL_DATABASE = preload("res://scripts/character_skill_database.gd")
 const CHARACTER_NAME_MAX_LENGTH = 20
 const DEFAULT_INVENTORY: Array[Dictionary] = [
@@ -53,13 +53,11 @@ const DEFAULT_INVENTORY: Array[Dictionary] = [
 	}
 ]
 const DEFAULT_EQUIPPED_GEAR := {
-	"fighter": {"weapon": "wpn_handwraps", "armor": "arm_leather", "accessory": null},
-	"fighter_2d": {"weapon": "wpn_handwraps", "armor": "arm_leather", "accessory": null},
+	"char01": {"weapon": null, "armor": null, "accessory": null},
 	"char02": {"weapon": "wpn_iron_sword", "armor": "arm_leather", "accessory": null}
 }
 const DEFAULT_CHARACTER_STATS := {
-	"fighter": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0},
-	"fighter_2d": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0},
+	"char01": {"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0},
 	"char02": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0}
 }
 const DEFAULT_CHARACTER_NAMES := {"fighter": "무도가", "fighter_2d": "화염권객", "char01": "검사", "char02": "마법사"}
@@ -169,24 +167,6 @@ var item_counts: Dictionary = {
 
 # Character creation reads the playable classes from this catalog.
 var characters: Dictionary = {
-	"fighter": {
-		"id": "fighter", "name": "무도가", "title": "권법 수련자", "role": "무도가",
-		"grade": "R", "icon": "🥋", "color": Color(0.85, 0.43, 0.2), "unlocked": true,
-		"model_scene": "res://assets/char/char05/char05_textured.glb", "model_scale": Vector3.ONE, "animation_profile": "fighter",
-		"base_attributes": {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3},
-		"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0, "base_spd": 6.8,
-		"signature_skill": "쇄도 연권", "weapon_name": "권갑", "combat_style": "기동성과 근접 타격",
-		"desc": "권갑을 두른 두 주먹과 기공으로 싸우는 무도가."
-	},
-	"fighter_2d": {
-		"id": "fighter_2d", "name": "화염권객", "title": "2D 화염권 무도가", "role": "무도가 · 2D",
-		"grade": "R", "icon": "🔥", "color": Color(0.82, 0.32, 0.18), "unlocked": false,
-		"model_scene": "res://assets/char/char05/char05_textured.glb", "model_scale": Vector3.ONE, "animation_profile": "fighter",
-		"base_attributes": {"STR": 7, "AGI": 7, "VIT": 6, "INT": 3, "DEX": 4, "LUK": 3},
-		"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0, "base_spd": 6.8,
-		"signature_skill": "쇄도 연권", "weapon_name": "권갑", "combat_style": "2D 스프라이트 · 기동성과 근접 타격",
-		"appearance": "2d_sprite", "desc": "불꽃 기운을 두른 2D 무도가. 기존 무도가와 같은 조작과 스킬을 사용합니다."
-	},
 	"char02": {
 		"id": "char02", "name": "마법사", "title": "원소 술사", "role": "마법사",
 		"grade": "R", "icon": "⚔️", "color": Color(0.3, 0.52, 0.72), "unlocked": true,
@@ -205,33 +185,6 @@ var characters: Dictionary = {
 		"signature_skill": "검기 난무", "weapon_name": "검", "combat_style": "근접 검술",
 		"desc": "char01 모델을 사용하는 검사."
 	},
-	"archer": {
-		"id": "archer", "name": "추적자", "title": "황야의 명사수", "role": "추적자 · 라이플 사수",
-		"grade": "R", "icon": "🔫", "color": Color(0.35, 0.66, 0.39), "unlocked": true,
-		"model_scene": "res://assets/char/char01/char01.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
-		"base_attributes": {"STR": 4, "AGI": 8, "VIT": 4, "INT": 3, "DEX": 9, "LUK": 5},
-		"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0, "base_spd": 7.4,
-		"signature_skill": "라이플 단발 사격", "weapon_name": "쌍드럼 라이플", "combat_style": "라이플 단발, 연사, 관통 사격",
-		"desc": "쌍드럼 라이플로 거리를 유지하며 정밀 사격과 탄막 공격을 가하는 추적자."
-	},
-	"mage": {
-		"id": "mage", "name": "원소술사", "title": "잿불의 계승자", "role": "마법사",
-		"grade": "R", "icon": "🔮", "color": Color(0.55, 0.39, 0.82), "unlocked": true,
-		"model_scene": "res://assets/char/char03/char03.glb", "model_scale": Vector3.ONE, "animation_profile": "mage",
-		"base_attributes": {"STR": 3, "AGI": 4, "VIT": 4, "INT": 9, "DEX": 5, "LUK": 5},
-		"base_hp": 100.0, "base_atk": 17.0, "base_def": 6.0, "base_spd": 6.4,
-		"signature_skill": "화염구", "weapon_name": "원소 지팡이", "combat_style": "마법 광역 공격과 원소 폭발",
-		"desc": "마나 없이 재사용 대기시간을 활용해 원소 마법을 연속 시전하는 마법사."
-	},
-	"paladin": {
-		"id": "paladin", "name": "성기사", "title": "새벽의 수호자", "role": "성기사",
-		"grade": "R", "icon": "🛡️", "color": Color(0.82, 0.65, 0.29), "unlocked": true,
-		"model_scene": "res://assets/char/char04/char04.glb", "model_scale": Vector3.ONE, "animation_profile": "paladin",
-		"base_attributes": {"STR": 7, "AGI": 4, "VIT": 9, "INT": 5, "DEX": 3, "LUK": 3},
-		"base_hp": 145.0, "base_atk": 18.0, "base_def": 14.0, "base_spd": 5.9,
-		"signature_skill": "심판의 강타", "weapon_name": "성검과 방패", "combat_style": "높은 체력과 방어, 자가 회복",
-		"desc": "굳건한 방패로 버티고 신성한 힘으로 자신과 주변을 지키는 수호자."
-	}
 }
 
 var party_slots: Array[String] = [FIGHTER_ID]

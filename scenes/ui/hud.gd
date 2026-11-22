@@ -870,7 +870,7 @@ func _update_auto_battle_label():
 
 func _on_action_requested(action_id: String):
 	match action_id:
-		"skill_q", "skill_w", "skill_e", "skill_a", "skill_s", "skill_r":
+		"skill_q", "skill_w", "skill_e", "skill_a", "skill_s", "skill_r", "skill_d", "skill_f":
 			_cast_skill(action_id.trim_prefix("skill_"))
 		"item_1":
 			_use_item(1)

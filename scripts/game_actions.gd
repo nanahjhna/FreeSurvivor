@@ -96,6 +96,14 @@ const ACTIONS := {
 		"label": "기혈 회복", "icon": "✚", "key": KEY_S, "input_action": "skill_s",
 		"context": "battle", "rebindable": true, "desc": "서바이벌 Lv.5에 배우는 회복 기술입니다."
 	},
+	"skill_d": {
+		"label": "D 스킬", "icon": "✨", "key": KEY_D, "input_action": "skill_d",
+		"context": "battle", "rebindable": true, "desc": "추가 스킬 슬롯 D입니다."
+	},
+	"skill_f": {
+		"label": "F 스킬", "icon": "🌟", "key": KEY_F, "input_action": "skill_f",
+		"context": "battle", "rebindable": true, "desc": "추가 스킬 슬롯 F입니다."
+	},
 	"item_1": {
 		"label": "아이템 1", "icon": "🧪", "key": KEY_1, "input_action": "item_1",
 		"context": "battle", "rebindable": true, "desc": "치유 물약을 사용합니다."

@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="CharacterData" format=3]
+[gd_resource type="Resource" script_class="CharacterData" format=3 uid="uid://c3b273h3krp3"]
 
-[ext_resource type="PackedScene" path="res://assets/char/char02/char02.glb" id="1_hstr7"]
-[ext_resource type="Script" path="res://scripts/resources/character_data.gd" id="2_gcit0"]
-[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="3_ccowp"]
+[ext_resource type="PackedScene" uid="uid://b4ow53y37cu4c" path="res://assets/char/char02/char02.glb" id="1_hstr7"]
+[ext_resource type="Script" uid="uid://dpjtcnv2duboh" path="res://scripts/resources/character_data.gd" id="2_gcit0"]
+[ext_resource type="Script" uid="uid://by4uujmb8456t" path="res://scripts/resources/skill_data.gd" id="3_ccowp"]
 [ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="4_xmbnw"]
 [ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="5_l57jj"]
 [ext_resource type="PackedScene" path="res://scenes/skills/flame_attack.tscn" id="6_7fi1c"]

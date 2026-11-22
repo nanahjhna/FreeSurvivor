@@ -86,7 +86,7 @@ static func get_default_loadout(character_class_id: String) -> Dictionary:
 			var skill := character.skills[index]
 			if skill == null or not skill.implemented or skill.cast_type in ["passive", "unassigned"]:
 				continue
-			if skill.slot_key in ["q", "w", "e", "r", "a", "s"]:
+			if skill.slot_key in ["q", "w", "e", "r", "a", "s", "d", "f"]:
 				result[skill.slot_key] = get_runtime_skill_id(character, skill, index)
 		return result
 	for slot in character.skill_loadout:

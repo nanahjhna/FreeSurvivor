@@ -20,7 +20,7 @@ var selected_class_id := GameData.FIGHTER_ID
 var creation_slot := -1
 
 var slot_list: HBoxContainer
-var class_list: VBoxContainer
+var class_list: HBoxContainer
 var detail_name: Label
 var detail_subtitle: Label
 var detail_stats: Label
@@ -137,41 +137,75 @@ func _show_creation(slot_index: int):
 	selected_class_id = GameData.FIGHTER_ID
 	_clear_screen()
 	var layout := _build_shell("새 캐릭터 만들기", "← 슬롯 선택", _show_selection)
-	var instructions := UiStyle.make_label(
-		"원하는 직업을 선택한 후 [캐릭터 생성]을 누르면 슬롯에 저장됩니다.",
-		15,
-		UiStyle.MUTED
-	)
-	instructions.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	instructions.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	layout.add_child(instructions)
 	var body := _new_body(layout)
 
-	var left := _make_section(body, 330, "직업 선택")
-	var scroll := ScrollContainer.new()
 	if _is_portrait_layout():
-		scroll.custom_minimum_size.y = clampf(get_viewport_rect().size.y * 0.30, 360.0, 400.0)
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.scroll_deadzone = 24
-	left.add_child(scroll)
-	class_list = VBoxContainer.new()
-	class_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	class_list.add_theme_constant_override("separation", 8)
-	scroll.add_child(class_list)
-	_build_preview(_make_section(body, 560, "캐릭터 미리보기 · 드래그/터치로 회전"))
-	_build_detail_panel(_make_section(body, 440, "선택한 직업 정보"))
+		# --- Portrait: 직업 가로 스크롤 → 미리보기+정보 가로 배치 → 생성 버튼 ---
+		var class_section := VBoxContainer.new()
+		class_section.add_theme_constant_override("separation", 4)
+		body.add_child(class_section)
+		class_section.add_child(UiStyle.make_label("직업 선택", 15, Color(1.0, 0.86, 0.44)))
+		var class_scroll := ScrollContainer.new()
+		class_scroll.custom_minimum_size.y = 56.0
+		class_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		class_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		class_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		class_scroll.scroll_deadzone = 24
+		class_section.add_child(class_scroll)
+		class_list = HBoxContainer.new()
+		class_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		class_list.add_theme_constant_override("separation", 4)
+		class_scroll.add_child(class_list)
 
-	var footer := HBoxContainer.new()
-	footer.add_theme_constant_override("separation", 10)
-	layout.add_child(footer)
+		var hero_row := HBoxContainer.new()
+		hero_row.add_theme_constant_override("separation", 8)
+		hero_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hero_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		body.add_child(hero_row)
 
-	create_button = UiStyle.make_button("⚔️ 캐릭터 생성", Vector2(0, 58 if _is_portrait_layout() else 52), true)
+		var preview_col := VBoxContainer.new()
+		preview_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		preview_col.size_flags_stretch_ratio = 1.15
+		preview_col.add_theme_constant_override("separation", 4)
+		hero_row.add_child(preview_col)
+		_build_preview(preview_col)
+
+		var info_col := VBoxContainer.new()
+		info_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_col.size_flags_stretch_ratio = 0.85
+		info_col.add_theme_constant_override("separation", 3)
+		hero_row.add_child(info_col)
+		var info_card := UiStyle.make_panel(UiStyle.INK_SOFT)
+		info_card.add_theme_stylebox_override("panel", UiStyle.panel_style(UiStyle.INK_SOFT, Color(0.62, 0.42, 0.23, 0.8), 1))
+		info_card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info_card.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		info_col.add_child(info_card)
+		var info_margin := UiStyle.make_margin(info_card, 8)
+		var info_content := VBoxContainer.new()
+		info_content.add_theme_constant_override("separation", 3)
+		info_margin.add_child(info_content)
+		_build_detail_panel(info_content)
+	else:
+		# --- Landscape: 직업 목록(좌) | 미리보기(중) | 정보(우) ---
+		var left := _make_section(body, 260, "직업 선택")
+		var class_scroll := ScrollContainer.new()
+		class_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		class_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		class_scroll.scroll_deadzone = 24
+		left.add_child(class_scroll)
+		class_list = HBoxContainer.new()
+		class_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		class_list.add_theme_constant_override("separation", 4)
+		class_scroll.add_child(class_list)
+		_build_preview(_make_section(body, 480, "미리보기 · 드래그로 회전"))
+		_build_detail_panel(_make_section(body, 360, "직업 정보"))
+
+	create_button = UiStyle.make_button("⚔️ 캐릭터 생성", Vector2(0, 52 if _is_portrait_layout() else 46), true)
 	create_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	create_button.add_theme_font_size_override("font_size", 20 if _is_portrait_layout() else 18)
+	create_button.add_theme_font_size_override("font_size", 18 if _is_portrait_layout() else 16)
 	create_button.tooltip_text = "선택한 직업으로 새 캐릭터를 생성합니다."
 	create_button.pressed.connect(_create_character)
-	footer.add_child(create_button)
+	layout.add_child(create_button)
 
 	feedback_label = _add_feedback(layout, "직업을 선택하고 [캐릭터 생성]을 누르세요.")
 	_populate_classes()
@@ -241,7 +275,7 @@ func _new_body(layout: VBoxContainer) -> Control:
 		return body
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 18)
+	body.add_theme_constant_override("separation", 8)
 	layout.add_child(body)
 	return body
 
@@ -514,7 +548,7 @@ func _populate_classes():
 		var character := GameData.get_class_template_data(class_id)
 		if not bool(character.get("unlocked", false)):
 			continue
-		var button := UiStyle.make_button("%s  %s\n%s" % [str(character.get("icon", "⚔️")), str(character.get("role", class_id)), str(character.get("title", ""))], Vector2(0, 70))
+		var button := UiStyle.make_button("%s  %s\n%s" % [str(character.get("icon", "⚔️")), str(character.get("role", class_id)), str(character.get("title", ""))], Vector2(0, 52))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.toggle_mode = true
 		button.focus_mode = Control.FOCUS_ALL

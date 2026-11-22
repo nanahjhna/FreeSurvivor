@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://dpjtcnv2duboh" path="res://scripts/resources/character_data.gd" id="1_g6opw"]
 [ext_resource type="Script" uid="uid://by4uujmb8456t" path="res://scripts/resources/skill_data.gd" id="2_4lpyr"]
 [ext_resource type="PackedScene" path="res://scenes/skills/rifle_projectile.tscn" id="3_rifle"]
-[ext_resource type="PackedScene" path="res://assets/weapon/gun01/akSAl.glb" id="4_gun"]
 [ext_resource type="PackedScene" uid="uid://b8ofoa0quhoax" path="res://assets/char/char01/char01.glb" id="5_character"]
 
 [sub_resource type="Resource" id="Resource_t4jxg"]
@@ -24,7 +23,6 @@ range = 16.0
 cast_type = "wave"
 animation_key = "Attack"
 effect_scene = ExtResource("3_rifle")
-projectile_pierce = 1
 implemented = true
 support_status = "game_skill"
 
@@ -49,7 +47,6 @@ effect_scene = ExtResource("3_rifle")
 cast_pattern = "fan"
 projectile_count = 3
 spread_radians = 0.16
-projectile_pierce = 1
 implemented = true
 support_status = "game_skill"
 
@@ -92,13 +89,11 @@ damage_step = 0.5
 range = 24.0
 unlock_level = 8
 cast_type = "volley"
-bonus_type = "physical"
+animation_key = "Attack"
 effect_scene = ExtResource("3_rifle")
 cast_pattern = "fan"
 projectile_count = 7
 spread_radians = 0.55
-projectile_pierce = 1
-animation_key = "Attack"
 implemented = true
 support_status = "game_skill"
 
@@ -117,7 +112,6 @@ unlock_level = 3
 cast_type = "wave"
 animation_key = "Attack"
 effect_scene = ExtResource("3_rifle")
-projectile_pierce = 1
 implemented = true
 support_status = "game_skill"
 
@@ -138,7 +132,6 @@ effect_scene = ExtResource("3_rifle")
 cast_pattern = "fan"
 projectile_count = 5
 spread_radians = 0.3
-projectile_pierce = 1
 implemented = true
 support_status = "game_skill"
 
@@ -159,7 +152,6 @@ effect_scene = ExtResource("3_rifle")
 cast_pattern = "fan"
 projectile_count = 3
 spread_radians = 0.08
-projectile_pierce = 1
 implemented = true
 support_status = "game_skill"
 
@@ -188,16 +180,13 @@ support_status = "game_skill"
 script = ExtResource("1_g6opw")
 id = "char01"
 legacy_id = "archer"
-model_scene = ExtResource("5_character")
 display_name = "검사"
 title = "근접 전투가"
 role = "검사"
 icon = "🔫"
 color = Color(0.35, 0.66, 0.39, 1)
+model_scene = ExtResource("5_character")
 animation_profile = "archer"
-walk_animation_speed = 1.16
-run_animation_speed = 3.85
-moving_attack_leg_roots = PackedStringArray("Amelia_SantaRL_L_Thigh", "Amelia_SantaRL_R_Thigh")
 animation_aliases = {
 "Attack": ["Attack", "Rifle_Fire_RT"],
 "AttackAlt": ["Attack", "Rifle_Fire_RT"],
@@ -218,6 +207,8 @@ animation_aliases = {
 "Victory": ["Victory_1_RT", "Victory_RT", "Victory"],
 "Walk": ["Walk", "Rifle_Walk_RT", "Walk_With_Rifle_RT"]
 }
+walk_animation_speed = 1.16
+run_animation_speed = 3.85
 base_str = 4
 base_agi = 8
 base_vit = 4
@@ -231,10 +222,8 @@ base_spd = 7.4
 skills = Array[ExtResource("2_4lpyr")]([SubResource("Resource_t4jxg"), SubResource("Resource_mwx4j"), SubResource("Resource_e1jsb"), SubResource("Resource_2f6pg"), SubResource("Resource_4lpyr"), SubResource("Resource_ixpnj"), SubResource("Resource_vdw8w"), SubResource("Resource_bxkv4")])
 signature_skill = "라이플 단발 사격"
 weapon_name = "없음"
-weapon_scene = null
 weapon_bone_name = "Amelia_SantaRL_R_Hand"
 weapon_grip_position = Vector3(-0.819, 0.552, 1.306)
-weapon_hidden_nodes = PackedStringArray("Cube", "arm")
 weapon_mount_position = Vector3(-0.018, 0.075, 0.008)
 weapon_mount_rotation_degrees = Vector3(-72, 0, 180)
 weapon_mount_scale = Vector3(0.215, 0.215, 0.215)
@@ -242,7 +231,6 @@ weapon_support_bone_name = "Amelia_SantaRL_L_Hand"
 weapon_support_grip_position = Vector3(-0.767, 0.33, 2.39)
 weapon_support_palm_offset = Vector3(0, 0.075, 0.016)
 weapon_support_rotation_degrees = Vector3(0, -110, -70)
-weapon_support_clips = PackedStringArray("Idle", "Walk", "Run", "Attack", "AttackAlt")
 combat_style = "라이플 단발, 연사, 관통 사격"
 description = "AK 소총으로 거리를 유지하며 정밀 사격과 탄막 공격을 가하는 추적자."
 starting_gear = {
