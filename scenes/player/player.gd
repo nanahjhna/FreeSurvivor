@@ -2,7 +2,6 @@ class_name PlayerCharacter
 extends CharacterBody3D
 
 signal hp_changed(current_hp, max_hp)
-signal sp_changed(current_sp, max_sp)
 signal exp_changed(current_xp, xp_to_next)
 signal leveled_up(new_level)
 signal died()
@@ -11,8 +10,6 @@ signal died()
 var preview_only: bool = false
 @export var max_hp: float = 100.0
 var current_hp: float = 100.0
-@export var max_sp: float = 30.0
-var current_sp: float = 30.0
 
 @export var base_move_speed: float = 6.8
 @export var base_attack_damage: float = 15.0
@@ -27,7 +24,6 @@ var level: int = 1
 
 var is_dead: bool = false
 var auto_attack_timer: float = 0.0
-var speed_boost_timer: float = 0.0
 var auto_attack_enabled: bool = true
 var touch_move_vector: Vector2 = Vector2.ZERO
 var current_move_input: Vector2 = Vector2.ZERO
@@ -41,9 +37,7 @@ var _pending_ranged_shots: Array[Callable] = []
 var manual_attack_cooldown: float = 0.0
 var _hp_regen_timer: float = 0.0
 var _time_since_last_damage: float = 0.0
-var _sp_signal_timer: float = 0.0
 var card_hit_bonuses: Dictionary = {}
-var card_sp_regen: float = 0.0
 var survival_shield: float = 0.0
 var survival_shield_timer: float = 0.0
 var last_stand_used: bool = false
@@ -116,13 +110,10 @@ func _ready():
 	xp_to_next_level = GameData.player_xp_to_next
 	max_hp = (stat_manager.max_hp() + GameData.max_hp_bonus) * (1.0 + GameData.get_survival_bonus("max_hp_percent"))
 	current_hp = max_hp
-	max_sp = stat_manager.max_sp()
-	current_sp = max_sp
 	GameData.player_current_hp = current_hp
 	
 	emit_signal("hp_changed", current_hp, max_hp)
 	_update_head_hp_bar(current_hp, max_hp)
-	emit_signal("sp_changed", current_sp, max_sp)
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 	if slash_effect:
 		slash_effect.visible = false
@@ -142,11 +133,9 @@ func _physics_process(delta: float):
 	_release_aimed_shots()
 	_update_hp_regeneration(delta)
 	_update_survival_shield(delta)
-	_update_sp_regeneration(delta)
 	
 	if is_combat_enabled:
 		_handle_auto_attack(delta)
-		_handle_items(delta)
 
 func _process(_delta: float) -> void:
 	# Keep the world-space indicator in lockstep even if a system updates HP
@@ -199,6 +188,11 @@ func _handle_movement(delta: float):
 	var input_vec: Vector2 = touch_move_vector
 	if input_vec == Vector2.ZERO:
 		input_vec = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	# In character-follow view the camera must finish turning before a new
+	# direction is accepted. This prevents the screen-relative left/right axis
+	# from flipping while the camera is still catching up.
+	if camera_node and camera_node.has_method("is_movement_input_locked") and camera_node.is_movement_input_locked():
+		input_vec = Vector2.ZERO
 	current_move_input = input_vec
 	var move_direction := _auto_move_direction
 	if input_vec != Vector2.ZERO:
@@ -209,9 +203,6 @@ func _handle_movement(delta: float):
 	var effective_speed: float = base_move_speed * GameData.move_speed_mult * (1.0 + GameData.get_survival_bonus("move_speed"))
 	if Input.is_key_pressed(KEY_SHIFT) and _moving_by_input:
 		effective_speed *= 1.45
-	if speed_boost_timer > 0.0:
-		effective_speed *= 1.5
-		speed_boost_timer -= delta
 	if _ranged_attack_busy:
 		effective_speed *= ranged_attack_move_multiplier
 
@@ -517,6 +508,11 @@ func _handle_auto_attack(delta: float):
 		if _ranged_attack_busy:
 			auto_attack_timer = 0.0
 		return
+	if _skill_animation_busy or not active_action_clip.is_empty():
+		return
+	var skill_manager := get_node_or_null("SkillManager")
+	if skill_manager and skill_manager.has_method("should_use_basic_attack") and not skill_manager.call("should_use_basic_attack"):
+		return
 	if not _pending_ranged_shots.is_empty():
 		return
 	var speed_multiplier := clampf(GameData.attack_speed_mult * (1.0 + GameData.get_survival_bonus("attack_speed") + GameData.get_survival_bonus("kill_attack_speed")), 0.5, 2.5)
@@ -577,6 +573,11 @@ func _release_basic_attack(dir_to_target: Vector3, target: Node3D) -> void:
 	if not _skill_animation_busy:
 		_play_model_animation(_basic_attack_animation_keys[_basic_attack_index], true)
 		_basic_attack_index = (_basic_attack_index + 1) % _basic_attack_animation_keys.size()
+	# Put the slash and damage on the swing's contact frame instead of the
+	# animation's starting frame. This keeps the visual and hit response together.
+	await get_tree().create_timer(0.22).timeout
+	if is_dead or not is_instance_valid(target) or bool(target.get("is_dead")):
+		return
 	if _has_ranged_weapon:
 		_spawn_ranged_attack_visual(target, dir_to_target)
 	else:
@@ -658,45 +659,6 @@ func _show_slash_effect():
 		tween.tween_property(slash_effect, "scale", Vector3(1.3, 1.3, 1.3), 0.15)
 		tween.tween_callback(func(): slash_effect.visible = false)
 
-func _handle_items(_delta: float):
-	if Input.is_action_just_pressed("item_1"):
-		use_item(1)
-	elif Input.is_action_just_pressed("item_2"):
-		use_item(2)
-	elif Input.is_action_just_pressed("item_3"):
-		use_item(3)
-
-func use_item(slot: int) -> bool:
-	if is_dead:
-		return false
-	if GameData.item_counts.get(slot, 0) <= 0:
-		var names := {1: "치유 물약", 2: "화면 폭탄", 3: "질풍 물약"}
-		UiFeedback.show_error("%s이(가) 없습니다." % names.get(slot, "아이템"))
-		return false
-	
-	match slot:
-		1: # Heal Potion
-			GameData.item_counts[1] -= 1
-			heal(35.0)
-		2: # Screen Bomb
-			GameData.item_counts[2] -= 1
-			_use_bomb()
-		3: # Speed boost
-			GameData.item_counts[3] -= 1
-			speed_boost_timer = 5.0
-			_show_damage_popup(0, false, false, "Speed Up!")
-	GameData.data_updated.emit()
-	return true
-
-func _use_bomb():
-	var enemies = get_tree().get_nodes_in_group("enemies")
-	for e in enemies:
-		if is_instance_valid(e) and not e.get("is_dead"):
-			if global_position.distance_to(e.global_position) <= 16.0:
-				if e.has_method("take_damage"):
-					e.take_damage(80.0 * GameData.attack_damage_mult, false, "item")
-	_show_damage_popup(0, true, false, "BOMB!")
-
 func gain_xp(amount: int):
 	if is_dead:
 		return
@@ -738,21 +700,14 @@ func refresh_persistent_stats():
 	base_attack_damage = stat_manager.phys_atk()
 	base_attack_speed = 1.2 * stat_manager.attack_speed()
 	var old_max_hp = max_hp
-	var old_max_sp = max_sp
 	max_hp = stat_manager.max_hp() + GameData.max_hp_bonus
-	max_sp = stat_manager.max_sp()
 	if old_max_hp > 0.0:
 		current_hp = min(max_hp, current_hp + max_hp - old_max_hp)
 	else:
 		current_hp = max_hp
-	if old_max_sp > 0.0:
-		current_sp = min(max_sp, current_sp + max_sp - old_max_sp)
-	else:
-		current_sp = max_sp
 	GameData.player_current_hp = current_hp
 	if is_inside_tree():
 		emit_signal("hp_changed", current_hp, max_hp)
-		emit_signal("sp_changed", current_sp, max_sp)
 
 func _update_hp_regeneration(delta: float):
 	if current_hp >= max_hp:
@@ -784,24 +739,6 @@ func _update_survival_shield(delta: float):
 	if survival_shield_timer >= 30.0:
 		survival_shield_timer = 0.0
 		survival_shield = minf(max_hp * 0.5, survival_shield + max_hp * shield_rate)
-
-func _update_sp_regeneration(delta: float):
-	if current_sp >= max_sp:
-		_sp_signal_timer = 0.0
-		return
-	current_sp = min(max_sp, current_sp + (stat_manager.sp_recovery_rate() + card_sp_regen) * delta)
-	_sp_signal_timer += delta
-	if _sp_signal_timer >= 0.1:
-		_sp_signal_timer = 0.0
-		emit_signal("sp_changed", current_sp, max_sp)
-
-func use_sp(amount: float) -> bool:
-	if amount < 0.0 or current_sp + 0.001 < amount:
-		return false
-	current_sp = max(0.0, current_sp - amount)
-	_sp_signal_timer = 0.0
-	emit_signal("sp_changed", current_sp, max_sp)
-	return true
 
 func take_damage(amount: float):
 	_apply_incoming_damage(amount, stat_manager.phys_def())

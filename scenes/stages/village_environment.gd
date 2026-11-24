@@ -3,9 +3,6 @@ extends Node3D
 
 const KIT := "res://assets/map/Medieval Village MegaKit[Standard]/glTF/"
 const WALKABLE_AREA := Rect2i(-33, -39, 67, 71)
-# The plaza paving is centered on the village origin; keep the fountain on that
-# same axis so the focal point is visually centered from the lobby camera.
-const FOUNTAIN := Vector3(0, 0, 0)
 const CARD_GATE := Vector3(-14, 0, 23)
 const CLEARANCE := 0.85
 const HOUSE_SCALE := Vector3(1.22, 1.55, 1.16)
@@ -77,7 +74,7 @@ func _build_houses() -> void:
 	_house("NorthWestCottage", Vector3(-18, 0, -29), 0, 3, 4, 1, false, 1)
 	_house("NorthEastCottage", Vector3(18, 0, -29), 0, 3, 4, 1, true, 3)
 	_shop_sign(destinations["forge"], "대장간", Vector3(0, 2.85, 4.23))
-	_shop_sign(destinations["shop"], "장비 상점", Vector3(0, 2.85, 4.23))
+	_shop_sign(destinations["shop"], "스킬 상점", Vector3(0, 2.85, 4.23))
 	_shop_sign(destinations["inn"], "여관", Vector3(-1, 3.1, 4.23))
 
 func _house(node_name: String, center: Vector3, yaw: float, columns: int, depth: int, floors: int, stone: bool, style: int) -> StaticBody3D:
@@ -222,27 +219,6 @@ func decorate_portal(portal: Area3D, caption: String, tint: Color) -> void:
 	portal.add_child(label)
 
 func _build_plaza() -> void:
-	var basin_scale := Vector3(1.08, 1.30, 1.08)
-	var fountain := _solid("Fountain", FOUNTAIN, Vector3(4.65, 0.7, 4.65) * basin_scale)
-	var basin := _scaled_detail(fountain, Vector3.ZERO, basin_scale)
-	var stone := _kit_material("Floor_Brick")
-	_round_mesh(basin, Vector3(0, 0.13, 0), 2.53, 2.6, 0.26, stone)
-	_round_mesh(basin, Vector3(0, 0.41, 0), 2.33, 2.39, 0.42, stone)
-	_round_mesh(basin, Vector3(0, 0.67, 0), 2.12, 2.12, 0.06, _material(Color(0.13, 0.48, 0.55), 0.18))
-	var rim := TorusMesh.new()
-	rim.inner_radius = 2.11
-	rim.outer_radius = 2.42
-	rim.rings = 32
-	rim.ring_segments = 8
-	_mesh(basin, rim, Vector3(0, 0.69, 0), stone)
-	_round_mesh(basin, Vector3(0, 1.15, 0), 0.28, 0.55, 1.03, stone)
-	_round_mesh(basin, Vector3(0, 1.65, 0), 0.82, 0.36, 0.24, stone)
-	_round_mesh(basin, Vector3(0, 1.78, 0), 0.71, 0.71, 0.05, _material(Color(0.28, 0.69, 0.73), 0.21))
-	_round_mesh(basin, Vector3(0, 1.95, 0), 0.13, 0.2, 0.36, stone)
-	var water := _material(Color(0.54, 0.83, 0.85), 0.15)
-	for angle in [0.5, 0.5 + TAU / 3.0, 0.5 + TAU * 2.0 / 3.0]:
-		var stream := _round_mesh(basin, Vector3(cos(angle), 1.18, sin(angle)) * Vector3(0.9, 1, 0.9), 0.035, 0.065, 1.10, water)
-		stream.rotation = Vector3(0, -angle, 0.18)
 	_bench(Vector3(-8.9, 0, -2.7), PI * 0.5)
 	_bench(Vector3(7.8, 0, 5.6), PI)
 	_bench(Vector3(-8.9, 0, 3.3), PI * 0.5)

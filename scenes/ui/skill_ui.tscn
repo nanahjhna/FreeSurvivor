@@ -63,7 +63,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
 theme_override_font_sizes/font_size = 24
-text = "⚡ 스킬 및 마스터리 강화"
+text = "내 스킬"
 
 [node name="CloseBtn" type="Button" parent="Panel/Margin/VBox/Header"]
 custom_minimum_size = Vector2(36, 32)

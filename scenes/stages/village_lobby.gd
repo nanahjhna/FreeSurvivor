@@ -29,11 +29,11 @@ func _ready():
 			player.call("set_first_person_mode", false)
 		var cam := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 		if cam:
-			cam.set("quarter_view_enabled", GameData.camera_view_mode != "follow")
+			cam.set("quarter_view_enabled", true)
 			cam.set("quarter_distance", GameData.camera_distance)
 			cam.set("quarter_elevation_degrees", GameData.camera_elevation_degrees)
 			cam.set("quarter_azimuth_degrees", GameData.camera_azimuth_degrees)
-			cam.set("back_view_enabled", GameData.camera_view_mode == "follow")
+			cam.set("back_view_enabled", false)
 			cam.set("first_person_enabled", false)
 			cam.fov = 60.0
 			cam.call("snap_to_target")
@@ -74,6 +74,8 @@ func _process(_delta: float):
 	if get_tree().paused or hud == null:
 		return
 	if player == null or not is_instance_valid(player):
+		return
+	if is_auto_moving():
 		return
 	var best: Dictionary = {}
 	var best_dist := INF
@@ -121,8 +123,9 @@ func try_interact():
 	_interact(nearest_interaction)
 
 func _interact(entry: Dictionary):
+	if is_auto_moving():
+		cancel_auto_move()
 	var id := str(entry.get("id", ""))
-	var node = entry.get("node")
 	match id:
 		"battle_start":
 			battle_prep_ui.call("open", GameData.current_selected_stage_id)
@@ -130,40 +133,22 @@ func _interact(entry: Dictionary):
 			GameManager.go_to_deck_builder()
 		"forge":
 			_open_hud_screen("forge")
-			UiFeedback.show_info("대장간에서 장비를 관리합니다.")
 		"shop":
 			_open_hud_screen("shop")
 		"inn":
-			_open_hud_screen("shop")
-			UiFeedback.show_info("여관 주인 엘레나에게 말을 걸어 휴식할 수 있습니다.")
+			_open_hud_screen("growth")
 		"quest":
 			_open_hud_screen("quest")
 		"npc_blacksmith":
-			_show_npc_dialog(node, "대장간에서 장비를 손볼 수 있습니다.", [
-				{"label": "🔨 장비 관리 열기", "action": "forge"},
-				{"label": "📖 도감 보기", "action": "collection"}
-			])
+			_open_hud_screen("forge")
 		"npc_merchant":
-			_show_npc_dialog(node, "필요한 장비와 물약이 있으면 말씀하세요.", [
-				{"label": "🪙 상점 열기", "action": "shop"},
-				{"label": "🎒 장비 관리 열기", "action": "inventory"}
-			])
+			_open_hud_screen("shop")
 		"npc_innkeeper":
-			_show_npc_dialog(node, "따뜻한 침대와 식사가 준비되어 있어요. 50 골드면 체력을 회복할 수 있습니다.", [
-				{"label": "🏨 휴식하기 (50 골드)", "action": "rest"},
-				{"label": "캐릭터 변경", "action": "character_select"},
-				{"label": "💬 그냥 대화하기", "action": ""}
-			])
+			_open_hud_screen("growth")
 		"npc_guard":
-			_show_npc_dialog(node, "북쪽 성문 밖은 위험합니다. 준비가 되셨나요?", [
-				{"label": "⚔️ 전투 준비 열기", "action": "battle_start"},
-				{"label": "🗺️ 지도 보기", "action": "map"}
-			])
+			battle_prep_ui.call("open", GameData.current_selected_stage_id)
 		"npc_villager":
-			_show_npc_dialog(node, "마을 소식을 들려드릴게요.", [
-				{"label": "📜 퀘스트 확인", "action": "quest"},
-				{"label": "📖 도감 보기", "action": "collection"}
-			])
+			_open_hud_screen("quest")
 		_:
 			UiFeedback.show_info("아직 사용할 수 없는 대상입니다.")
 
@@ -172,17 +157,6 @@ func _open_hud_screen(screen_id: String):
 		hud.call("open_screen", screen_id)
 	else:
 		UiFeedback.show_error("화면을 열 수 없습니다.")
-
-func _show_npc_dialog(node, line: String, options: Array):
-	var npc_name := "마을 주민"
-	var role := ""
-	if node != null and is_instance_valid(node):
-		npc_name = str(node.get("npc_name")) if node.get("npc_name") != null else npc_name
-		role = str(node.get("npc_role")) if node.get("npc_role") != null else ""
-	if hud and hud.has_method("show_npc_dialog"):
-		hud.call("show_npc_dialog", npc_name, role, line, options)
-	else:
-		UiFeedback.show_info(line)
 
 func _unhandled_input(event: InputEvent):
 	if GameManager.current_location != GameManager.Location.LOBBY:
@@ -274,6 +248,10 @@ func start_auto_move_to(interaction_id: String) -> bool:
 	_auto_move_replanned = false
 	_auto_move_last_position = player.global_position
 	_auto_move_stall_time = 0.0
+	nearest_interaction = {}
+	_last_prompt_id = ""
+	_set_interaction_highlight(null)
+	hud.clear_interaction_prompt()
 	return true
 
 func _auto_move_route(goal: Vector3) -> Array[Vector3]:
@@ -287,11 +265,19 @@ func _auto_move_route(goal: Vector3) -> Array[Vector3]:
 func is_auto_moving() -> bool:
 	return not _auto_move_entry.is_empty()
 
+func get_auto_move_path() -> PackedVector3Array:
+	if not is_auto_moving() or not is_instance_valid(player):
+		return PackedVector3Array()
+	var path := PackedVector3Array([player.global_position])
+	path.append_array(PackedVector3Array(_auto_move_waypoints))
+	return path
+
 func cancel_auto_move():
 	if is_instance_valid(player):
 		player.set_auto_move_direction(Vector3.ZERO)
 	_auto_move_entry = {}
 	_auto_move_waypoints.clear()
+	_last_prompt_id = ""
 	if hud and hud.has_method("clear_interaction_prompt"):
 		hud.call("clear_interaction_prompt")
 
@@ -331,8 +317,7 @@ func _process_auto_move(delta: float):
 		_auto_move_waypoints.pop_front()
 	if _auto_move_waypoints.is_empty():
 		var arrived_entry := _auto_move_entry
-		player.set_auto_move_direction(Vector3.ZERO)
-		_auto_move_entry = {}
+		cancel_auto_move()
 		_interact(arrived_entry)
 		return
 	var target_delta := _auto_move_waypoints[0] - player.global_position
@@ -347,14 +332,14 @@ func _build_village_environment() -> void:
 	_register_interactable(battle_portal, "battle_start", "서바이벌 던전 입장", 7.0)
 
 	_register_interactable(environment.destinations["forge"], "forge", "대장간 이용하기", 8.0)
-	_register_interactable(environment.destinations["shop"], "shop", "무기 상점 열기", 8.0)
-	_register_interactable(environment.destinations["inn"], "inn", "여관에서 휴식하기", 8.0)
+	_register_interactable(environment.destinations["shop"], "shop", "스킬 상점 열기", 8.0)
+	_register_interactable(environment.destinations["inn"], "inn", "여관에서 영구 강화하기", 8.0)
 	_register_interactable(environment.destinations["quest"], "quest", "게시판 보기", 4.5)
 	_create_card_dungeon_portal()
 	_spawn_npcs()
 
 func get_village_landmarks() -> Dictionary:
-	var pins := {"fountain": environment.FOUNTAIN}
+	var pins := {}
 	for entry in interactables:
 		var id: String = entry["id"]
 		if not id.begins_with("npc_"):
@@ -405,14 +390,14 @@ func _spawn_npcs():
 	npc_root.add_child(bs)
 	_register_interactable(bs, "npc_blacksmith", "헤파이스토와 대화하기", 3.8)
 	
-	# 2. Weapon Merchant
+	# 2. Skill Merchant
 	var shop = npc_scene.instantiate()
 	shop.npc_name = "마커스"
-	shop.npc_role = "무기 상인"
+	shop.npc_role = "스킬 상인"
 	shop.outfit_color = Color(0.25, 0.35, 0.65)
 	shop.position = Vector3(12.35, 0, -1.5)
 	npc_root.add_child(shop)
-	_register_interactable(shop, "npc_merchant", "마커스와 대화하기", 3.8)
+	_register_interactable(shop, "npc_merchant", "스킬 상점 열기", 3.8)
 	
 	# 3. Innkeeper
 	var inn = npc_scene.instantiate()
@@ -421,7 +406,7 @@ func _spawn_npcs():
 	inn.outfit_color = Color(0.65, 0.25, 0.45)
 	inn.position = Vector3(12.1, 0, 15.6)
 	npc_root.add_child(inn)
-	_register_interactable(inn, "npc_innkeeper", "엘레나와 대화하기", 3.8)
+	_register_interactable(inn, "npc_innkeeper", "엘레나에게 영구 강화하기", 3.8)
 	
 	# 4. Gate Guards
 	var guard1 = npc_scene.instantiate()

@@ -185,6 +185,9 @@ func die():
 	if player and player.has_method("on_monster_killed"):
 		player.on_monster_killed(self)
 	if is_boss:
+		var equipment_drop := GameData.grant_boss_equipment()
+		if not equipment_drop.is_empty():
+			UiFeedback.show_success("보스 장비 획득: %s" % str(equipment_drop.get("name", "장비")))
 		GameManager.register_boss_defeat()
 	
 	# Keep the imported death animation visible before removing the monster.
@@ -212,12 +215,6 @@ func _spawn_xp_gem():
 		gem.gold_reward = 0
 		gem.lifetime_seconds = 45.0
 		_place_pickup(gem, Vector3(0.0, 0.5, 0.0))
-		if is_boss or randf() < float(monster_definition.get("potion_chance", 0.0)):
-			var potion := gem_scene.instantiate() as PickupGem
-			potion.reward_type = "치유 물약"
-			potion.reward_value = 1
-			potion.lifetime_seconds = 45.0
-			_place_pickup(potion, Vector3(0.7, 0.5, 0.0))
 
 func _place_pickup(new_pickup: PickupGem, offset: Vector3):
 	var existing_pickups := get_tree().get_nodes_in_group("xp_gems")
@@ -235,14 +232,5 @@ func _place_pickup(new_pickup: PickupGem, offset: Vector3):
 				pickup.reward_value += new_pickup.reward_value
 			new_pickup.free()
 			return
-		# Keep a potion reward even when the pickup cap is full of experience gems.
-		if new_pickup.get("reward_type") == "치유 물약":
-			for existing in existing_pickups:
-				var pickup := existing as PickupGem
-				if is_instance_valid(pickup) and not pickup.is_queued_for_deletion() and pickup.reward_type == "경험치":
-					pickup.potion_reward += new_pickup.reward_value
-					pickup.refresh_label()
-					new_pickup.free()
-					return
 	get_tree().current_scene.add_child(new_pickup)
 	new_pickup.global_position = global_position + offset

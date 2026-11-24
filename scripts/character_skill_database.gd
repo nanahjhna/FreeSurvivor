@@ -50,6 +50,17 @@ static func has_skill_assignment(character_class_id: String) -> bool:
 	return not get_skill_ids(character_class_id).is_empty()
 
 
+static func get_source_clip(character: CharacterData, animation_key: String) -> String:
+	if character == null or animation_key.is_empty():
+		return ""
+	var aliases: Variant = character.animation_aliases.get(animation_key, [animation_key])
+	var candidates: Array = aliases if aliases is Array else [aliases]
+	for alias in candidates:
+		if character.animation_source_clips.has(alias):
+			return str(character.animation_source_clips[alias])
+	return str(character.animation_source_clips.get(animation_key, animation_key))
+
+
 static func get_skill_set(character_class_id: String) -> Dictionary:
 	var skills: Dictionary = {}
 	var character := _get_character(character_class_id)

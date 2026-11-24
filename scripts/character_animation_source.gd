@@ -4,6 +4,47 @@ extends RefCounted
 
 static var _libraries: Dictionary = {}
 
+static func get_source_library(source_path: String) -> AnimationLibrary:
+	var packed := load(source_path) as PackedScene
+	if packed == null:
+		return null
+	var state := packed.get_state()
+	for index in range(state.get_node_count()):
+		if state.get_node_type(index) != &"AnimationPlayer":
+			continue
+		for property_index in range(state.get_node_property_count(index)):
+			if state.get_node_property_name(index, property_index) == &"libraries/":
+				return state.get_node_property_value(index, property_index) as AnimationLibrary
+	return null
+
+static func play_preview(model: Node3D, player: AnimationPlayer, source: AnimationLibrary, clip_name: StringName) -> bool:
+	if not source.has_animation(clip_name):
+		return false
+	var rigs := model.find_children("*", "Skeleton3D", true, false)
+	var root := player.get_node_or_null(player.root_node)
+	if rigs.is_empty() or root == null:
+		return false
+	var target := rigs[0] as Skeleton3D
+	if target.find_bone("mixamorigHips") < 0:
+		return false
+
+	var target_rest := _rest_hip(player, target)
+	var source_rest := _rest_hip_from_animation(source.get_animation(&"Rest_Pose") if source.has_animation(&"Rest_Pose") else null, target_rest)
+	var copy := _retarget_clip(source.get_animation(clip_name), target, root.get_path_to(target), source_rest, target_rest)
+	if copy.get_track_count() == 0:
+		return false
+	copy.loop_mode = Animation.LOOP_LINEAR
+	var preview := AnimationLibrary.new()
+	preview.add_animation(clip_name, copy)
+	player.stop()
+	if player.has_animation_library(&"shop_preview"):
+		player.remove_animation_library(&"shop_preview")
+	player.add_animation_library(&"shop_preview", preview)
+	target.reset_bone_poses()
+	player.play(StringName("shop_preview/" + str(clip_name)))
+	player.advance(0.0)
+	return true
+
 static func apply_to(model: Node3D, player: AnimationPlayer, data: CharacterData) -> void:
 	var rigs := model.find_children("*", "Skeleton3D", true, false)
 	if rigs.is_empty():
@@ -39,47 +80,55 @@ static func _build_library(player: AnimationPlayer, target: Skeleton3D, target_p
 	var source_rig := rigs[0] as Skeleton3D
 	var source_rest := _rest_hip(source_player, source_rig)
 	var target_rest := _rest_hip(player, target)
-	var height_ratio := target_rest.z / source_rest.z if absf(source_rest.z) > 0.0001 else 1.0
 	var library := AnimationLibrary.new()
 	for alias in data.animation_source_clips:
 		var source_name := str(data.animation_source_clips[alias])
 		if not source_player.has_animation(source_name):
 			push_warning("애니메이션을 찾을 수 없습니다: " + source_name)
 			continue
-		var copy := source_player.get_animation(source_name).duplicate(true) as Animation
-		for index in range(copy.get_track_count() - 1, -1, -1):
-			var path := copy.track_get_path(index)
-			if path.get_subname_count() != 1:
-				copy.remove_track(index)
-				continue
-			var bone := str(path.get_subname(0))
-			if target.find_bone(bone) < 0:
-				copy.remove_track(index)
-				continue
-			var kind := copy.track_get_type(index)
-			if kind == Animation.TYPE_POSITION_3D:
-				if bone != "mixamorigHips":
-					copy.remove_track(index)
-					continue
-				for key in range(copy.track_get_key_count(index)):
-					var original: Vector3 = copy.track_get_key_value(index, key)
-					# The controller owns ground movement. Preserve only vertical hip motion.
-					var corrected := target_rest
-					corrected.z += (original.z - source_rest.z) * height_ratio
-					copy.track_set_key_value(index, key, corrected)
-			elif kind != Animation.TYPE_ROTATION_3D:
-				copy.remove_track(index)
-				continue
-			copy.track_set_path(index, NodePath(str(target_path) + ":" + bone))
+		var copy := _retarget_clip(source_player.get_animation(source_name), target, target_path, source_rest, target_rest)
 		library.add_animation(str(alias), copy)
 	source.free()
 	return library
 
+static func _retarget_clip(animation: Animation, target: Skeleton3D, target_path: NodePath, source_rest: Vector3, target_rest: Vector3) -> Animation:
+	var copy := animation.duplicate(true) as Animation
+	var height_ratio := target_rest.z / source_rest.z if absf(source_rest.z) > 0.0001 else 1.0
+	for index in range(copy.get_track_count() - 1, -1, -1):
+		var path := copy.track_get_path(index)
+		if path.get_subname_count() != 1:
+			copy.remove_track(index)
+			continue
+		var bone := str(path.get_subname(0))
+		if target.find_bone(bone) < 0:
+			copy.remove_track(index)
+			continue
+		var kind := copy.track_get_type(index)
+		if kind == Animation.TYPE_POSITION_3D:
+			if bone != "mixamorigHips":
+				copy.remove_track(index)
+				continue
+			for key in range(copy.track_get_key_count(index)):
+				var original: Vector3 = copy.track_get_key_value(index, key)
+				# Keep vertical hip motion and let the controller handle ground movement.
+				var corrected := target_rest
+				corrected.z += (original.z - source_rest.z) * height_ratio
+				copy.track_set_key_value(index, key, corrected)
+		elif kind != Animation.TYPE_ROTATION_3D:
+			copy.remove_track(index)
+			continue
+		copy.track_set_path(index, NodePath(str(target_path) + ":" + bone))
+	return copy
+
 static func _rest_hip(player: AnimationPlayer, skeleton: Skeleton3D) -> Vector3:
-	if player.has_animation("Rest_Pose"):
-		var rest := player.get_animation("Rest_Pose")
+	var hips := skeleton.find_bone("mixamorigHips")
+	var fallback := skeleton.get_bone_rest(hips).origin if hips >= 0 else Vector3.ZERO
+	return _rest_hip_from_animation(player.get_animation(&"Rest_Pose") if player.has_animation(&"Rest_Pose") else null, fallback)
+
+static func _rest_hip_from_animation(rest: Animation, fallback: Vector3) -> Vector3:
+	if rest != null:
 		for i in range(rest.get_track_count()):
 			if rest.track_get_type(i) == Animation.TYPE_POSITION_3D and str(rest.track_get_path(i)).ends_with(":mixamorigHips"):
-				return rest.track_get_key_value(i, 0)
-	var hips := skeleton.find_bone("mixamorigHips")
-	return skeleton.get_bone_rest(hips).origin if hips >= 0 else Vector3.ZERO
+				if rest.track_get_key_count(i) > 0:
+					return rest.track_get_key_value(i, 0)
+	return fallback

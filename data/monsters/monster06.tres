@@ -18,11 +18,9 @@ xp = 45
 gold = 500
 loot = {
 "gold": 500,
-"potion_chance": 1.0,
 "xp": 45
 }
 is_boss = true
-potion_chance = 1.0
 visual_scale = Vector3(2, 2, 2)
 collision_scale = Vector3(2, 2, 2)
 fall_on_death = false

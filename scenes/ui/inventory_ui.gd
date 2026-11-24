@@ -107,7 +107,7 @@ func _ready() -> void:
 
 	filters = HBoxContainer.new()
 	body.add_child(filters)
-	for entry in [["all", "전체"], ["gear", "장비"], ["mat", "재료·소모품"]]:
+	for entry in [["all", "전체"], ["gear", "장비"], ["mat", "재료"]]:
 		var button := _tab(filters, entry[1])
 		button.pressed.connect(_set_filter.bind(entry[0]))
 		filter_buttons[entry[0]] = button
@@ -188,7 +188,7 @@ func _refresh() -> void:
 		var is_gear := str(item.get("type", "")) in EQUIPMENT_TYPES
 		if (equipment_mode or current_filter == "gear") and not is_gear:
 			continue
-		if current_filter == "mat" and str(item.get("type", "")) not in ["material", "consumable"]:
+		if current_filter == "mat" and str(item.get("type", "")) != "material":
 			continue
 		var grade := str(item.get("grade", ""))
 		var button := UiStyle.make_button("%s\n%s" % [item.get("icon", "◆"), "×%d" % int(item.count) if item.has("count") else grade], Vector2(80, 96))
@@ -230,15 +230,6 @@ func _refresh_portrait() -> void:
 
 func _inventory_items() -> Array[Dictionary]:
 	var items := GameData.inventory.duplicate()
-	for item in [
-		{"slot": 1, "name": "치유 물약", "icon": "🧪", "desc": "HP를 35 회복합니다."},
-		{"slot": 2, "name": "화면 폭탄", "icon": "💣", "desc": "주변 적에게 큰 피해를 줍니다."},
-		{"slot": 3, "name": "질풍 물약", "icon": "💨", "desc": "5초간 이동 속도가 증가합니다."}
-	]:
-		var slot := int(item.slot)
-		var amount := int(GameData.item_counts.get(slot, 0))
-		if amount > 0:
-			items.append(item.merged({"type": "consumable", "count": amount}))
 	var grades := {"SSR": 4, "SR": 3, "R": 2, "N": 1}
 	items.sort_custom(func(a: Dictionary, b: Dictionary):
 		return int(grades.get(a.get("grade", ""), 0)) > int(grades.get(b.get("grade", ""), 0)))

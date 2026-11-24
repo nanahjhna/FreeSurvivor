@@ -6,6 +6,7 @@ extends Node
 
 signal data_updated()
 signal currency_changed(gold: int, gems: int)
+signal skill_shop_updated()
 signal party_updated()
 signal save_status_changed(status: String)
 
@@ -28,24 +29,9 @@ const DEFAULT_INVENTORY: Array[Dictionary] = [
 		"desc": "기본적인 단단한 쇠 검."
 	},
 	{
-		"id": "wpn_flame_blade", "type": "weapon", "name": "작열의 검", "grade": "SR",
-		"atk": 25, "def": 0, "hp": 30, "spd": 0.2, "icon": "🔥",
-		"desc": "화염의 기운이 깃든 명검."
-	},
-	{
 		"id": "arm_leather", "type": "armor", "name": "가죽 갑옷", "grade": "N",
 		"atk": 0, "def": 6, "hp": 25, "spd": 0.1, "icon": "🥋",
 		"desc": "가볍고 질긴 기본 가죽 갑옷."
-	},
-	{
-		"id": "arm_plate", "type": "armor", "name": "기사단 판금 갑옷", "grade": "SSR",
-		"atk": 5, "def": 22, "hp": 100, "spd": -0.2, "icon": "🛡️",
-		"desc": "왕실 수호 기사단의 견고한 갑옷."
-	},
-	{
-		"id": "acc_ring_speed", "type": "accessory", "name": "바람의 반지", "grade": "R",
-		"atk": 4, "def": 2, "hp": 10, "spd": 0.6, "icon": "💍",
-		"desc": "착용자의 발걸음을 가볍게 합니다."
 	},
 	{
 		"id": "mat_stone", "type": "material", "name": "장비 강화석", "count": 15,
@@ -71,29 +57,37 @@ const PERMANENT_STAT_UPGRADE_CONFIG := {
 # SHOP CATALOG & BESTIARY
 # -------------------------------------------------------------
 
-const SHOP_CATALOG: Dictionary = {
-	"shop_spear": {
-		"id": "shop_spear", "type": "weapon", "name": "은빛 창", "grade": "R",
-		"atk": 16, "def": 0, "hp": 10, "spd": 0.1, "icon": "🔱", "price": 780,
-		"desc": "긴 사거리와 안정적인 공격력을 갖춘 창."
+const SKILL_SHOP_SOURCE := "res://assets/rig/exported-model.glb"
+const SKILL_MOTION_PRICE := 100
+const SKILL_SHOP_MOTIONS := preload("res://data/skill_shop_motions.gd").MOTIONS
+const CHARACTER_ANIMATION_SOURCE := preload("res://scripts/character_animation_source.gd")
+
+const BOSS_EQUIPMENT_CATALOG: Dictionary = {
+	"wpn_iron_sword": {
+		"id": "wpn_iron_sword", "type": "weapon", "name": "철제 장검", "grade": "N",
+		"atk": 8, "def": 0, "hp": 0, "spd": 0.0, "icon": "🗡️", "desc": "기본적인 단단한 쇠 검."
 	},
-	"shop_robe": {
-		"id": "shop_robe", "type": "armor", "name": "현자의 로브", "grade": "R",
-		"atk": 3, "def": 10, "hp": 45, "spd": 0.2, "icon": "🥼", "price": 860,
-		"desc": "마법의 흐름을 돕는 가벼운 로브."
+	"wpn_flame_blade": {
+		"id": "wpn_flame_blade", "type": "weapon", "name": "작열의 검", "grade": "SR",
+		"atk": 25, "def": 0, "hp": 30, "spd": 0.2, "icon": "🔥", "desc": "화염의 기운이 깃든 명검."
 	},
-	"shop_charm": {
-		"id": "shop_charm", "type": "accessory", "name": "행운의 부적", "grade": "R",
-		"atk": 6, "def": 4, "hp": 20, "spd": 0.3, "icon": "🍀", "price": 640,
-		"desc": "모험가에게 행운을 가져다주는 작은 부적."
+	"arm_plate": {
+		"id": "arm_plate", "type": "armor", "name": "기사단 판금 갑옷", "grade": "SSR",
+		"atk": 5, "def": 22, "hp": 100, "spd": -0.2, "icon": "🛡️", "desc": "왕실 수호 기사단의 견고한 갑옷."
+	},
+	"acc_ring_speed": {
+		"id": "acc_ring_speed", "type": "accessory", "name": "바람의 반지", "grade": "R",
+		"atk": 4, "def": 2, "hp": 10, "spd": 0.6, "icon": "💍", "desc": "착용자의 발걸음을 가볍게 합니다."
 	}
 }
 
-const SHOP_CONSUMABLES: Array[Dictionary] = [
-	{"slot": 1, "name": "치유 물약", "icon": "🧪", "price": 100, "desc": "HP를 35 회복합니다."},
-	{"slot": 2, "name": "화면 폭탄", "icon": "💣", "price": 260, "desc": "주변 적에게 큰 피해를 줍니다."},
-	{"slot": 3, "name": "질풍 물약", "icon": "💨", "price": 180, "desc": "5초 동안 이동속도가 증가합니다."}
-]
+# 장비는 보스 처치에서만 획득한다. 스테이지별 보상 장비를 명시해
+# 일반 몬스터·상점·스테이지 클리어 보상에서는 장비가 나오지 않게 한다.
+const BOSS_EQUIPMENT_BY_STAGE: Dictionary = {
+	"stage_1": ["wpn_iron_sword"],
+	"stage_2": ["wpn_flame_blade"],
+	"stage_3": ["arm_plate", "acc_ring_speed"]
+}
 
 const MONSTER_BESTIARY: Dictionary = {
 	"infected": {
@@ -112,6 +106,12 @@ var player_current_xp: int = 0
 var player_xp_to_next: int = 10
 var player_gold: int = 1500
 var player_gems: int = 100
+var skill_coins: int = 0
+var _owned_skill_motions: Dictionary = {}
+var _skill_shop_clips := PackedStringArray()
+var _built_in_motions: Dictionary = {}
+var _starting_combat_skills: Dictionary = {}
+var _shop_combat_skills: Dictionary = {}
 var player_growth_currency: int = 0
 var player_current_hp: float = 100.0
 var survival_bonuses: Dictionary = {}
@@ -159,13 +159,6 @@ var skill_levels: Dictionary = {
 var skill_loadout: Dictionary = CHARACTER_SKILL_DATABASE.get_default_loadout(FIGHTER_ID)
 var skill_meta: Dictionary = CHARACTER_SKILL_DATABASE.get_skill_set(FIGHTER_ID)
 
-# --- Consumable Items Stock ---
-var item_counts: Dictionary = {
-	1: 3, # Potion (Heal 35)
-	2: 1, # Screen Bomb (80 Damage)
-	3: 2  # Speed Boost (1.5x Speed for 5s)
-}
-
 # Character creation reads the playable classes from this catalog.
 var characters: Dictionary = {
 	"char02": {
@@ -208,7 +201,7 @@ var stages: Dictionary = {
 		"difficulty": "★☆☆☆☆",
 		"desc": "마을 북쪽 성문 밖 초원에 몬스터들이 출몰하기 시작했습니다. 성문 밖으로 나가 침략을 저지하세요.",
 		"monster_types": ["감염자", "거대 감염자 (보스)"],
-		"rewards": {"gold": 400, "xp": 60, "items": ["강화석 x2", "치유 물약 x2"]},
+		"rewards": {"gold": 400, "xp": 60, "items": ["강화석 x2"]},
 		"scene": "res://scenes/stages/stage_grassland.tscn",
 		"preview_scene": "res://scenes/stages/stage_grassland.tscn",
 		"cleared": false
@@ -223,7 +216,7 @@ var stages: Dictionary = {
 		"difficulty": "★★★☆☆",
 		"desc": "짙은 안개 속에서 고대의 언데드들이 끝없이 몰려옵니다. 강력한 화력과 방어 전략이 요구됩니다.",
 		"monster_types": ["감염자", "거대 감염자 (보스)"],
-		"rewards": {"gold": 900, "xp": 140, "items": ["강화석 x5", "폭탄 x2", "작열의 검"]},
+		"rewards": {"gold": 900, "xp": 140, "items": ["강화석 x5"]},
 		"scene": "res://scenes/stages/stage_grassland.tscn",
 		"cleared": false
 	},
@@ -237,7 +230,7 @@ var stages: Dictionary = {
 		"difficulty": "★★★★★",
 		"desc": "봉인된 심연의 문에서 쏟아져 나오는 몬스터 군단. 수련한 무공으로 군단을 돌파하세요.",
 		"monster_types": ["감염자", "거대 감염자 (보스)"],
-		"rewards": {"gold": 2500, "xp": 350, "items": ["기사단 판금 갑옷", "다이아몬드 x50"]},
+		"rewards": {"gold": 2500, "xp": 350, "items": ["다이아몬드 x50"]},
 		"scene": "res://scenes/stages/stage_grassland.tscn",
 		"cleared": false
 	}
@@ -331,7 +324,6 @@ var _direct_growth_migration_pending := false
 func _ready():
 	_migrate_character_attributes()
 	_migrate_direct_gold_growth()
-	_migrate_skill_loadout(skill_loadout)
 	_ensure_character_equipment_entries()
 	_set_character_skill_set(get_leader_id())
 	_default_runtime_template = _serialize_runtime_state()
@@ -447,6 +439,8 @@ func get_direct_stat_upgrade_cost(char_id: String, stat_name: String) -> int:
 	if not characters.has(char_id) or not StatManager.STAT_KEYS.has(stat_name):
 		return 0
 	var stats := get_character_stat_manager(char_id)
+	if not stats.can_upgrade(stat_name):
+		return 0
 	var defaults := StatManager.get_default_stats(char_id, characters.get(char_id, {}))
 	var upgrade_count := maxi(0, stats.get_stat(stat_name) - int(defaults[stat_name]))
 	var base_cost := int(PERMANENT_STAT_UPGRADE_CONFIG.base_cost)
@@ -454,6 +448,20 @@ func get_direct_stat_upgrade_cost(char_id: String, stat_name: String) -> int:
 	var round_to := int(PERMANENT_STAT_UPGRADE_CONFIG.round_to)
 	var raw_cost := float(base_cost) * pow(growth_rate, upgrade_count)
 	return ceili(raw_cost / float(round_to)) * round_to
+
+func has_permanent_upgrade_available(char_id: String = "") -> bool:
+	var target_id := char_id if not char_id.is_empty() else get_leader_id()
+	for stat_name in StatManager.STAT_KEYS:
+		var cost := get_direct_stat_upgrade_cost(target_id, stat_name)
+		if cost > 0 and player_gold >= cost:
+			return true
+	return false
+
+func has_claimable_quest() -> bool:
+	for quest in quests:
+		if not bool(quest.get("claimed", false)) and int(quest.get("current", 0)) >= int(quest.get("target", 1)):
+			return true
+	return false
 
 func upgrade_character_stat_with_gold(char_id: String, stat_name: String) -> bool:
 	if not characters.has(char_id) or not StatManager.STAT_KEYS.has(stat_name):
@@ -516,12 +524,34 @@ func _set_character_skill_set(character_class_id: String):
 	skill_meta = CHARACTER_SKILL_DATABASE.get_skill_set(character_class_id)
 	skill_levels = CHARACTER_SKILL_DATABASE.get_default_levels(character_class_id)
 	skill_loadout = CHARACTER_SKILL_DATABASE.get_default_loadout(character_class_id)
+	_built_in_motions.clear()
+	_starting_combat_skills.clear()
+	_shop_combat_skills.clear()
+	var character := CharacterRegistry.get_by_id(character_class_id)
+	if character != null:
+		for action in character.basic_attack_animation_keys:
+			var clip := CHARACTER_SKILL_DATABASE.get_source_clip(character, action)
+			if not clip.is_empty():
+				_built_in_motions[clip] = true
+		var starting_ids := skill_loadout.values()
+		var basic_clips := _built_in_motions.duplicate()
+		for skill_id in skill_meta:
+			var meta: Dictionary = skill_meta[skill_id]
+			var clip := CHARACTER_SKILL_DATABASE.get_source_clip(character, str(meta.get("animation_key", "")))
+			if basic_clips.has(clip) or str(meta.get("cast_type", "")) == "unassigned":
+				continue
+			if starting_ids.has(skill_id) or str(meta.get("cast_type", "")) == "passive":
+				_starting_combat_skills[skill_id] = true
+				if not clip.is_empty():
+					_built_in_motions[clip] = true
+			elif character.animation_source_path == SKILL_SHOP_SOURCE and not character.role.is_empty() and get_skill_shop_motion_role(clip) == character.role:
+				_shop_combat_skills[skill_id] = clip
 	skill_cooldowns.clear()
 	for skill_id in skill_meta:
 		skill_cooldowns[skill_id] = float(skill_meta[skill_id].get("base_cd", 1.0))
 
 func level_up_skill(skill_key: String) -> bool:
-	if not skill_levels.has(skill_key) or not skill_meta.get(skill_key, {}).has("cost_base"):
+	if not is_combat_skill_owned(skill_key) or not skill_levels.has(skill_key) or not skill_meta.get(skill_key, {}).has("cost_base"):
 		return false
 	var cur_lvl = skill_levels[skill_key]
 	if cur_lvl >= 10:
@@ -545,14 +575,21 @@ func level_up_skill(skill_key: String) -> bool:
 	return true
 
 func get_equipped_skill(slot: String) -> String:
-	return str(skill_loadout.get(slot, ""))
+	var id := str(skill_loadout.get(slot, ""))
+	return id if is_combat_skill_owned(id) else ""
+
+func is_combat_skill_owned(skill_id: String) -> bool:
+	if _starting_combat_skills.has(skill_id):
+		return true
+	var clip := str(_shop_combat_skills.get(skill_id, ""))
+	return not clip.is_empty() and owns_skill_motion(clip)
 
 func is_survival_skill_unlocked(skill_id: String) -> bool:
-	return skill_meta.has(skill_id) and player_level >= int(skill_meta[skill_id].unlock_level)
+	return is_combat_skill_owned(skill_id) and player_level >= int(skill_meta[skill_id].unlock_level)
 
 func equip_skill(slot: String, skill_id: String) -> bool:
 	var slots: Array[String] = ["q", "w", "e", "r", "a", "s"]
-	if not slots.has(slot) or not skill_meta.has(skill_id):
+	if not slots.has(slot) or not is_combat_skill_owned(skill_id):
 		return false
 	if str(skill_meta[skill_id].get("cast_type", "passive")) == "passive":
 		return false
@@ -579,22 +616,16 @@ func _migrate_skill_loadout(saved_loadout: Dictionary):
 	var assigned: Dictionary = {}
 	for slot in slots:
 		var skill_id := CHARACTER_SKILL_DATABASE.canonicalize_skill_id(get_leader_id(), str(saved_loadout.get(slot, "")))
-		if skill_meta.has(skill_id) and str(skill_meta[skill_id].get("cast_type", "passive")) != "passive" and not assigned.has(skill_id):
+		if is_combat_skill_owned(skill_id) and str(skill_meta[skill_id].get("cast_type", "passive")) != "passive" and not assigned.has(skill_id):
 			migrated[slot] = skill_id
 			assigned[skill_id] = true
 	for slot in slots:
 		if migrated.has(slot):
 			continue
 		var current_skill := str(defaults.get(slot, ""))
-		if skill_meta.has(current_skill) and not assigned.has(current_skill):
+		if is_combat_skill_owned(current_skill) and not assigned.has(current_skill):
 			migrated[slot] = current_skill
 			assigned[current_skill] = true
-			continue
-		for skill_id in skill_meta:
-			if str(skill_meta[skill_id].get("cast_type", "passive")) != "passive" and not assigned.has(skill_id):
-				migrated[slot] = skill_id
-				assigned[skill_id] = true
-				break
 	skill_loadout = migrated
 
 func get_skill_damage_multiplier(skill_key: String) -> float:
@@ -634,16 +665,6 @@ func record_battle_result(won: bool, time_sec: float, kills: int) -> Dictionary:
 	else:
 		# Partial rewards
 		base_gold += int(stage.rewards.gold * 0.3)
-		earned_items.append("소형 치유 물약 x1")
-		_grant_reward_item("소형 치유 물약 x1")
-
-	# Give consumables if drops occurred
-	if kills >= 5:
-		item_counts[1] = item_counts.get(1, 0) + 1
-		earned_items.append("체력 물약 x1")
-	if kills >= 15:
-		item_counts[2] = item_counts.get(2, 0) + 1
-		earned_items.append("폭탄 x1")
 
 	# Apply currencies
 	player_gold += base_gold
@@ -729,12 +750,6 @@ func _grant_reward_item(reward: String):
 				if item.get("id", "") == "mat_stone":
 					item["count"] = item.get("count", 0) + count
 					return
-		"치유 물약", "체력 물약", "소형 치유 물약":
-			item_counts[1] = item_counts.get(1, 0) + count
-			return
-		"폭탄":
-			item_counts[2] = item_counts.get(2, 0) + count
-			return
 		"다이아몬드":
 			player_gems += count
 			return
@@ -828,6 +843,23 @@ func get_active_character_equipment_hp() -> float:
 		total += float(item.get("hp", 0.0))
 	return total
 
+
+func grant_boss_equipment() -> Dictionary:
+	var pool: Array = BOSS_EQUIPMENT_BY_STAGE.get(current_selected_stage_id, [])
+	if pool.is_empty():
+		return {}
+	var item_id := str(pool.pick_random())
+	var source: Dictionary = BOSS_EQUIPMENT_CATALOG.get(item_id, {})
+	if source.is_empty():
+		return {}
+	var drop := source.duplicate(true)
+	drop["id"] = "%s_boss_%d" % [item_id, Time.get_ticks_msec()]
+	drop.erase("count")
+	inventory.append(drop)
+	data_updated.emit()
+	save_to_disk()
+	return drop
+
 func mark_tutorial(flag: String):
 	tutorial_flags[flag] = true
 	if flag == "seen_character":
@@ -837,74 +869,68 @@ func mark_tutorial(flag: String):
 func is_tutorial_done(flag: String) -> bool:
 	return bool(tutorial_flags.get(flag, false))
 
-func buy_shop_item(key: String) -> Dictionary:
-	if key.begins_with("consumable:"):
-		var slot := int(key.get_slice(":", 1))
-		var entry: Dictionary = {}
-		for c in SHOP_CONSUMABLES:
-			if int(c.get("slot", -1)) == slot:
-				entry = c
-				break
-		if entry.is_empty():
-			return {"ok": false, "message": "판매하지 않는 상품입니다."}
-		var price := int(entry.get("price", 0))
-		if player_gold < price:
-			return {
-				"ok": false,
-				"message": "골드가 부족합니다. (필요 %d / 보유 %d)" % [price, player_gold]
-			}
-		player_gold -= price
-		item_counts[slot] = int(item_counts.get(slot, 0)) + 1
-		currency_changed.emit(player_gold, player_gems)
-		data_updated.emit()
-		save_to_disk()
-		return {
-			"ok": true,
-			"message": "%s을(를) 구매했습니다." % entry.get("name", "아이템"),
-			"reward": ["%s x1" % entry.get("name", "아이템")]
-		}
+func get_skill_shop_library() -> AnimationLibrary:
+	var library := CHARACTER_ANIMATION_SOURCE.get_source_library(SKILL_SHOP_SOURCE)
+	if library != null:
+		_skill_shop_clips = library.get_animation_list()
+	return library
 
-	var gear: Dictionary = SHOP_CATALOG.get(key, {})
-	if gear.is_empty():
-		return {"ok": false, "message": "판매하지 않는 상품입니다."}
-	for item in inventory:
-		if item.get("id", "") == key:
-			return {"ok": false, "message": "이미 보유 중인 장비입니다."}
-	var price := int(gear.get("price", 0))
-	if player_gold < price:
-		return {
-			"ok": false,
-			"message": "골드가 부족합니다. (필요 %d / 보유 %d)" % [price, player_gold]
-		}
-	player_gold -= price
-	var bought := gear.duplicate(true)
-	bought.erase("price")
-	inventory.append(bought)
-	currency_changed.emit(player_gold, player_gems)
-	data_updated.emit()
-	save_to_disk()
-	return {
-		"ok": true,
-		"message": "%s을(를) 구매했습니다." % gear.get("name", "장비"),
-		"reward": ["%s x1" % gear.get("name", "장비")]
-	}
+func owns_skill_motion(clip_name: String) -> bool:
+	return _owned_skill_motions.has(clip_name)
 
-func rest_at_inn() -> Dictionary:
-	var cost := 50
-	if player_gold < cost:
-		return {
-			"ok": false,
-			"message": "골드가 부족합니다. (필요 %d / 보유 %d)" % [cost, player_gold]
-		}
-	player_gold -= cost
-	player_current_hp = get_max_player_hp()
-	currency_changed.emit(player_gold, player_gems)
-	data_updated.emit()
-	save_to_disk()
-	var player = get_tree().get_first_node_in_group("player")
-	if player and player.has_method("heal"):
-		player.call("heal", 99999.0)
-	return {"ok": true, "message": "여관에서 휴식하여 체력을 모두 회복했습니다."}
+func has_skill_shop_motion(clip_name: String) -> bool:
+	return owns_skill_motion(clip_name) or _built_in_motions.has(clip_name)
+
+func has_skill_shop_purchase_available() -> bool:
+	if skill_coins < SKILL_MOTION_PRICE:
+		return false
+	if _skill_shop_clips.is_empty():
+		get_skill_shop_library()
+	var role := get_skill_shop_player_role()
+	for clip_name in _skill_shop_clips:
+		if get_skill_shop_motion_role(clip_name) == role and not has_skill_shop_motion(clip_name):
+			return true
+	return false
+
+func get_skill_shop_motion_name(clip_name: String) -> String:
+	return str(SKILL_SHOP_MOTIONS.get(clip_name, ["이름 미등록", ""])[0])
+
+func get_skill_shop_motion_role(clip_name: String) -> String:
+	return str(SKILL_SHOP_MOTIONS.get(clip_name, ["", ""])[1])
+
+func get_skill_shop_player_role() -> String:
+	var character := CharacterRegistry.get_by_id(get_leader_id())
+	return character.role if character != null else ""
+
+func get_skill_shop_purchase_error(clip_name: String) -> String:
+	if has_skill_shop_motion(clip_name):
+		return "이미 보유한 동작입니다."
+	var role := get_skill_shop_motion_role(clip_name)
+	if role.is_empty():
+		return "미리보기용 동작입니다."
+	if role != get_skill_shop_player_role():
+		return "%s만 구매할 수 있습니다." % role
+	if skill_coins < SKILL_MOTION_PRICE:
+		return "스킬 코인이 부족합니다."
+	return ""
+
+func buy_skill_motion(clip_name: String) -> String:
+	if _skill_shop_clips.is_empty():
+		get_skill_shop_library()
+	if not _skill_shop_clips.has(clip_name):
+		return "판매 목록에 없는 동작입니다."
+	var blocked := get_skill_shop_purchase_error(clip_name)
+	if not blocked.is_empty():
+		return blocked
+
+	skill_coins -= SKILL_MOTION_PRICE
+	_owned_skill_motions[clip_name] = true
+	if not save_to_disk():
+		_owned_skill_motions.erase(clip_name)
+		skill_coins += SKILL_MOTION_PRICE
+		return "구매를 저장하지 못했습니다."
+	skill_shop_updated.emit()
+	return ""
 
 func record_monster_kill(monster_id: String):
 	monster_kill_counts[monster_id] = int(monster_kill_counts.get(monster_id, 0)) + 1
@@ -990,9 +1016,6 @@ func apply_upgrade(upgrade: Dictionary):
 			if player:
 				var id := str(upgrade.id)
 				player.card_hit_bonuses[id] = float(player.card_hit_bonuses.get(id, 0.0)) + float(upgrade.value)
-		"sp_regen":
-			if player:
-				player.card_sp_regen += float(upgrade.value)
 		"all_cd":
 			for skill in skill_cooldowns:
 				skill_cooldowns[skill] = maxf(0.5, float(skill_cooldowns[skill]) * (1.0 - float(upgrade.value)))
@@ -1014,7 +1037,6 @@ func _serialize_runtime_state() -> Dictionary:
 		"growth_system_version": 2,
 		"class_id": get_leader_id(),
 		"skill_loadout": skill_loadout,
-		"item_counts": item_counts,
 		"characters": characters,
 		"inventory": inventory,
 		"equipped_gear": equipped_gear,
@@ -1065,11 +1087,6 @@ func _apply_runtime_state(data: Dictionary):
 	if data.has("skill_loadout") and data["skill_loadout"] is Dictionary:
 		skill_loadout = data["skill_loadout"].duplicate(true)
 
-	if data.has("item_counts") and data["item_counts"] is Dictionary:
-		item_counts.clear()
-		for key in data["item_counts"]:
-			item_counts[int(key)] = int(data["item_counts"][key])
-
 	if data.has("characters") and data["characters"] is Dictionary:
 		for character_id in data["characters"]:
 			if characters.has(character_id) and data["characters"][character_id] is Dictionary:
@@ -1103,7 +1120,8 @@ func _apply_runtime_state(data: Dictionary):
 		last_battle_result = data["last_battle_result"].duplicate(true)
 
 	input_mode = str(data.get("input_mode", input_mode))
-	camera_view_mode = str(data.get("camera_view_mode", camera_view_mode))
+	# 캐릭터 추적뷰는 임시 비활성화. 기존 저장값이 follow여도 쿼터뷰로 정규화한다.
+	camera_view_mode = "quarter"
 	camera_elevation_degrees = clampf(float(data.get("camera_elevation_degrees", camera_elevation_degrees)), 20.0, 75.0)
 	camera_azimuth_degrees = wrapf(float(data.get("camera_azimuth_degrees", camera_azimuth_degrees)), -180.0, 180.0)
 	camera_distance = clampf(float(data.get("camera_distance", camera_distance)), 8.0, 24.0)
@@ -1344,6 +1362,7 @@ func save_to_disk() -> bool:
 	save_dict["character_slots"] = character_slot_manager.to_array()
 	save_dict["character_profiles"] = character_profiles
 	save_dict["last_selected_character_id"] = last_selected_character_id
+	save_dict["skill_shop"] = {"coins": skill_coins, "owned_motions": _owned_skill_motions}
 	save_dict["saved_at"] = Time.get_datetime_string_from_system(false, true)
 	var json_str := JSON.stringify(save_dict, "\t")
 	var file := FileAccess.open(SAVE_TEMP_PATH, FileAccess.WRITE)
@@ -1375,9 +1394,12 @@ func save_to_disk() -> bool:
 	if DirAccess.rename_absolute(temp_global, save_global) != OK and DirAccess.rename_absolute(SAVE_TEMP_PATH, SAVE_FILE_PATH) != OK:
 		# Direct write fallback if atomic rename is blocked (common in mobile scoped storage)
 		var direct_file := FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
-		if direct_file:
-			direct_file.store_string(json_str)
-			direct_file.close()
+		if not direct_file:
+			_save_in_progress = false
+			save_status_changed.emit("failed")
+			return false
+		direct_file.store_string(json_str)
+		direct_file.close()
 		DirAccess.remove_absolute(temp_global)
 		DirAccess.remove_absolute(SAVE_TEMP_PATH)
 	_save_in_progress = false
@@ -1385,14 +1407,17 @@ func save_to_disk() -> bool:
 	return true
 
 func load_from_disk() -> bool:
-	if not FileAccess.file_exists(SAVE_FILE_PATH):
-		return false
-	var save_data := _read_save_dictionary(SAVE_FILE_PATH)
+	var save_data := _read_save_dictionary(SAVE_FILE_PATH) if FileAccess.file_exists(SAVE_FILE_PATH) else {}
 	if save_data.is_empty() and FileAccess.file_exists(SAVE_BACKUP_PATH):
 		push_warning("Primary save is invalid. Loading the protected backup.")
 		save_data = _read_save_dictionary(SAVE_BACKUP_PATH)
 	if save_data.is_empty():
 		return false
+
+	var shop_state: Variant = save_data.get("skill_shop", {})
+	skill_coins = maxi(0, int(shop_state.get("coins", 0))) if shop_state is Dictionary else 0
+	var owned: Variant = shop_state.get("owned_motions", {}) if shop_state is Dictionary else {}
+	_owned_skill_motions = owned.duplicate() if owned is Dictionary else {}
 
 	character_profiles.clear()
 	if int(save_data.get("schema_version", 1)) >= 2 and save_data.get("character_profiles", {}) is Dictionary:
@@ -1523,7 +1548,6 @@ func reset_save():
 	leader_index = 0
 	_set_character_skill_set(get_leader_id())
 	skill_loadout = CHARACTER_SKILL_DATABASE.get_default_loadout(get_leader_id())
-	item_counts = {1: 3, 2: 1, 3: 2}
 	inventory = DEFAULT_INVENTORY.duplicate(true)
 	equipped_gear = DEFAULT_EQUIPPED_GEAR.duplicate(true)
 	_ensure_character_equipment_entries()

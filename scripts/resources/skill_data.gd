@@ -13,7 +13,6 @@ extends Resource
 @export var display_name: String = ""
 @export_multiline var description: String = ""
 @export var cost: int = 0
-@export var mana_cost: int = 0
 @export var cooldown: float = 0.0
 @export var damage_ratio: float = 0.0
 @export var cooldown_step: float = 0.0

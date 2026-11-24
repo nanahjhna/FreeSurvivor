@@ -2,10 +2,9 @@ extends Area3D
 class_name PickupGem
 
 @export var xp_value: int = 1
-@export_enum("경험치", "골드", "치유 물약") var reward_type: String = "경험치"
+@export_enum("경험치", "골드") var reward_type: String = "경험치"
 @export var reward_value: int = 0
 @export var gold_reward: int = 0
-@export var potion_reward: int = 0
 @export_range(0.0, 600.0, 0.5) var lifetime_seconds: float = 0.0
 var player: Node3D = null
 var magnet_speed: float = 0.0
@@ -59,7 +58,7 @@ func _ready():
 
 func refresh_label():
 	if pickup_label and reward_type == "경험치":
-		pickup_label.text = "EXP + HP" if potion_reward > 0 else "EXP"
+		pickup_label.text = "EXP"
 
 
 func _physics_process(delta: float):
@@ -73,8 +72,6 @@ func _physics_process(delta: float):
 	var magnet_range := 0.0
 	if reward_type == "경험치":
 		magnet_range = GameData.get_survival_bonus("xp_magnet_range")
-	elif reward_type == "치유 물약":
-		magnet_range = GameData.get_survival_bonus("potion_magnet_range")
 	if player and magnet_range > 0.0:
 		var target_position := player.global_position + Vector3(0.0, 0.55, 0.0)
 		if global_position.distance_to(target_position) <= magnet_range:
@@ -110,15 +107,9 @@ func collect():
 			if gold_reward > 0:
 				GameData.player_gold += int(round(gold_reward * (1.0 + GameData.get_survival_bonus("gold"))))
 				GameData.currency_changed.emit(GameData.player_gold, GameData.player_gems)
-			if potion_reward > 0:
-				GameData.item_counts[1] = int(GameData.item_counts.get(1, 0)) + potion_reward
-				GameData.data_updated.emit()
 		elif reward_type == "골드":
 			GameData.player_gold += int(round(reward_value * (1.0 + GameData.get_survival_bonus("gold"))))
 			GameData.currency_changed.emit(GameData.player_gold, GameData.player_gems)
-		else:
-			GameData.item_counts[1] = int(GameData.item_counts.get(1, 0)) + maxi(1, reward_value)
-			GameData.data_updated.emit()
 	_play_pickup_sound()
 
 	# Quick scale-down pop

@@ -66,7 +66,7 @@ func _build_ui():
 
 	var landmarks := [
 		{"id": "forge", "icon": "🔨", "name": "대장간", "desc": "장비 관리 · 헤파이스토"},
-		{"id": "shop", "icon": "🪙", "name": "무기 상점", "desc": "장비와 소모품 구매 · 마커스"},
+		{"id": "shop", "icon": "🪙", "name": "스킬 상점", "desc": "영웅 동작 미리보기·구매"},
 		{"id": "inn", "icon": "🏨", "name": "여관", "desc": "골드로 체력 회복 · 엘레나"},
 		{"id": "quest", "icon": "📜", "name": "마을 게시판", "desc": "퀘스트 확인 및 보상 수령"},
 		{"id": "battle_start", "icon": "⚔️", "name": "북쪽 성문", "desc": "스테이지 선택 및 전투 준비"}

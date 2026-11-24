@@ -39,6 +39,8 @@ extends Camera3D
 @export_range(0.05, 1.0, 0.05) var collision_margin: float = 0.3
 @export_range(0.5, 4.0, 0.1) var zoom_step: float = 1.0
 
+const CAMERA_ROTATION_EPSILON := deg_to_rad(1.25)
+
 @onready var _camera_pivot: Node3D = get_node("../..") as Node3D
 @onready var _spring_arm: SpringArm3D = get_parent() as SpringArm3D
 
@@ -49,7 +51,7 @@ var _camera_yaw: float = 0.0
 var _back_idle_time: float = 0.0
 var _rig_mode: String = ""
 var _manual_orbit_timer: float = 0.0
-var _movement_yaw_offset: float = 0.0
+var _movement_input_locked: bool = false
 var _orbit_touch_id: int = -1
 var _orbit_mouse_active: bool = false
 var _follow_visual: Node3D
@@ -69,7 +71,6 @@ func _ready() -> void:
 
 func _configure_rig() -> void:
 	_rig_mode = _current_rig_mode()
-	_movement_yaw_offset = 0.0
 	if first_person_enabled:
 		top_level = false
 		_camera_pivot.top_level = true
@@ -156,14 +157,18 @@ func _player_forward() -> Vector3:
 	return forward.normalized()
 
 func get_movement_right() -> Vector3:
-	if back_view_enabled or first_person_enabled:
-		# Automatic follow yaw depends on the player facing. Using it as input would
-		# make held directions rotate in a loop. Only manual orbit changes the reference.
-		var yaw := deg_to_rad(quarter_azimuth_degrees) + _movement_yaw_offset
-		return Vector3(cos(yaw), 0.0, -sin(yaw))
+	# Use the rendered camera's horizontal screen-right vector. The old follow
+	# view rebuilt this axis from a yaw offset, which inverted left/right when
+	# the spring arm was turned behind the character.
 	var right := global_basis.x
 	right.y = 0.0
 	return right.normalized() if right.length_squared() > 0.001 else Vector3.RIGHT
+
+
+func is_movement_input_locked() -> bool:
+	if not back_view_enabled:
+		return false
+	return _movement_input_locked or _orbit_mouse_active or _orbit_touch_id >= 0
 
 
 func _player_yaw() -> float:
@@ -241,25 +246,33 @@ func _update_back_yaw(delta: float, yaw_offset_degrees: float) -> void:
 	if _manual_orbit_timer > 0.0:
 		_manual_orbit_timer = maxf(0.0, _manual_orbit_timer - delta)
 		_back_idle_time = 0.0
+		_movement_input_locked = false
+		return
+	if _movement_input_locked:
+		_movement_input_locked = _rotate_back_yaw(delta, yaw_offset_degrees)
 		return
 	var has_move_input := false
 	if follow_target.has_method("has_camera_move_input"):
 		has_move_input = bool(follow_target.call("has_camera_move_input"))
 	if has_move_input:
 		_back_idle_time = 0.0
-		_rotate_back_yaw(delta, yaw_offset_degrees)
+		_movement_input_locked = _rotate_back_yaw(delta, yaw_offset_degrees)
 		return
 	_back_idle_time += delta
 	if _back_idle_time < back_view_recenter_delay:
 		return
-	_rotate_back_yaw(delta, yaw_offset_degrees)
+	_movement_input_locked = _rotate_back_yaw(delta, yaw_offset_degrees)
 
 
-func _rotate_back_yaw(delta: float, yaw_offset_degrees: float) -> void:
+func _rotate_back_yaw(delta: float, yaw_offset_degrees: float) -> bool:
 	var desired_yaw: float = _player_yaw() + deg_to_rad(yaw_offset_degrees)
 	var yaw_error: float = wrapf(desired_yaw - _camera_yaw, -PI, PI)
+	if absf(yaw_error) <= CAMERA_ROTATION_EPSILON:
+		_camera_yaw = desired_yaw
+		return false
 	var recenter_weight: float = 1.0 - exp(-back_view_recenter_speed * delta)
 	_camera_yaw += yaw_error * recenter_weight
+	return true
 
 
 func adjust_zoom(steps: int) -> void:
@@ -321,7 +334,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _apply_orbit_drag(relative: Vector2) -> void:
 	_camera_yaw -= relative.x * orbit_sensitivity
-	_movement_yaw_offset = wrapf(_camera_yaw + PI - deg_to_rad(quarter_azimuth_degrees), -PI, PI)
 	back_elevation_degrees = clampf(
 		back_elevation_degrees + relative.y * orbit_pitch_sensitivity,
 		25.0,

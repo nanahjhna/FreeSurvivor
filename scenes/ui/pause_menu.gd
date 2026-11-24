@@ -5,6 +5,7 @@ extends CanvasLayer
 @onready var restart_button: Button = $CenterContainer/VBoxContainer/RestartButton
 @onready var settings_button: Button = $CenterContainer/VBoxContainer/SettingsButton
 @onready var lobby_button: Button = $CenterContainer/VBoxContainer/LobbyButton
+var pause_content: VBoxContainer
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -28,6 +29,7 @@ func _build_pause_panel() -> void:
 	$ColorRect.color = Color(0.028, 0.019, 0.034, 0.72)
 	var center := $CenterContainer as CenterContainer
 	var content := $CenterContainer/VBoxContainer as VBoxContainer
+	pause_content = content
 	var title := content.get_node("Title") as Label
 	title.add_theme_color_override("font_color", Color.WHITE)
 	UiStyle.ink_outline(title, 7, Color("#25436d"))

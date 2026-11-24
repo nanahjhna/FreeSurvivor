@@ -8,11 +8,6 @@ extends CanvasLayer
 @onready var stage_label: Label = $TopCenter/StageLabel
 @onready var kill_label: Label = $TopRight/KillContainer/KillLabel
 
-# Items
-@onready var item1_label: Label = $BottomRight/ItemContainer/Item1/CountLabel
-@onready var item2_label: Label = $BottomRight/ItemContainer/Item2/CountLabel
-@onready var item3_label: Label = $BottomRight/ItemContainer/Item3/CountLabel
-
 # Offscreen warning overlay
 @onready var indicator_overlay: Control = $IndicatorOverlay
 @onready var pause_button: Button = $TopRight/PauseButton
@@ -49,14 +44,12 @@ var _hud_overlap_label: Label
 const HUD_CONFIG_PATH := "user://hud_layout.cfg"
 
 var _skill_panels: Dictionary = {}
-var _item_panels: Dictionary = {}
 var boss_choice_dialog: ConfirmationDialog
 
 const VIRTUAL_DPAD: PackedScene = preload("res://scenes/ui/virtual_dpad.tscn")
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	$TopLeft/Bars/SPBar.visible = false
 	_connect_signals()
 	_style_action_panels()
 	_build_infinite_dungeon_controls()
@@ -71,7 +64,6 @@ func _ready():
 	GameActions.action_requested.connect(_on_action_requested)
 	GameActions.input_mode_changed.connect(_build_mobile_dpad)
 	GameManager.boss_defeated.connect(_on_boss_defeated)
-	_update_item_counts()
 	_update_skill_slot_labels()
 	_on_time_updated(GameManager.battle_time)
 	_on_leveled_up(GameData.player_level)
@@ -79,7 +71,6 @@ func _ready():
 func _connect_signals():
 	GameManager.time_updated.connect(_on_time_updated)
 	GameManager.kill_count_changed.connect(_on_kill_count_changed)
-	GameData.data_updated.connect(_update_item_counts)
 	GameData.data_updated.connect(_update_skill_slot_labels)
 
 	player_node = get_tree().get_first_node_in_group("player")
@@ -417,11 +408,6 @@ func _style_action_panels():
 		"a": _create_runtime_skill_panel("a"),
 		"s": _create_runtime_skill_panel("s")
 	}
-	_item_panels = {
-		1: $BottomRight/ItemContainer/Item1,
-		2: $BottomRight/ItemContainer/Item2,
-		3: $BottomRight/ItemContainer/Item3
-	}
 	for key in _skill_panels:
 		var skill_panel := _skill_panels[key] as Control
 		skill_panel.custom_minimum_size = Vector2(58, 70) if str(key) in ["a", "s"] else Vector2(87, 83)
@@ -429,13 +415,6 @@ func _style_action_panels():
 			skill_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.07, 0.13, 0.25, 0.93), Color("#80b8ef"), 3, 13))
 		var action_id: String = "skill_" + str(key)
 		_setup_panel(skill_panel, action_id, func(): _cast_skill(str(key)), _skill_tooltip.bind(str(key)))
-	for slot in _item_panels:
-		var s: int = slot
-		var item_panel := _item_panels[slot] as Panel
-		item_panel.custom_minimum_size = Vector2(52, 52)
-		item_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.045, 0.03, 0.028, 0.92), Color(0.55, 0.38, 0.22, 0.78), 1, 6))
-		_setup_panel(_item_panels[slot], "item_%d" % s, func(): _use_item(s), _item_tooltip.bind(s))
-
 	if pause_button:
 		UiStyle.apply_button(pause_button)
 		pause_button.text = "⏸"
@@ -542,7 +521,7 @@ func _build_battle_action_bar():
 	auto_battle_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 	auto_battle_button.toggle_mode = true
 	auto_battle_button.pressed.connect(_toggle_auto_battle)
-	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 스킬 시전", "사거리 안의 적에게 습득한 스킬을 시전합니다.\n체력이 40% 이하이면 자동으로 물약을 사용합니다.", auto_battle_button.global_position + Vector2(0, 46)))
+	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 전투", "스킬 우선 · 쓸 수 없으면 기본공격\nHP 40% 이하일 때 보유한 물약 사용", auto_battle_button.global_position + Vector2(0, 46)))
 	auto_battle_button.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
 	controls.add_child(auto_battle_button)
 	controls.move_child(auto_battle_button, 0)
@@ -785,12 +764,6 @@ func _cast_skill(key: String):
 		return
 	skill_manager.call("press_skill", key)
 
-func _use_item(slot: int):
-	if player_node == null or not is_instance_valid(player_node):
-		player_node = get_tree().get_first_node_in_group("player")
-	if player_node and player_node.has_method("use_item"):
-		player_node.call("use_item", slot)
-
 func _manual_attack():
 	if player_node == null or not is_instance_valid(player_node):
 		player_node = get_tree().get_first_node_in_group("player")
@@ -806,19 +779,13 @@ func _toggle_auto_battle():
 func _update_auto_battle_label():
 	var enabled := bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
 	auto_battle_button.set_pressed_no_signal(enabled)
-	auto_battle_button.text = "AUTO  %s" % ("ON" if enabled else "OFF")
+	auto_battle_button.text = "자동 전투 %s" % ("켜짐" if enabled else "꺼짐")
 	UiStyle.skin_button(auto_battle_button, Color("#256b8a") if enabled else Color("#25334a"), Color("#74d3ff") if enabled else Color("#889aba"))
 
 func _on_action_requested(action_id: String):
 	match action_id:
 		"skill_q", "skill_w", "skill_e", "skill_a", "skill_s", "skill_r", "skill_d", "skill_f":
 			_cast_skill(action_id.trim_prefix("skill_"))
-		"item_1":
-			_use_item(1)
-		"item_2":
-			_use_item(2)
-		"item_3":
-			_use_item(3)
 		"attack":
 			_manual_attack()
 		"auto_battle":
@@ -876,21 +843,8 @@ func _update_skill_availability():
 		var skill_id := GameData.get_equipped_skill(str(slot))
 		var panel: Control = _skill_panels[slot]
 		var unlocked := GameData.is_survival_skill_unlocked(skill_id)
-		panel.visible = slot in ["q", "w", "e", "r"] or unlocked
+		panel.visible = not skill_id.is_empty() and (slot in ["q", "w", "e", "r"] or unlocked)
 		panel.modulate = Color.WHITE if unlocked else Color(0.58, 0.59, 0.67)
-
-func _item_tooltip(slot: int) -> Dictionary:
-	var names := {1: "치유 물약", 2: "화면 폭탄", 3: "질풍 물약"}
-	var descs := {
-		1: "체력을 35 회복합니다.",
-		2: "주변 적에게 큰 피해를 줍니다.",
-		3: "5초 동안 이동속도가 50% 증가합니다."
-	}
-	var count := int(GameData.item_counts.get(slot, 0))
-	var body := "%s\n\n보유 수량: %d개" % [descs.get(slot, ""), count]
-	if count <= 0:
-		body += "\n\n⛔ 아이템이 없습니다. 마을 상점에서 구매하세요."
-	return {"title": "%s [%d]" % [names.get(slot, "아이템"), slot], "body": body}
 
 # ------------------------------------------------------------
 # SIGNALS / INPUT
@@ -928,20 +882,6 @@ func _on_time_updated(time_sec: float):
 
 func _on_kill_count_changed(count: int):
 	kill_label.text = "⚔ %d" % count
-
-func _update_item_counts():
-	if item1_label:
-		item1_label.text = "x" + str(GameData.item_counts.get(1, 0))
-	if item2_label:
-		item2_label.text = "x" + str(GameData.item_counts.get(2, 0))
-	if item3_label:
-		item3_label.text = "x" + str(GameData.item_counts.get(3, 0))
-	for slot in _item_panels:
-		var panel: Control = _item_panels[slot]
-		if panel == null:
-			continue
-		var count := int(GameData.item_counts.get(slot, 0))
-		panel.modulate = Color(1, 1, 1, 1) if count > 0 else Color(0.55, 0.55, 0.6, 0.8)
 
 func _on_skill_cooldown_updated(skill_key: String, current_cd: float, max_cd: float):
 	var panel := _skill_panels.get(skill_key) as Control

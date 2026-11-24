@@ -248,7 +248,7 @@ func scale_card_damage(value: float, scaling: String) -> float:
 
 
 func scale_block(value: float) -> float:
-	return value * (1.0 + character_stats.get_stat("VIT") * 0.04)
+	return value * (1.0 + float(character_stats.base_stats.VIT) * 0.04)
 
 
 func damage_enemy(amount: float):

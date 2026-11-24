@@ -37,15 +37,10 @@ const ACTIONS := {
 		"context": "lobby", "rebindable": true,
 		"desc": "진행 가능한 임무와 보상을 확인합니다."
 	},
-	"collection": {
-		"label": "도감", "icon": "📖", "key": KEY_B, "input_action": "menu_collection",
-		"context": "lobby", "rebindable": true,
-		"desc": "무도가와 마주친 몬스터를 확인합니다."
-	},
 	"shop": {
-		"label": "상점", "icon": "🪙", "key": KEY_O, "input_action": "menu_shop",
+		"label": "스킬 상점", "icon": "🪙", "key": KEY_O, "input_action": "menu_shop",
 		"context": "lobby", "rebindable": true,
-		"desc": "골드로 장비와 소모품을 구매합니다."
+		"desc": "영웅 동작을 미리 보고 스킬 코인으로 구매합니다."
 	},
 	"map": {
 		"label": "지도", "icon": "🗺️", "key": KEY_M, "input_action": "menu_map",
@@ -103,18 +98,6 @@ const ACTIONS := {
 	"skill_f": {
 		"label": "F 스킬", "icon": "🌟", "key": KEY_F, "input_action": "skill_f",
 		"context": "battle", "rebindable": true, "desc": "추가 스킬 슬롯 F입니다."
-	},
-	"item_1": {
-		"label": "아이템 1", "icon": "🧪", "key": KEY_1, "input_action": "item_1",
-		"context": "battle", "rebindable": true, "desc": "치유 물약을 사용합니다."
-	},
-	"item_2": {
-		"label": "아이템 2", "icon": "💣", "key": KEY_2, "input_action": "item_2",
-		"context": "battle", "rebindable": true, "desc": "화면 폭탄을 사용합니다."
-	},
-	"item_3": {
-		"label": "아이템 3", "icon": "💨", "key": KEY_3, "input_action": "item_3",
-		"context": "battle", "rebindable": true, "desc": "질풍 물약을 사용합니다."
 	},
 	"attack": {
 		"label": "수동 공격", "icon": "⚔️", "key": KEY_SPACE, "input_action": "manual_attack",

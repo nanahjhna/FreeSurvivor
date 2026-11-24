@@ -36,9 +36,12 @@ func _ready():
 	screen_vbox.add_child(passive_info_label)
 	screen_vbox.move_child(passive_info_label, 2)
 	GameData.data_updated.connect(_refresh_ui)
+	GameData.skill_shop_updated.connect(_refresh_ui)
 
 func open():
 	visible = true
+	selected_skill = ""
+	_slot_target_chosen = false
 	feedback_label.text = ""
 	_refresh_ui()
 
@@ -47,18 +50,24 @@ func close():
 	closed.emit()
 
 func _refresh_ui():
+	if not visible:
+		return
 	for child in skill_cards_box.get_children():
+		skill_cards_box.remove_child(child)
 		child.queue_free()
+	if not GameData.is_combat_skill_owned(selected_skill):
+		selected_skill = ""
 	var passive: Dictionary = {}
 	for skill_id in GameData.skill_meta:
-		if str(GameData.skill_meta[skill_id].get("cast_type", "")) == "passive":
+		if GameData.is_combat_skill_owned(skill_id) and str(GameData.skill_meta[skill_id].get("cast_type", "")) == "passive":
 			passive = GameData.skill_meta[skill_id]
 			break
-	passive_info_label.text = "P 패시브 · %s: %s" % [str(passive.get("name", "없음")), str(passive.get("desc", ""))]
+	passive_info_label.visible = not passive.is_empty()
+	passive_info_label.text = "패시브 · %s: %s" % [str(passive.get("name", "")), str(passive.get("desc", ""))]
 	_update_loadout_controls()
 	var keys: Array[String] = []
 	for skill_id in GameData.skill_meta:
-		if str(GameData.skill_meta[skill_id].get("cast_type", "")) != "passive":
+		if GameData.is_combat_skill_owned(skill_id) and str(GameData.skill_meta[skill_id].get("cast_type", "")) != "passive":
 			keys.append(str(skill_id))
 	for k in keys:
 		var meta = GameData.skill_meta[k]
@@ -70,7 +79,7 @@ func _build_loadout_controls():
 	var row := VBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	var title := Label.new()
-	title.text = "스킬을 고른 뒤 장착할 슬롯을 누르세요"
+	title.text = "스킬 선택 → 장착할 슬롯 누르기"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(title)
 	var slots := GridContainer.new()
@@ -102,13 +111,11 @@ func _update_loadout_controls():
 		button.text = "%s: %s %s" % [str(slot).to_upper(), str(meta.get("icon", "—")), str(meta.get("name", "빈 슬롯"))]
 		button.button_pressed = str(slot) == selected_slot
 		button.tooltip_text = "현재 장착: %s. 선택한 스킬을 장착하거나 교체합니다." % str(meta.get("name", ""))
-	loadout_hint.text = (
-		"선택 스킬: %s · 대상 슬롯: %s (Q/W/E/R/A/S 중 선택)"
-		% [
-			str(GameData.skill_meta.get(selected_skill, {}).get("name", "스킬 없음")),
-			selected_slot.to_upper()
-		]
-	)
+	loadout_hint.visible = not selected_skill.is_empty() or _slot_target_chosen
+	if not selected_skill.is_empty():
+		loadout_hint.text = "%s를 넣을 슬롯을 누르세요" % str(GameData.skill_meta.get(selected_skill, {}).get("name", "스킬"))
+	elif _slot_target_chosen:
+		loadout_hint.text = "%s에 넣을 스킬을 고르세요" % selected_slot.to_upper()
 
 func _on_loadout_slot_pressed(slot: String):
 	selected_slot = slot
@@ -127,12 +134,13 @@ func _on_loadout_slot_pressed(slot: String):
 	_update_loadout_controls()
 
 func _on_skill_selected(skill_id: String):
+	if not GameData.is_combat_skill_owned(skill_id):
+		return
 	selected_skill = skill_id
 	if _slot_target_chosen:
 		_on_loadout_slot_pressed(selected_slot)
 		return
-	feedback_label.text = "%s 선택됨 · 장착할 슬롯 버튼을 누르세요." % str(GameData.skill_meta[skill_id].get("name", "스킬"))
-	feedback_label.add_theme_color_override("font_color", Color(0.65, 0.9, 1.0))
+	feedback_label.text = ""
 	_update_loadout_controls()
 
 func _create_skill_card(key: String, meta: Dictionary, lvl: int) -> PanelContainer:
@@ -156,12 +164,6 @@ func _create_skill_card(key: String, meta: Dictionary, lvl: int) -> PanelContain
 	vbox.add_theme_constant_override("separation", 6 if compact_row else 12)
 	margin.add_child(vbox)
 	
-	var key_lbl = Label.new()
-	key_lbl.text = "보유 스킬"
-	key_lbl.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
-	key_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(key_lbl)
-	
 	var icon = Label.new()
 	icon.text = meta.get("icon", "⚡")
 	icon.add_theme_font_size_override("font_size", 31 if compact_row else 42)
@@ -184,10 +186,14 @@ func _create_skill_card(key: String, meta: Dictionary, lvl: int) -> PanelContain
 	var cd = max(0.5, meta.base_cd - (meta.cd_step * (lvl - 1)))
 	var dmg = meta.base_dmg_ratio + (meta.dmg_step * (lvl - 1))
 	var stats = Label.new()
-	stats.text = "쿨타임: %.1fs\n피해 계수: x%.2f\n사거리: %.1f" % [
-		cd, dmg, float(meta.get("range", 0.0))
-	]
-	stats.add_theme_font_size_override("font_size", 10 if compact_row else 12)
+	stats.text = "재사용 %.1f초" % cd
+	if str(meta.get("cast_type", "")) == "heal":
+		stats.text += "\n최대 HP의 %.0f%% 회복" % (float(meta.get("heal_ratio", 0.2)) * 100.0)
+	else:
+		var power := "마법 공격력" if bool(meta.get("uses_magic_power", false)) else "물리 공격력"
+		stats.text += "\n%s × %.2f\n사거리 %.1fm" % [power, dmg, float(meta.get("range", 0.0))]
+	stats.add_theme_font_size_override("font_size", 14)
+	stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(stats)
 	var unlock_level := int(meta.get("unlock_level", 1))
@@ -205,7 +211,7 @@ func _create_skill_card(key: String, meta: Dictionary, lvl: int) -> PanelContain
 	vbox.add_child(desc)
 
 	var select_button := Button.new()
-	select_button.text = "스킬 선택 / 장착"
+	select_button.text = "스킬 선택"
 	select_button.custom_minimum_size = Vector2(0, 34 if compact_row else 38)
 	select_button.disabled = false
 	select_button.tooltip_text = "스킬을 선택한 후 원하는 슬롯을 눌러 장착합니다."

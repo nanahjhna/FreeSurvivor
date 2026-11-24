@@ -2,221 +2,243 @@ extends CanvasLayer
 
 signal closed()
 
-var _list: GridContainer
-var _gold_label: Label
-var _tab_gear: Button
-var _tab_consumable: Button
-var _current_tab: String = "gear"
+const CHARACTER_PORTRAIT := preload("res://scenes/ui/character_portrait.gd")
+const ALL_JOBS := "*"
 
-func _ready():
+var _source: AnimationLibrary
+var _motion_names: Array[String] = []
+var _selected_motion := ""
+var _preview_ready := false
+var _preview: CHARACTER_PORTRAIT
+var _preview_panel: PanelContainer
+var _list: ItemList
+var _search: LineEdit
+var _job_filter: OptionButton
+var _owned_only: Button
+var _results_label: Label
+var _coins_label: Label
+var _selected_label: Label
+var _status: Label
+var _buy: Button
+
+
+func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	layer = 30
-	visible = false
+	hide()
 	_build_ui()
-	GameData.data_updated.connect(_refresh)
-	GameData.currency_changed.connect(func(_g, _c): _refresh())
+	GameData.skill_shop_updated.connect(_refresh_purchase)
+	get_viewport().size_changed.connect(_fit_preview)
 
-func _build_ui():
-	var root := Control.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(root)
 
+func _build_ui() -> void:
 	var backdrop := ColorRect.new()
+	backdrop.color = Color(0, 0, 0, 0.68)
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0, 0, 0, 0.72)
-	root.add_child(backdrop)
+	add_child(backdrop)
 
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.add_child(center)
-
-	var panel := UiStyle.make_panel()
-	center.add_child(panel)
-	var portrait := UiStyle.fit_modal(panel, Vector2(980, 1120))
-
-	var margin := UiStyle.make_margin(panel, 16 if portrait else 24)
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 14)
-	margin.add_child(vbox)
-
+	var content := UiStyle.dialog_layout(self, "", 760.0)
 	var header := HBoxContainer.new()
-	vbox.add_child(header)
-	var title := UiStyle.make_title("🪙 상점", 28)
+	content.add_child(header)
+	var title := UiStyle.make_title("스킬 상점", 27)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-	_gold_label = UiStyle.make_label("", 17, Color(1.0, 0.87, 0.42))
-	header.add_child(_gold_label)
-	var close := UiStyle.make_button("✕", Vector2(52, 48))
+	_coins_label = UiStyle.make_label("", 17, UiStyle.GOLD_BRIGHT)
+	header.add_child(_coins_label)
+	var close := UiStyle.make_button("✕", Vector2(50, 48))
 	close.pressed.connect(close_screen)
 	header.add_child(close)
 
-	var tabs := HBoxContainer.new()
-	tabs.add_theme_constant_override("separation", 10)
-	vbox.add_child(tabs)
-	_tab_gear = UiStyle.make_button("⚔️ 장비 상점", Vector2(180, 42))
-	_tab_gear.toggle_mode = true
-	_tab_gear.pressed.connect(func(): _set_tab("gear"))
-	tabs.add_child(_tab_gear)
-	_tab_consumable = UiStyle.make_button("🧪 소모품 상점", Vector2(180, 42))
-	_tab_consumable.toggle_mode = true
-	_tab_consumable.pressed.connect(func(): _set_tab("consumable"))
-	tabs.add_child(_tab_consumable)
-	vbox.add_child(HSeparator.new())
+	_preview_panel = UiStyle.make_panel(Color("#20242e"))
+	_preview_panel.clip_contents = true
+	content.add_child(_preview_panel)
+	_fit_preview()
 
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vbox.add_child(scroll)
+	var filters := HBoxContainer.new()
+	filters.add_theme_constant_override("separation", 10)
+	content.add_child(filters)
+	_job_filter = OptionButton.new()
+	_job_filter.custom_minimum_size.y = 44
+	_job_filter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	UiStyle.apply_button(_job_filter)
+	_job_filter.item_selected.connect(func(_index): _rebuild_results(_search.text))
+	filters.add_child(_job_filter)
+	_owned_only = UiStyle.make_button("보유만", Vector2(96, 44))
+	_owned_only.toggle_mode = true
+	_owned_only.toggled.connect(func(_on): _rebuild_results(_search.text))
+	filters.add_child(_owned_only)
 
-	_list = GridContainer.new()
-	_list.columns = 2 if portrait and get_viewport().get_visible_rect().size.x >= 700 else (1 if portrait else 3)
-	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_list.add_theme_constant_override("h_separation", 12)
-	_list.add_theme_constant_override("v_separation", 12)
-	scroll.add_child(_list)
+	var search_row := HBoxContainer.new()
+	search_row.add_theme_constant_override("separation", 10)
+	content.add_child(search_row)
+	_search = LineEdit.new()
+	_search.placeholder_text = "동작 이름 검색"
+	_search.clear_button_enabled = true
+	_search.custom_minimum_size.y = 46
+	_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_search.text_changed.connect(_rebuild_results)
+	search_row.add_child(_search)
+	_results_label = UiStyle.make_label("", 16, UiStyle.MUTED)
+	search_row.add_child(_results_label)
 
-func open():
-	visible = true
-	_set_tab(_current_tab)
+	_list = ItemList.new()
+	_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_list.custom_minimum_size.y = 92
+	_list.add_theme_font_size_override("font_size", 17)
+	_list.add_theme_constant_override("v_separation", 17)
+	_list.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
+	_list.item_selected.connect(_select_motion)
+	content.add_child(_list)
 
-func close_screen():
-	visible = false
+	var footer := HBoxContainer.new()
+	footer.add_theme_constant_override("separation", 10)
+	content.add_child(footer)
+	var selection := VBoxContainer.new()
+	selection.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer.add_child(selection)
+	_selected_label = UiStyle.make_label("", 18)
+	_selected_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	selection.add_child(_selected_label)
+	_status = UiStyle.make_label("", 15, UiStyle.MUTED)
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status.custom_minimum_size.y = 22
+	selection.add_child(_status)
+	_buy = UiStyle.make_button("", Vector2(132, 50), true)
+	_buy.pressed.connect(_buy_selected)
+	footer.add_child(_buy)
+
+
+func _fit_preview() -> void:
+	_preview_panel.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.30, 165.0, 380.0)
+
+
+func open() -> void:
+	_source = GameData.get_skill_shop_library()
+	_motion_names.assign(_source.get_animation_list() if _source != null else PackedStringArray())
+	_motion_names.sort_custom(func(a: String, b: String):
+		return GameData.get_skill_shop_motion_name(a).naturalnocasecmp_to(GameData.get_skill_shop_motion_name(b)) < 0
+	)
+	_selected_motion = ""
+	_preview_ready = false
+	_search.text = ""
+	_owned_only.set_pressed_no_signal(false)
+	_populate_job_filter()
+	show()
+	if _source != null:
+		if _preview == null:
+			_preview = CHARACTER_PORTRAIT.new()
+			_preview_panel.add_child(_preview)
+		_preview.show_character(GameData.get_leader_id())
+		_preview.set_portrait_active(true)
+	_rebuild_results("")
+	_refresh_purchase()
+
+
+func close_screen() -> void:
+	if _preview != null:
+		_preview.clear_clip_preview()
+		_preview.set_portrait_active(false)
+	_source = null
+	hide()
 	closed.emit()
 
-func _unhandled_input(event: InputEvent):
-	if visible and event.is_action_pressed("ui_cancel"):
-		close_screen()
-		get_viewport().set_input_as_handled()
+func _populate_job_filter() -> void:
+	var player_job := GameData.get_skill_shop_player_role()
+	var jobs: Array[String] = []
+	for clip in _motion_names:
+		var job := GameData.get_skill_shop_motion_role(clip)
+		if not job.is_empty() and not jobs.has(job):
+			jobs.append(job)
+	jobs.sort()
+	_job_filter.clear()
+	_job_filter.add_item("전체 동작")
+	_job_filter.set_item_metadata(0, ALL_JOBS)
+	_job_filter.select(0)
+	for job in jobs:
+		var index := _job_filter.item_count
+		_job_filter.add_item("%s (내 직업)" % job if job == player_job else job)
+		_job_filter.set_item_metadata(index, job)
+		if job == player_job:
+			_job_filter.select(index)
+	_job_filter.add_item("일반 동작")
+	_job_filter.set_item_metadata(_job_filter.item_count - 1, "")
 
-func _set_tab(tab: String):
-	_current_tab = tab
-	_tab_gear.button_pressed = tab == "gear"
-	_tab_consumable.button_pressed = tab == "consumable"
-	_refresh()
+func _rebuild_results(query: String) -> void:
+	var term := query.strip_edges().to_lower()
+	var job_filter := str(_job_filter.get_selected_metadata())
+	var keep_selection := false
+	_list.clear()
+	for clip_name in _motion_names:
+		var job := GameData.get_skill_shop_motion_role(clip_name)
+		if job_filter != ALL_JOBS and job != job_filter:
+			continue
+		if _owned_only.button_pressed and not GameData.has_skill_shop_motion(clip_name):
+			continue
+		var localized := GameData.get_skill_shop_motion_name(clip_name)
+		if not term.is_empty() and not localized.containsn(term) and not clip_name.containsn(term.replace(" ", "_")):
+			continue
+		var index := _list.add_item(_item_text(clip_name))
+		_list.set_item_metadata(index, clip_name)
+		if clip_name == _selected_motion:
+			_list.select(index)
+			keep_selection = true
+	if not keep_selection and not _selected_motion.is_empty():
+		_selected_motion = ""
+		_preview_ready = false
+		if _preview != null:
+			_preview.clear_clip_preview()
+		_refresh_purchase()
+	_results_label.text = "%d개" % _list.item_count
 
-func _refresh():
+
+func _item_text(clip_name: String) -> String:
+	var title := GameData.get_skill_shop_motion_name(clip_name)
+	var job := GameData.get_skill_shop_motion_role(clip_name)
+	if str(_job_filter.get_selected_metadata()) == ALL_JOBS and not job.is_empty():
+		title += "  ·  " + job
+	return title + "  ·  보유" if GameData.has_skill_shop_motion(clip_name) else title
+
+
+func _select_motion(index: int) -> void:
+	_selected_motion = str(_list.get_item_metadata(index))
+	_preview_ready = _preview != null and _source != null and _preview.preview_clip(_source, StringName(_selected_motion))
+	_refresh_purchase()
+
+
+func _refresh_purchase() -> void:
 	if not visible:
 		return
-	_gold_label.text = "💰 %d 골드" % GameData.player_gold
-	for child in _list.get_children():
-		child.queue_free()
-	if _current_tab == "gear":
-		_render_gear()
+	_coins_label.text = "스킬 코인 %d" % GameData.skill_coins
+	var owned := GameData.has_skill_shop_motion(_selected_motion)
+	var blocked := GameData.get_skill_shop_purchase_error(_selected_motion)
+	_selected_label.text = GameData.get_skill_shop_motion_name(_selected_motion) if not _selected_motion.is_empty() else "동작 선택"
+	_selected_label.tooltip_text = _selected_label.text
+	_buy.text = "보유 중" if owned else "구매 · %d 코인" % GameData.SKILL_MOTION_PRICE
+	_buy.disabled = not _preview_ready or not blocked.is_empty()
+	if _source == null:
+		_status.text = "동작 목록을 불러오지 못했습니다."
+	elif _selected_motion.is_empty():
+		_status.text = "목록에서 고르면 영웅이 재생합니다."
+	elif not _preview_ready:
+		_status.text = "현재 영웅이 이 동작을 재생할 수 없습니다."
+	elif owned:
+		_status.text = ""
 	else:
-		_render_consumables()
+		_status.text = blocked
 
-func _render_gear():
-	for id in GameData.SHOP_CATALOG:
-		var item: Dictionary = GameData.SHOP_CATALOG[id]
-		var owned := _owns_gear(id)
-		var price := int(item.get("price", 0))
-		var reason := ""
-		if owned:
-			reason = "이미 보유 중인 장비입니다."
-		elif GameData.player_gold < price:
-			reason = "골드 부족 (필요 %d / 보유 %d)" % [price, GameData.player_gold]
-		_list.add_child(_make_item_card(
-			str(item.get("icon", "⚔️")),
-			str(item.get("name", "장비")),
-			"[%s] %s" % [item.get("grade", "N"), item.get("type", "")],
-			_gear_stats(item),
-			price,
-			"보유 중" if owned else "구매",
-			reason,
-			func(): _request_buy(id, str(item.get("name", "장비")), price),
-			owned
-		))
 
-func _render_consumables():
-	for entry in GameData.SHOP_CONSUMABLES:
-		var slot := int(entry.get("slot", 1))
-		var price := int(entry.get("price", 0))
-		var count := int(GameData.item_counts.get(slot, 0))
-		var reason := ""
-		if GameData.player_gold < price:
-			reason = "골드 부족 (필요 %d / 보유 %d)" % [price, GameData.player_gold]
-		_list.add_child(_make_item_card(
-			str(entry.get("icon", "🧪")),
-			str(entry.get("name", "소모품")),
-			"보유 수량: %d개" % count,
-			str(entry.get("desc", "")),
-			price,
-			"구매",
-			reason,
-			func(): _request_buy("consumable:%d" % slot, str(entry.get("name", "소모품")), price),
-			false
-		))
+func _buy_selected() -> void:
+	if _buy.disabled:
+		return
+	var error := GameData.buy_skill_motion(_selected_motion)
+	if not error.is_empty():
+		_status.text = error
+		return
+	_status.text = "구매 완료"
+	for index in _list.get_selected_items():
+		_list.set_item_text(index, _item_text(_selected_motion))
 
-func _gear_stats(item: Dictionary) -> String:
-	var parts: Array[String] = []
-	if int(item.get("atk", 0)) > 0: parts.append("ATK +%d" % int(item.atk))
-	if int(item.get("def", 0)) > 0: parts.append("DEF +%d" % int(item.def))
-	if int(item.get("hp", 0)) > 0: parts.append("HP +%d" % int(item.hp))
-	return "  ".join(parts) + "\n" + str(item.get("desc", ""))
 
-func _owns_gear(id: String) -> bool:
-	for item in GameData.inventory:
-		if str(item.get("id", "")) == id:
-			return true
-	return false
-
-func _make_item_card(
-	icon: String, title: String, subtitle: String, body: String,
-	price: int, button_text: String, reason: String, on_buy: Callable, owned: bool
-) -> PanelContainer:
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(minf(300.0, get_viewport().get_visible_rect().size.x - 80.0), 230)
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
-
-	var margin := UiStyle.make_margin(panel, 14)
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
-	margin.add_child(vbox)
-
-	var top := HBoxContainer.new()
-	top.add_theme_constant_override("separation", 8)
-	vbox.add_child(top)
-	var icon_label := UiStyle.make_label(icon, 34, Color(1.0, 0.85, 0.45))
-	icon_label.custom_minimum_size = Vector2(48, 0)
-	top.add_child(icon_label)
-	var titles := VBoxContainer.new()
-	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	top.add_child(titles)
-	titles.add_child(UiStyle.make_label(title, 17, Color(1.0, 0.9, 0.55)))
-	titles.add_child(UiStyle.make_label(subtitle, 12, Color(0.7, 0.8, 0.92)))
-
-	var body_label := UiStyle.make_label(body, 12, Color(0.86, 0.9, 0.98))
-	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(body_label)
-
-	var price_label := UiStyle.make_label("💰 %d 골드" % price, 14, Color(1.0, 0.85, 0.4))
-	vbox.add_child(price_label)
-
-	if reason != "":
-		var reason_label := UiStyle.make_label("⛔ " + reason, 12, Color(1.0, 0.55, 0.5))
-		reason_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		vbox.add_child(reason_label)
-
-	var buy := UiStyle.make_button(button_text, Vector2(0, 40), true)
-	buy.disabled = owned or reason != ""
-	buy.pressed.connect(on_buy)
-	vbox.add_child(buy)
-	return panel
-
-func _request_buy(key: String, item_name: String, price: int):
-	UiFeedback.confirm(
-		"구매 확인",
-		"%s을(를) %d 골드에 구매하시겠습니까?\n보유 골드: %d" % [item_name, price, GameData.player_gold],
-		func(): _do_buy(key)
-	)
-
-func _do_buy(key: String):
-	var result := GameData.buy_shop_item(key)
-	if bool(result.get("ok", false)):
-		var rewards: Array = result.get("reward", [])
-		UiFeedback.show_reward(str(result.get("message", "구매 완료")), rewards)
-		_refresh()
-	else:
-		UiFeedback.show_error(str(result.get("message", "구매할 수 없습니다.")))
+func _unhandled_input(event: InputEvent) -> void:
+	if visible and not GameActions.is_capturing() and event.is_action_pressed("ui_cancel"):
+		close_screen()
+		get_viewport().set_input_as_handled()

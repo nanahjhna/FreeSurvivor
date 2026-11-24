@@ -58,56 +58,27 @@ func set_stat(stat_name: String, value: int):
 
 
 func max_hp() -> float:
-	return base_hp + (get_stat("VIT") - base_stats.VIT) * 8.0 + (get_stat("STR") - base_stats.STR)
+	return base_hp + (get_stat("VIT") - base_stats.VIT) * 8.0
 
 
-func max_sp() -> float:
-	return 30.0 + get_stat("INT") * 5.0 + get_stat("DEX")
-
-
-func phys_atk(is_ranged: bool = false) -> float:
-	var str_value := get_stat("STR")
-	var dex_value := get_stat("DEX")
-	var luk_value := get_stat("LUK")
-	var primary_delta: float = (
-		(dex_value - base_stats.DEX) * 2.0 if is_ranged else (str_value - base_stats.STR) * 2.0
-	)
-	var secondary_delta: float = (
-		(str_value - base_stats.STR) * 0.5 if is_ranged else (dex_value - base_stats.DEX) * 0.5
-	)
-	return max(1.0, base_atk + primary_delta + secondary_delta + (luk_value - base_stats.LUK) * 0.3)
+func phys_atk() -> float:
+	return maxf(1.0, base_atk + (get_stat("STR") - base_stats.STR) * 2.0)
 
 
 func mag_atk() -> float:
-	var int_value := get_stat("INT")
-	var dex_value := get_stat("DEX")
-	var luk_value := get_stat("LUK")
-	return max(1.0, int_value * 2.5 + dex_value * 0.5 + luk_value * 0.3)
+	return maxf(1.0, get_stat("INT") * 2.5 + base_stats.DEX * 0.5 + base_stats.LUK * 0.3)
 
 
 func phys_def() -> float:
-	return max(
-		0.0,
-		(
-			base_def
-			+ (get_stat("VIT") - base_stats.VIT) * 1.5
-			+ (get_stat("STR") - base_stats.STR) * 0.5
-			+ (get_stat("AGI") - base_stats.AGI) * 0.5
-		)
-	)
+	return maxf(0.0, base_def)
 
 
 func mag_def() -> float:
-	return max(
-		0.0, get_stat("VIT") + get_stat("INT") + get_stat("DEX") * 0.5 + get_stat("LUK") * 0.5
-	)
+	return maxf(0.0, base_stats.VIT + base_stats.INT + base_stats.DEX * 0.5 + base_stats.LUK * 0.5)
 
 
 func attack_speed() -> float:
-	return max(
-		0.25,
-		1.0 + (get_stat("AGI") - base_stats.AGI) * 0.03 + (get_stat("DEX") - base_stats.DEX) * 0.02
-	)
+	return maxf(0.25, 1.0 + (get_stat("DEX") - base_stats.DEX) * 0.02)
 
 
 func move_speed_multiplier() -> float:
@@ -115,36 +86,32 @@ func move_speed_multiplier() -> float:
 
 
 func hit_rate() -> float:
-	return clampf(
-		90.0 + (get_stat("DEX") - base_stats.DEX) * 2.0 + (get_stat("LUK") - base_stats.LUK),
-		0.0,
-		100.0
-	)
+	return 90.0
 
 
 func evasion() -> float:
-	return clampf(get_stat("AGI") * 1.5 + get_stat("LUK") * 0.5, 0.0, 75.0)
+	return clampf(base_stats.AGI * 1.5 + base_stats.LUK * 0.5, 0.0, 75.0)
 
 
 func perfect_dodge() -> float:
-	return clampf(get_stat("LUK") * 0.3, 0.0, 15.0)
+	return clampf(base_stats.LUK * 0.3, 0.0, 15.0)
 
 
 func crit_rate() -> float:
 	return clampf(get_stat("LUK") * 1.0, 0.0, 75.0)
 
 
+func can_upgrade(stat_name: String) -> bool:
+	return STAT_KEYS.has(stat_name) and (stat_name != "LUK" or crit_rate() < 75.0)
+
+
 func cast_time_reduction() -> float:
-	return clampf(get_stat("INT") * 0.02 + get_stat("DEX") * 0.05, 0.0, 0.8)
+	return clampf(base_stats.INT * 0.02 + base_stats.DEX * 0.05, 0.0, 0.8)
 
 
 func hp_recovery_rate() -> float:
-	return get_stat("VIT") * 0.05
-
-
-func sp_recovery_rate() -> float:
-	return get_stat("INT") * 0.1
+	return base_stats.VIT * 0.05
 
 
 func carry_capacity() -> float:
-	return 50.0 + get_stat("STR") * 5.0
+	return 50.0 + base_stats.STR * 5.0

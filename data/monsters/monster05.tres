@@ -18,7 +18,5 @@ xp = 5
 gold = 90
 loot = {
 "gold": 90,
-"potion_chance": 0.5,
 "xp": 5
 }
-potion_chance = 0.5

@@ -1,6 +1,7 @@
 extends SubViewportContainer
 
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
+const ANIMATION_SOURCE := preload("res://scripts/character_animation_source.gd")
 
 var portrait_view: SubViewport
 var actor: PlayerCharacter
@@ -58,3 +59,21 @@ func set_portrait_active(enabled: bool) -> void:
 		portrait_view.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE if enabled else SubViewport.UPDATE_DISABLED
 	if actor and is_instance_valid(actor.model_animation_player):
 		actor.model_animation_player.active = enabled
+
+
+func preview_clip(source: AnimationLibrary, clip_name: StringName) -> bool:
+	if actor == null or not is_instance_valid(actor.model_animation_player):
+		return false
+	return ANIMATION_SOURCE.play_preview(actor.character_model, actor.model_animation_player, source, clip_name)
+
+
+func clear_clip_preview() -> void:
+	if actor == null or not is_instance_valid(actor.model_animation_player):
+		return
+	var player := actor.model_animation_player
+	if player.has_animation_library(&"shop_preview"):
+		player.stop()
+		player.remove_animation_library(&"shop_preview")
+		var idle := StringName(actor.model_clips.get("Idle", &""))
+		if player.has_animation(idle):
+			player.play(idle)

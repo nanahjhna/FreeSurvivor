@@ -234,7 +234,6 @@ func _build_camera_section():
 	_camera_mode_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_camera_mode_option.custom_minimum_size.y = 40
 	_camera_mode_option.add_item("고정 쿼터뷰", 0)
-	_camera_mode_option.add_item("캐릭터 추적뷰", 1)
 	_camera_mode_option.item_selected.connect(_on_camera_settings_changed)
 	mode_row.add_child(_camera_mode_option)
 	_camera_angle_slider = _add_camera_slider("기울기", 20.0, 75.0, 1.0)
@@ -276,7 +275,9 @@ func _refresh_camera_controls():
 	_camera_box.visible = player != null
 	if player == null:
 		return
-	_camera_mode_option.select(1 if GameData.camera_view_mode == "follow" else 0)
+	# 캐릭터 추적뷰는 임시 비활성화 상태다.
+	GameData.camera_view_mode = "quarter"
+	_camera_mode_option.select(0)
 	_camera_angle_slider.set_value_no_signal(GameData.camera_elevation_degrees)
 	_camera_direction_slider.set_value_no_signal(GameData.camera_azimuth_degrees)
 	_camera_distance_slider.set_value_no_signal(GameData.camera_distance)
@@ -305,13 +306,13 @@ func _apply_camera_settings():
 	var camera := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 	if camera == null:
 		return
-	GameData.camera_view_mode = "follow" if _camera_mode_option.selected == 1 else "quarter"
+	# 캐릭터 추적뷰는 다시 활성화하기 전까지 설정할 수 없게 한다.
+	GameData.camera_view_mode = "quarter"
 	GameData.camera_elevation_degrees = _camera_angle_slider.value
 	GameData.camera_azimuth_degrees = _camera_direction_slider.value
 	GameData.camera_distance = _camera_distance_slider.value
-	var following := GameData.camera_view_mode == "follow"
-	camera.set("quarter_view_enabled", not following)
-	camera.set("back_view_enabled", following)
+	camera.set("quarter_view_enabled", true)
+	camera.set("back_view_enabled", false)
 	camera.set("first_person_enabled", false)
 	camera.set("quarter_elevation_degrees", GameData.camera_elevation_degrees)
 	camera.set("back_elevation_degrees", GameData.camera_elevation_degrees)

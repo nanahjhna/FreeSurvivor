@@ -65,6 +65,7 @@ func _ready() -> void:
 	var reward_plate := UiStyle.plaque("", Color("#493020"), Color("#a37846"), UiStyle.AMBER, 20)
 	body.add_child(reward_plate)
 	rewards = reward_plate.get_child(0) as Label
+	rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var hero := Control.new()
 	hero.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.49, 300, 730)
 	hero.clip_contents = true
@@ -160,10 +161,10 @@ func _select_stage(stage_id: String) -> void:
 	art.visible = not has_live_preview
 	stage_name.text = str(stage.get("name", stage_id))
 	chapter.text = "%s  ·  %s" % [stage.get("chapter", ""), stage.get("difficulty", "")]
-	details.text = "무한 생존  ·  첫 보스 %s\n등장 적  %s\n쓰러지면 처치 골드 50%% 회수" % [
+	details.text = "무한 생존  ·  첫 보스 %s\n등장 적  %s\n처치 골드  ·  포탈 귀환 100%% / 사망 50%%" % [
 		UiStyle.format_time(GameManager.FIRST_BOSS_TIME), ", ".join(stage.get("monster_types", []))
 	]
-	rewards.text = "◆  처치 골드  ·  귀환 시 전액 회수"
+	rewards.text = "보스 처치 → 장비 획득"
 	var best := GameData.get_stage_best_survival(stage_id)
 	record.text = "%s  ·  던전 최고 기록 %s" % [
 		"클리어" if stage.get("cleared", false) else "미클리어",

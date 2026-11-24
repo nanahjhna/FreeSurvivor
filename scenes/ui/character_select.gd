@@ -352,7 +352,7 @@ func _populate_stat_grid(stats: StatManager, class_id: String) -> void:
 		"DEX %d" % stats.get_stat("DEX"),
 		"LUK %d" % stats.get_stat("LUK"),
 		"HP %d" % stats.max_hp(),
-		"공격 %.1f" % stats.phys_atk(class_id == "archer"),
+		"공격 %.1f" % stats.phys_atk(),
 		"방어 %.1f" % stats.phys_def(),
 	]
 	for text_value in stat_cell_texts:

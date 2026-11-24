@@ -13,7 +13,6 @@ var cooldowns: Dictionary = {
 
 var player: Node3D = null
 var auto_battle_enabled: bool = true
-var _auto_potion_timer: float = 0.0
 var _auto_battle_timer: float = 0.0
 var _cooldown_ui_timer: float = 0.0
 
@@ -128,7 +127,7 @@ func _get_skill_attack_power(definition: Dictionary) -> float:
 		return float(player.get("base_attack_damage"))
 	if bool(definition.get("uses_magic_power", false)):
 		return stats.mag_atk()
-	return stats.phys_atk(bool(player.get("_has_ranged_weapon")))
+	return stats.phys_atk()
 
 
 func _get_skill_total_multiplier(_skill_id: String, definition: Dictionary) -> float:
@@ -210,12 +209,6 @@ func _run_auto_battle(delta: float):
 	_auto_battle_timer = 0.0
 	if player.current_hp <= player.max_hp * 0.7:
 		try_cast("s")
-	_auto_potion_timer = max(0.0, _auto_potion_timer - tick_delta)
-	if _auto_potion_timer <= 0.0:
-		_auto_potion_timer = 4.0
-		if player.current_hp <= player.max_hp * 0.4 and int(GameData.item_counts.get(1, 0)) > 0:
-			player.use_item(1)
-
 	var target := _nearest_enemy()
 	if target == null:
 		return
@@ -229,7 +222,28 @@ func _run_auto_battle(delta: float):
 		var meta: Dictionary = GameData.skill_meta.get(ability_id, {})
 		var reach: float = float(meta.get("range", 8.0))
 		if distance <= reach:
-			try_cast(key, target)
+			if try_cast(key, target):
+				return
+
+func should_use_basic_attack() -> bool:
+	if not auto_battle_enabled or player == null or not is_instance_valid(player) or player.is_dead:
+		return false
+	var target := _nearest_enemy()
+	if target == null:
+		return false
+	var distance := player.global_position.distance_to(target.global_position)
+	for key in ["r", "a", "q", "w", "e"]:
+		if cooldowns.get(key, 0.0) > 0.0:
+			continue
+		var ability_id := GameData.get_equipped_skill(key)
+		if not GameData.is_survival_skill_unlocked(ability_id):
+			continue
+		var meta: Dictionary = GameData.skill_meta.get(ability_id, {})
+		if meta.is_empty() or str(meta.get("cast_type", "")) == "passive":
+			continue
+		if distance <= float(meta.get("range", 8.0)):
+			return false
+	return true
 
 func _nearest_enemy() -> Node3D:
 	var nearest: Node3D = null

@@ -107,7 +107,7 @@ func show_item(item: Dictionary, action_text: String = "", comparison: String = 
 	title.text = str(item.get("name", "아이템"))
 	icon.text = str(item.get("icon", "◆"))
 	var type := str(item.get("type", ""))
-	var types := {"weapon": "무기", "armor": "방어구", "accessory": "장신구", "material": "재료", "consumable": "소모품", "card": "카드"}
+	var types := {"weapon": "무기", "armor": "방어구", "accessory": "장신구", "material": "재료", "card": "카드"}
 	identity.text = str(types.get(type, type))
 	if not grade.is_empty():
 		identity.text = "%s  ·  %s" % [grade, identity.text]

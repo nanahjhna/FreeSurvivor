@@ -15,7 +15,6 @@ extends Resource
 @export var gold: int = 0
 @export var loot: Dictionary = {}
 @export var is_boss: bool = false
-@export var potion_chance: float = 0.0
 @export var visual_scale: Vector3 = Vector3.ONE
 @export var collision_scale: Vector3 = Vector3.ONE
 @export var fall_on_death: bool = true
@@ -45,7 +44,6 @@ func to_dictionary() -> Dictionary:
 		"gold": gold,
 		"loot": loot.duplicate(true),
 		"is_boss": is_boss,
-		"potion_chance": potion_chance,
 		"visual_scale": visual_scale,
 		"collision_scale": collision_scale,
 		"fall_on_death": fall_on_death,

@@ -39,7 +39,7 @@ const SURVIVAL_EFFECTS := {
 	"finisher": {"type":"on_hit", "value":0.3, "description":"HP가 40% 이하인 적에게 기본 공격 피해 +30%"},
 	"focus": {"type":"stat", "stat":"move_speed_mult", "value":0.15, "description":"전투 중 이동 속도 +15%"},
 	"quick_think": {"type":"all_cd", "value":0.1, "description":"모든 스킬의 재사용 대기시간 10% 단축"},
-	"adrenaline": {"type":"sp_regen", "value":1.0, "description":"매초 SP 회복량 +1"}
+	"adrenaline": {"type":"stat", "stat":"attack_speed_mult", "value":0.1, "description":"기본 공격 속도 +10%"}
 }
 
 static func get_survival_upgrade(card_id: String) -> Dictionary:
