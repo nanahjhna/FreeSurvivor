@@ -23,6 +23,8 @@ extends Resource
 @export var cast_type: String = "unassigned"
 ## Semantic animation key looked up in CharacterData.animation_aliases.
 @export var animation_key: String = "AttackAlt"
+## Positive values protect the skill animation and cap playback at this many seconds.
+@export var animation_duration: float = 0.0
 @export var bonus_type: String = "physical"
 @export var effect_scene: PackedScene
 @export var effect_color: Color = Color.WHITE
@@ -53,6 +55,7 @@ func to_game_dictionary() -> Dictionary:
 		"unlock_level": unlock_level,
 		"cast_type": cast_type,
 		"animation_key": animation_key,
+		"animation_duration": animation_duration,
 		"bonus_type": bonus_type,
 		"effect_scene": effect_scene.resource_path if effect_scene != null else "",
 		"visual_color": effect_color.to_html(false),

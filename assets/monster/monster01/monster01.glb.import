@@ -4,11 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://jhulcqxscbfq"
-valid=false
+path="res://.godot/imported/monster01.glb-a913c6a7a0f58d0bdb79ce6d5bacaf85.scn"
 
 [deps]
 
 source_file="res://assets/monster/monster01/monster01.glb"
+dest_files=["res://.godot/imported/monster01.glb-a913c6a7a0f58d0bdb79ce6d5bacaf85.scn"]
 
 [params]
 

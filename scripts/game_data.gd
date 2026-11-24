@@ -179,7 +179,7 @@ var characters: Dictionary = {
 	"char01": {
 		"id": "char01", "name": "검사", "title": "황야의 검사", "role": "검사",
 		"grade": "R", "icon": "⚔️", "color": Color(0.35, 0.66, 0.39), "unlocked": true,
-		"model_scene": "res://assets/char/char01/char01.glb", "model_scale": Vector3.ONE, "animation_profile": "archer",
+		"model_scene": "res://assets/char/char01/char01.glb", "model_scale": Vector3.ONE, "animation_profile": "swordsman",
 		"base_attributes": {"STR": 4, "AGI": 8, "VIT": 4, "INT": 3, "DEX": 9, "LUK": 5},
 		"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0, "base_spd": 7.4,
 		"signature_skill": "검기 난무", "weapon_name": "검", "combat_style": "근접 검술",
@@ -1049,6 +1049,8 @@ func _apply_runtime_state(data: Dictionary):
 				if not data["characters"][character_id].has("direct_gold_growth_migration_v3"):
 					characters[character_id].erase("direct_gold_growth_migration_v3")
 				characters[character_id].merge(data["characters"][character_id], true)
+				if str(character_id) == "char01":
+					_refresh_swordsman_identity(characters[character_id])
 	if data.has("inventory") and data["inventory"] is Array:
 		inventory = Array(data["inventory"], TYPE_DICTIONARY, &"", null)
 	equipped_gear = DEFAULT_EQUIPPED_GEAR.duplicate(true)
@@ -1134,8 +1136,21 @@ func get_profile_class_data(profile: Dictionary) -> Dictionary:
 	var state: Dictionary = profile.get("state", {})
 	var state_characters: Dictionary = state.get("characters", {})
 	if state_characters.has(class_id) and state_characters[class_id] is Dictionary:
-		return state_characters[class_id]
+		var saved_character: Dictionary = state_characters[class_id].duplicate(true)
+		if class_id == "char01":
+			_refresh_swordsman_identity(saved_character)
+		return saved_character
 	return characters.get(class_id, {})
+
+func _refresh_swordsman_identity(character: Dictionary) -> void:
+	var definition := CharacterRegistry.get_by_id("char01")
+	if definition == null:
+		return
+	var current := definition.to_legacy_dictionary()
+	for key in ["name", "title", "role", "icon", "model_scene", "model_scale", "animation_profile",
+		"animation_aliases", "signature_skill", "weapon_name", "weapon_scene", "weapon_bone_name",
+		"weapon_mount_position", "weapon_mount_rotation_degrees", "weapon_mount_scale", "combat_style", "desc"]:
+		character[key] = current[key]
 
 func get_profile_stat_manager(profile: Dictionary) -> StatManager:
 	var stats := StatManager.new()

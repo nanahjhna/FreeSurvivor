@@ -16,6 +16,12 @@ extends Resource
 ## Semantic action name -> ordered clip-name candidates from this model's AnimationPlayer.
 ## Example: {"AttackAlt": ["Bow_Release_RT", "Attack"]}
 @export var animation_aliases: Dictionary = {}
+## Semantic action keys played in order for successive basic attacks.
+@export var basic_attack_animation_keys := PackedStringArray()
+## Optional GLB containing animations for this character's skeleton.
+@export_file("*.glb", "*.gltf") var animation_source_path: String = ""
+## Runtime animation name -> clip name in animation_source_path.
+@export var animation_source_clips: Dictionary = {}
 ## Reference ground speeds for the imported walk and run clips at the model's original scale.
 ## A value of zero uses the class's base movement speed to estimate the cadence.
 @export var walk_animation_speed: float = 0.0
@@ -40,6 +46,7 @@ extends Resource
 @export_storage var skill_loadout: Dictionary = {}
 @export var signature_skill: String = ""
 @export var weapon_name: String = ""
+@export_enum("melee", "ranged") var attack_style: String = "melee"
 @export var weapon_scene: PackedScene
 @export var weapon_bone_name: String = ""
 ## Point to align with the mount, measured from the weapon scene root.

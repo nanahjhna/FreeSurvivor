@@ -79,6 +79,8 @@ func try_cast(skill_key: String, target: Node3D = null) -> bool:
 		player = get_tree().get_first_node_in_group("player")
 	if player == null or not is_instance_valid(player):
 		return false
+	if player.has_method("is_skill_animation_busy") and player.is_skill_animation_busy():
+		return false
 	if cooldowns[skill_key] > 0.0:
 		return false
 	if str(GameData.skill_meta.get(ability_id, {}).get("cast_type", "")) == "heal" and player.current_hp >= player.max_hp:

@@ -2,27 +2,29 @@
 
 [ext_resource type="Script" uid="uid://dpjtcnv2duboh" path="res://scripts/resources/character_data.gd" id="1_g6opw"]
 [ext_resource type="Script" uid="uid://by4uujmb8456t" path="res://scripts/resources/skill_data.gd" id="2_4lpyr"]
-[ext_resource type="PackedScene" path="res://scenes/skills/rifle_projectile.tscn" id="3_rifle"]
-[ext_resource type="PackedScene" uid="uid://b8ofoa0quhoax" path="res://assets/char/char01/char01.glb" id="5_character"]
+[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="3_spin"]
+[ext_resource type="PackedScene" path="res://assets/weapon/SteelSword.fbx" id="4_sword"]
+[ext_resource type="PackedScene" uid="uid://eikb1imoc8y4" path="res://assets/char/char01/char01.glb" id="5_character"]
 
 [sub_resource type="Resource" id="Resource_t4jxg"]
 script = ExtResource("2_4lpyr")
 id = "skill877"
 legacy_id = "archer_q"
 slot_key = "q"
-reference_name = "라이플 단발 사격"
-reference_description = "조준한 방향으로 빠른 탄환을 발사합니다."
-icon = "🔫"
-display_name = "라이플 단발 사격"
-description = "조준한 방향으로 빠른 탄환을 발사합니다."
+reference_name = "발차기"
+reference_description = "발차기로 주변 적에게 피해를 줍니다."
+icon = "🦵"
+display_name = "발차기"
+description = "발차기로 주변 적에게 피해를 줍니다."
 cooldown = 2.8
 damage_ratio = 1.45
 cooldown_step = 0.1
 damage_step = 0.18
-range = 16.0
-cast_type = "wave"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
+range = 4.0
+cast_type = "spin"
+animation_key = "Kick"
+animation_duration = 1.74
+effect_scene = ExtResource("3_spin")
 implemented = true
 support_status = "game_skill"
 
@@ -31,148 +33,20 @@ script = ExtResource("2_4lpyr")
 id = "skill878"
 legacy_id = "archer_w"
 slot_key = "w"
-reference_name = "3점사"
-reference_description = "전방에 탄환 세 발을 넓게 연속 발사합니다."
-icon = "💥"
-display_name = "3점사"
-description = "전방에 탄환 세 발을 넓게 연속 발사합니다."
+reference_name = "공중 내려베기"
+reference_description = "공중에서 검을 내려쳐 주변 적에게 피해를 줍니다."
+icon = "⚔️"
+display_name = "공중 내려베기"
+description = "공중에서 검을 내려쳐 주변 적에게 피해를 줍니다."
 cooldown = 6.0
 damage_ratio = 0.85
 cooldown_step = 0.12
 damage_step = 0.12
-range = 15.0
-cast_type = "volley"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
-cast_pattern = "fan"
-projectile_count = 3
-spread_radians = 0.16
-implemented = true
-support_status = "game_skill"
-
-[sub_resource type="Resource" id="Resource_e1jsb"]
-script = ExtResource("2_4lpyr")
-id = "skill879"
-legacy_id = "archer_e"
-slot_key = "e"
-reference_name = "철갑 관통탄"
-reference_description = "두꺼운 탄환으로 일직선의 적을 관통합니다."
-icon = "🎯"
-display_name = "철갑 관통탄"
-description = "두꺼운 탄환으로 일직선의 적을 관통합니다."
-cooldown = 8.0
-damage_ratio = 2.3
-cooldown_step = 0.18
-damage_step = 0.28
-range = 20.0
-cast_type = "wave"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
-projectile_pierce = 5
-implemented = true
-support_status = "game_skill"
-
-[sub_resource type="Resource" id="Resource_2f6pg"]
-script = ExtResource("2_4lpyr")
-id = "skill880"
-legacy_id = "archer_r"
-slot_key = "r"
-reference_name = "쌍드럼 난사"
-reference_description = "쌍드럼 라이플로 전방을 탄막으로 휩씁니다."
-icon = "🔥"
-display_name = "쌍드럼 난사"
-description = "쌍드럼 라이플로 전방을 탄막으로 휩씁니다."
-cooldown = 24.0
-damage_ratio = 3.8
-cooldown_step = 0.45
-damage_step = 0.5
-range = 24.0
-unlock_level = 8
-cast_type = "volley"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
-cast_pattern = "fan"
-projectile_count = 7
-spread_radians = 0.55
-implemented = true
-support_status = "game_skill"
-
-[sub_resource type="Resource" id="Resource_4lpyr"]
-script = ExtResource("2_4lpyr")
-slot_key = "a"
-reference_name = "정밀 헤드샷"
-reference_description = "먼 거리의 적을 강하게 꿰뚫는 정밀 사격입니다."
-icon = "🎯"
-display_name = "정밀 헤드샷"
-description = "먼 거리의 적을 강하게 꿰뚫는 정밀 사격입니다."
-cooldown = 10.0
-damage_ratio = 2.8
-range = 18.0
-unlock_level = 3
-cast_type = "wave"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
-implemented = true
-support_status = "game_skill"
-
-[sub_resource type="Resource" id="Resource_ixpnj"]
-script = ExtResource("2_4lpyr")
-slot_key = "s"
-reference_name = "제압 사격"
-reference_description = "전방으로 다섯 발을 빠르게 퍼뜨려 발사합니다."
-icon = "💥"
-display_name = "제압 사격"
-description = "전방으로 다섯 발을 빠르게 퍼뜨려 발사합니다."
-cooldown = 26.0
-damage_ratio = 0.72
-range = 20.0
-cast_type = "volley"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
-cast_pattern = "fan"
-projectile_count = 5
-spread_radians = 0.3
-implemented = true
-support_status = "game_skill"
-
-[sub_resource type="Resource" id="Resource_vdw8w"]
-script = ExtResource("2_4lpyr")
-reference_name = "속사 연발"
-reference_description = "전방으로 탄환 세 발을 좁게 모아 연사합니다."
-icon = "🔫"
-display_name = "속사 연발"
-description = "전방으로 탄환 세 발을 좁게 모아 연사합니다."
-cooldown = 11.0
-damage_ratio = 0.78
-range = 17.0
-unlock_level = 5
-cast_type = "volley"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
-cast_pattern = "fan"
-projectile_count = 3
-spread_radians = 0.08
-implemented = true
-support_status = "game_skill"
-
-[sub_resource type="Resource" id="Resource_bxkv4"]
-script = ExtResource("2_4lpyr")
-reference_name = "관통 탄막"
-reference_description = "여러 관통탄을 넓은 각도로 발사합니다."
-icon = "🔥"
-display_name = "관통 탄막"
-description = "여러 관통탄을 넓은 각도로 발사합니다."
-cooldown = 32.0
-damage_ratio = 4.6
-range = 24.0
-unlock_level = 10
-cast_type = "volley"
-animation_key = "Attack"
-effect_scene = ExtResource("3_rifle")
-cast_pattern = "fan"
-projectile_count = 9
-spread_radians = 0.65
-projectile_pierce = 3
+range = 4.0
+cast_type = "spin"
+animation_key = "AirSlash"
+animation_duration = 1.9
+effect_scene = ExtResource("3_spin")
 implemented = true
 support_status = "game_skill"
 
@@ -183,32 +57,45 @@ legacy_id = "archer"
 display_name = "검사"
 title = "근접 전투가"
 role = "검사"
-icon = "🔫"
+icon = "⚔️"
 color = Color(0.35, 0.66, 0.39, 1)
 model_scene = ExtResource("5_character")
-animation_profile = "archer"
-animation_aliases = {
-"Attack": ["Attack", "Rifle_Fire_RT"],
-"AttackAlt": ["Attack", "Rifle_Fire_RT"],
-"AttackBase": ["Attack", "Rifle_Fire_RT"],
-"Block": ["Blocking_RT", "Block_RT", "Block"],
-"Cast": ["Attack", "Rifle_Fire_RT"],
-"Death": ["Death", "Rifle_Run_To_Dying_RT"],
-"Dodge": ["Dodge_RT", "Roll_RT", "Dodge"],
-"Fall": ["Livershot_Knockdown_RT", "Knockdown", "Fall"],
-"GetUp": ["Get_Up_RT", "Getting_Up_RT", "Stand_Up_RT", "GetUp"],
-"Hit": ["Hit", "Rifle_Hit_To_Back_RT", "Rifle_Prone_Hit_Reaction_RT"],
-"Idle": ["Idle", "Rifle_Idle_RT", "Rifle_Idle_Tactical_Carbine"],
-"Jump": ["Jump_RT", "Jump"],
-"Kick": ["Attack", "Rifle_Fire_RT"],
-"Knockdown": ["Livershot_Knockdown_RT", "Knockdown", "Fall"],
-"Reload": ["Reload", "Rifle_Reload_RT"],
-"Run": ["Run", "Rifle_Run_RT", "Walk_With_Rifle_RT"],
-"Victory": ["Victory_1_RT", "Victory_RT", "Victory"],
-"Walk": ["Walk", "Rifle_Walk_RT", "Walk_With_Rifle_RT"]
+animation_profile = "swordsman"
+animation_source_path = "res://assets/rig/exported-model.glb"
+animation_source_clips = {
+"Idle": "Idle_Sword",
+"Walk": "Great_Sword_Walk",
+"Run": "Great_Sword_Run",
+"Attack": "Sword_Regular_A_Rec",
+"AttackAlt": "Sword_Regular_B_Rec",
+"AttackBase": "Sword_Regular_C_RM",
+"Kick": "Great_Sword_Kick",
+"AirSlash": "Sword_Attack_Air_Vertical",
+"Hit": "Great_Sword_Impact",
+"Death": "Two_Handed_Sword_Death",
+"Block": "Great_Sword_Blocking",
+"Dodge": "Dodge_back",
+"Jump": "Great_Sword_Jump",
+"Victory": "Victory"
 }
-walk_animation_speed = 1.16
-run_animation_speed = 3.85
+animation_aliases = {
+"AirSlash": ["AirSlash"],
+"Attack": ["Attack"],
+"AttackAlt": ["AttackAlt"],
+"AttackBase": ["AttackBase"],
+"Block": ["Block"],
+"Cast": ["Attack"],
+"Death": ["Death"],
+"Dodge": ["Dodge"],
+"Hit": ["Hit"],
+"Idle": ["Idle"],
+"Jump": ["Jump"],
+"Kick": ["Kick"],
+"Run": ["Run"],
+"Victory": ["Victory"],
+"Walk": ["Walk"]
+}
+basic_attack_animation_keys = PackedStringArray("Attack", "AttackAlt", "AttackBase")
 base_str = 4
 base_agi = 8
 base_vit = 4
@@ -219,20 +106,17 @@ base_hp = 105.0
 base_atk = 18.0
 base_def = 7.0
 base_spd = 7.4
-skills = Array[ExtResource("2_4lpyr")]([SubResource("Resource_t4jxg"), SubResource("Resource_mwx4j"), SubResource("Resource_e1jsb"), SubResource("Resource_2f6pg"), SubResource("Resource_4lpyr"), SubResource("Resource_ixpnj"), SubResource("Resource_vdw8w"), SubResource("Resource_bxkv4")])
-signature_skill = "라이플 단발 사격"
-weapon_name = "없음"
-weapon_bone_name = "Amelia_SantaRL_R_Hand"
-weapon_grip_position = Vector3(-0.819, 0.552, 1.306)
-weapon_mount_position = Vector3(-0.018, 0.075, 0.008)
-weapon_mount_rotation_degrees = Vector3(-72, 0, 180)
-weapon_mount_scale = Vector3(0.215, 0.215, 0.215)
-weapon_support_bone_name = "Amelia_SantaRL_L_Hand"
-weapon_support_grip_position = Vector3(-0.767, 0.33, 2.39)
-weapon_support_palm_offset = Vector3(0, 0.075, 0.016)
-weapon_support_rotation_degrees = Vector3(0, -110, -70)
-combat_style = "라이플 단발, 연사, 관통 사격"
-description = "AK 소총으로 거리를 유지하며 정밀 사격과 탄막 공격을 가하는 추적자."
+skills = Array[ExtResource("2_4lpyr")]([SubResource("Resource_t4jxg"), SubResource("Resource_mwx4j")])
+signature_skill = "발차기"
+weapon_name = "강철 검"
+weapon_scene = ExtResource("4_sword")
+weapon_bone_name = "mixamorigRightHand"
+weapon_grip_position = Vector3(0, 8.65, 0)
+weapon_mount_position = Vector3(-0.051, 0.003, 0.009)
+weapon_mount_rotation_degrees = Vector3(-90, 0, 0)
+weapon_mount_scale = Vector3(0.123, 0.123, 0.123)
+combat_style = "근접 검술과 발차기"
+description = "검술로 주변의 적을 상대하는 근접 전투가."
 starting_gear = {
 "accessory": null,
 "armor": null,

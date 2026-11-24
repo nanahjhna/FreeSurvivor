@@ -68,7 +68,10 @@ var character_model: Node3D
 var current_appearance := "fighter"
 var first_person_mode: bool = false
 var active_action_clip := ""
-var alternate_attack := false
+const DEFAULT_BASIC_ATTACK_ANIMATION_KEYS := ["Attack", "AttackAlt"]
+var _basic_attack_animation_keys := PackedStringArray(DEFAULT_BASIC_ATTACK_ANIMATION_KEYS)
+var _basic_attack_index := 0
+var _skill_animation_busy := false
 var _ranged_attack_busy: bool = false
 var _attack_animation_recovery_remaining: float = 0.0
 @export_range(0.0, 0.6, 0.01) var rifle_attack_recovery_time: float = 0.18
@@ -284,10 +287,15 @@ func set_character_appearance(character_id: String):
 		return
 	current_appearance = character_id
 	var character_data := CharacterRegistry.get_by_id(character_id)
-	_has_ranged_weapon = character_id in ["archer", "char01"] or (character_data != null and character_data.weapon_scene != null)
+	_has_ranged_weapon = character_data.attack_style == "ranged" if character_data != null else character_id == "archer"
 	model_animation_player = null
 	model_clips.clear()
 	active_action_clip = ""
+	_basic_attack_animation_keys = PackedStringArray(DEFAULT_BASIC_ATTACK_ANIMATION_KEYS)
+	if character_data != null and not character_data.basic_attack_animation_keys.is_empty():
+		_basic_attack_animation_keys = character_data.basic_attack_animation_keys
+	_basic_attack_index = 0
+	_skill_animation_busy = false
 	_ranged_attack_busy = false
 	_gait = "Idle"
 	_gait_rate = 1.0
@@ -565,8 +573,9 @@ func _release_basic_attack(dir_to_target: Vector3, target: Node3D) -> void:
 		return
 	if not _has_ranged_weapon and not _moving_by_input:
 		_standing_attack_direction = Vector3(dir_to_target.x, 0.0, dir_to_target.z)
-	_play_model_animation("AttackAlt" if alternate_attack else "Attack", true)
-	alternate_attack = not alternate_attack
+	if not _skill_animation_busy:
+		_play_model_animation(_basic_attack_animation_keys[_basic_attack_index], true)
+		_basic_attack_index = (_basic_attack_index + 1) % _basic_attack_animation_keys.size()
 	if _has_ranged_weapon:
 		_spawn_ranged_attack_visual(target, dir_to_target)
 	else:
@@ -860,7 +869,7 @@ func die():
 	emit_signal("died")
 	if _play_model_animation("Death", true):
 		var death_wait := create_tween()
-		death_wait.tween_interval(2.0)
+		death_wait.tween_interval(maxf(2.0, model_animation_player.current_animation_length))
 		death_wait.tween_callback(func(): GameManager.game_over())
 	else:
 		var tween = create_tween()
@@ -877,6 +886,10 @@ func _setup_model_animations():
 	model_animation_player = players[0] as AnimationPlayer
 	if model_animation_player == null:
 		return
+	var character_data := CharacterRegistry.get_by_id(current_appearance)
+	if character_data != null and not character_data.animation_source_path.is_empty():
+		var loader := preload("res://scripts/character_animation_source.gd")
+		loader.apply_to(character_model, model_animation_player, character_data)
 	if preview_only:
 		model_animation_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	model_clips.clear()
@@ -894,7 +907,13 @@ func _setup_model_animations():
 			var clip := model_animation_player.get_animation(model_clips[clip_key])
 			if clip:
 				clip.loop_mode = Animation.LOOP_LINEAR
-	for clip_key in ["Attack", "AttackAlt", "AttackBase", "Cast", "Kick", "Hit", "Death"]:
+	var action_keys := ["Attack", "AttackAlt", "AttackBase", "Cast", "Kick", "Hit", "Death"]
+	action_keys.append_array(_basic_attack_animation_keys)
+	if character_data != null:
+		for skill in character_data.skills:
+			if skill != null and skill.implemented:
+				action_keys.append(skill.animation_key)
+	for clip_key in action_keys:
 		if model_clips.has(clip_key):
 			var action_clip := model_animation_player.get_animation(model_clips[clip_key])
 			if action_clip:
@@ -915,6 +934,7 @@ func _map_animation_alias(alias: String, candidates: Variant):
 func _on_model_animation_finished(animation_name: StringName):
 	if str(animation_name) == active_action_clip:
 		active_action_clip = ""
+		_skill_animation_busy = false
 		if _ranged_attack_busy:
 			_character_attack_animation_finished = true
 			if not _weapon_fire_animation_busy:
@@ -937,7 +957,7 @@ func _begin_attack_animation_recovery() -> void:
 		_ranged_attack_busy = false
 
 
-func _play_model_animation(clip_key: String, action: bool = false) -> bool:
+func _play_model_animation(clip_key: String, action: bool = false, animation_duration: float = 0.0) -> bool:
 	if model_animation_player == null or not model_clips.has(clip_key):
 		return false
 	var clip_name := str(model_clips[clip_key])
@@ -954,6 +974,7 @@ func _play_model_animation(clip_key: String, action: bool = false) -> bool:
 				_attack_legs.active = false
 				_attack_legs.influence = 0.0
 		active_action_clip = clip_name
+		_skill_animation_busy = animation_duration > 0.0
 		_ranged_attack_busy = firing
 		_attack_animation_recovery_remaining = 0.0
 		if _ranged_attack_busy:
@@ -963,6 +984,8 @@ func _play_model_animation(clip_key: String, action: bool = false) -> bool:
 		var clip := model_animation_player.get_animation(clip_name)
 		if clip_key == "Hit" and clip.length > HIT_REACTION_TIME:
 			model_animation_player.play_section(clip_name, 0.0, HIT_REACTION_TIME, 0.08)
+		elif animation_duration > 0.0 and animation_duration < clip.length:
+			model_animation_player.play_section(clip_name, 0.0, animation_duration, ATTACK_BLEND_TIME)
 		else:
 			model_animation_player.play(clip_name, ATTACK_BLEND_TIME)
 		return true
@@ -994,6 +1017,13 @@ func _play_equipped_weapon_fire_animation() -> bool:
 	return true
 
 
+func is_skill_animation_busy() -> bool:
+	return _skill_animation_busy
+
+
 func play_skill_animation(skill_key: String, skill_id: String = ""):
+	if skill_id.is_empty():
+		skill_id = GameData.get_equipped_skill(skill_key)
 	var animation_key := PlayerManager.get_skill_animation_key(skill_id, skill_key) if not skill_id.is_empty() else ("Kick" if skill_key == "w" else "AttackAlt")
-	_play_model_animation(animation_key, true)
+	var animation_duration := float(GameData.skill_meta.get(skill_id, {}).get("animation_duration", 0.0))
+	_play_model_animation(animation_key, true, animation_duration)
