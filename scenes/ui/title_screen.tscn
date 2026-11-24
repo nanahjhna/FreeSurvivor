@@ -1,205 +1,113 @@
 [gd_scene format=3 uid="uid://bfmjpicdawa2o"]
 
-[ext_resource type="Script" uid="uid://b6q3y4rnbkvlh" path="res://scenes/ui/title_screen.gd" id="1_title"]
+[ext_resource type="Script" path="res://scenes/ui/title_screen.gd" id="1_title"]
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_ui.tscn" id="2_settings"]
-[ext_resource type="Texture2D" uid="uid://c3skdk88x0jnv" path="res://assets/ui/title_splash.png" id="3_splash"]
+[ext_resource type="Texture2D" path="res://assets/ui/title_citadel_v2.png" id="3_splash"]
 
-[sub_resource type="Gradient" id="Gradient_title_vignette"]
-offsets = PackedFloat32Array(0, 0.4, 0.72, 1)
-colors = PackedColorArray(0.01, 0.02, 0.05, 0.28, 0.01, 0.02, 0.05, 0, 0.01, 0.02, 0.05, 0.28, 0.01, 0.02, 0.05, 0.82)
+[sub_resource type="SystemFont" id="SystemFont_title"]
+font_names = PackedStringArray("Arial Black", "Verdana", "Noto Sans")
+font_weight = 900
 
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_title_vignette"]
-gradient = SubResource("Gradient_title_vignette")
-fill_from = Vector2(0.5, 0)
-fill_to = Vector2(0.5, 1)
+[sub_resource type="Gradient" id="Gradient_title"]
+offsets = PackedFloat32Array(0, 0.22, 0.36, 0.60, 0.78, 1)
+colors = PackedColorArray(0.105, 0.044, 0.20, 0.48, 0.1, 0.07, 0.24, 0.18, 0.04, 0.02, 0.1, 0, 0.04, 0.02, 0.1, 0.06, 0.035, 0.02, 0.08, 0.58, 0.025, 0.02, 0.048, 0.97)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_start"]
-bg_color = Color(0.95, 0.55, 0.12, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.85, 0.3, 1)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_title"]
+gradient = SubResource("Gradient_title")
+fill_to = Vector2(0, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_start_hover"]
-bg_color = Color(1, 0.68, 0.2, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.95, 0.5, 1)
-corner_radius_top_left = 22
-corner_radius_top_right = 22
-corner_radius_bottom_right = 22
-corner_radius_bottom_left = 22
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
-bg_color = Color(0.12, 0.34, 0.58, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.35, 0.78, 1, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
-bg_color = Color(0.18, 0.47, 0.75, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.85, 0.3, 1)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-
-[node name="TitleScreen" type="Control" unique_id=805442002]
-layout_mode = 3
+[node name="TitleScreen" type="Control"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 script = ExtResource("1_title")
 
-[node name="Background" type="TextureRect" parent="." unique_id=154209400]
-layout_mode = 1
+[node name="Background" type="TextureRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("3_splash")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="GothicTint" type="ColorRect" parent="." unique_id=1903894553]
-layout_mode = 1
+[node name="Vignette" type="TextureRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
-color = Color(0.1, 0.012, 0.008, 0.28)
-
-[node name="Vignette" type="TextureRect" parent="." unique_id=339740147]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-texture = SubResource("GradientTexture2D_title_vignette")
+texture = SubResource("GradientTexture2D_title")
 expand_mode = 1
 
-[node name="Center" type="MarginContainer" parent="." unique_id=2081506821]
-layout_mode = 1
+[node name="Center" type="MarginContainer" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 86
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 82
 
-[node name="VBox" type="VBoxContainer" parent="Center" unique_id=654519146]
+[node name="VBox" type="VBoxContainer" parent="Center"]
 layout_mode = 2
-theme_override_constants/separation = 16
 
-[node name="TitleGroup" type="VBoxContainer" parent="Center/VBox" unique_id=548595104]
+[node name="TitleGroup" type="VBoxContainer" parent="Center/VBox"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = -18
 
-[node name="MainTitle" type="Label" parent="Center/VBox/TitleGroup" unique_id=853841868]
+[node name="MainTitle" type="Label" parent="Center/VBox/TitleGroup"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
-theme_override_constants/shadow_offset_x = 4
-theme_override_constants/shadow_offset_y = 4
-theme_override_font_sizes/font_size = 42
-text = "⚔️ FreeSurvivor ⚔️"
+theme_override_colors/font_color = Color(1, 0.75, 0.33, 1)
+theme_override_colors/font_outline_color = Color(0.20, 0.073, 0.118, 1)
+theme_override_colors/font_shadow_color = Color(0.12, 0.05, 0.16, 1)
+theme_override_constants/shadow_offset_y = 8
+theme_override_constants/outline_size = 12
+theme_override_fonts/font = SubResource("SystemFont_title")
+text = "FREE"
 horizontal_alignment = 1
 
-[node name="SubTitle" type="Label" parent="Center/VBox/TitleGroup" unique_id=1048572784]
+[node name="SecondTitle" type="Label" parent="Center/VBox/TitleGroup"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8, 0.9, 1, 0.9)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.7)
-theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 22
-text = "1인 서바이벌 · 카드 던전 RPG"
+theme_override_colors/font_color = Color(0.81, 0.91, 1, 1)
+theme_override_colors/font_outline_color = Color(0.13, 0.11, 0.26, 1)
+theme_override_colors/font_shadow_color = Color(0.085, 0.052, 0.17, 1)
+theme_override_constants/shadow_offset_y = 8
+theme_override_constants/outline_size = 11
+theme_override_fonts/font = SubResource("SystemFont_title")
+text = "SURVIVOR"
 horizontal_alignment = 1
 
-[node name="Spacer" type="Control" parent="Center/VBox" unique_id=1034433002]
+[node name="Spacer" type="Control" parent="Center/VBox"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Buttons" type="VBoxContainer" parent="Center/VBox" unique_id=1539051057]
-custom_minimum_size = Vector2(560, 0)
+[node name="Buttons" type="VBoxContainer" parent="Center/VBox"]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_constants/separation = 14
+theme_override_constants/separation = 9
 
-[node name="StartBtn" type="Button" parent="Center/VBox/Buttons" unique_id=966225221]
-custom_minimum_size = Vector2(0, 52)
+[node name="StartBtn" type="Button" parent="Center/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_start")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_start_hover")
-text = "🗡️ 게임 시작"
 
-[node name="SettingsBtn" type="Button" parent="Center/VBox/Buttons" unique_id=753315083]
-custom_minimum_size = Vector2(0, 48)
+[node name="SettingsBtn" type="Button" parent="Center/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "⚙️ 환경 설정"
 
-[node name="QuitBtn" type="Button" parent="Center/VBox/Buttons" unique_id=2029560810]
-custom_minimum_size = Vector2(0, 48)
+[node name="QuitBtn" type="Button" parent="Center/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "🚪 게임 종료"
 
-[node name="NoticeLabel" type="Label" parent="Center/VBox" unique_id=1446009512]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.45, 0.35, 1)
-theme_override_font_sizes/font_size = 14
-horizontal_alignment = 1
-
-[node name="BottomLeft" type="MarginContainer" parent="." unique_id=753538422]
-layout_mode = 1
+[node name="BottomLeft" type="MarginContainer" parent="."]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_top = -40.0
-offset_right = 400.0
-grow_vertical = 0
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_bottom = 16
+offset_top = -38.0
+offset_right = 100.0
+mouse_filter = 2
 
-[node name="VersionLabel" type="Label" parent="BottomLeft" unique_id=252879705]
+[node name="VersionLabel" type="Label" parent="BottomLeft"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.65, 0.7, 0.7)
+theme_override_colors/font_color = Color(0.7, 0.64, 0.56, 1)
 theme_override_font_sizes/font_size = 14
-text = "FreeSurvivor v1.0.0"
 
-[node name="SettingsUI" parent="." unique_id=1624455257 instance=ExtResource("2_settings")]
+[node name="SettingsUI" parent="." instance=ExtResource("2_settings")]
 
 [connection signal="pressed" from="Center/VBox/Buttons/StartBtn" to="." method="_on_start_btn_pressed"]
 [connection signal="pressed" from="Center/VBox/Buttons/SettingsBtn" to="." method="_on_settings_btn_pressed"]

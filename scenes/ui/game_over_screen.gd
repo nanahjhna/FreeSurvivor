@@ -1,127 +1,163 @@
 extends CanvasLayer
 
-@onready var kill_stat: Label = $CenterContainer/VBoxContainer/Stats/KillStat
-@onready var time_stat: Label = $CenterContainer/VBoxContainer/Stats/TimeStat
-@onready var level_stat: Label = $CenterContainer/VBoxContainer/Stats/LevelStat
-@onready var gold_stat: Label = $CenterContainer/VBoxContainer/Stats/GoldStat
-@onready var xp_stat: Label = $CenterContainer/VBoxContainer/Stats/XPStat
-@onready var cards_stat: Label = $CenterContainer/VBoxContainer/Stats/CardsStat
-@onready var items_stat: Label = $CenterContainer/VBoxContainer/Stats/ItemsStat
-@onready var record_stat: Label = $CenterContainer/VBoxContainer/Stats/RecordStat
+const ITEM_DETAIL := preload("res://scenes/ui/item_detail.gd")
+const RESULT_CREST := preload("res://scenes/ui/result_crest.gd")
 
-func _ready():
+var body: VBoxContainer
+var detail: ITEM_DETAIL
+
+
+func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	visible = false
-	_apply_result_skin()
+	hide()
+	var layout := UiStyle.dialog_layout(self, "", 660)
+	var panel := layout.get_parent().get_parent() as PanelContainer
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	body = UiStyle.scroll_column(layout)
+	UiStyle.divider(layout)
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
+	layout.add_child(actions)
+	var lobby := UiStyle.make_button("마을 복귀", Vector2(0, 64))
+	lobby.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lobby.pressed.connect(GameManager.go_to_lobby)
+	actions.add_child(lobby)
+	var retry := UiStyle.make_button("다시 도전", Vector2(0, 64), true)
+	retry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	retry.pressed.connect(GameManager.restart)
+	actions.add_child(retry)
+	for button in [lobby, retry]:
+		button.add_theme_font_size_override("font_size", 22)
+	UiStyle.skin_button(lobby, Color("#344674"), Color("#a5bbff"))
+	UiStyle.skin_button(retry, Color("#e7a73a"), Color("#ffe6a7"), UiStyle.PAPER_INK)
+	detail = ITEM_DETAIL.new()
+	add_child(detail)
 	GameManager.state_changed.connect(_on_state_changed)
 
-func _apply_result_skin():
-	$ColorRect.color = Color(0.035, 0.012, 0.012, 0.84)
-	var center := $CenterContainer as CenterContainer
-	var content := $CenterContainer/VBoxContainer as VBoxContainer
-	var panel := UiStyle.make_panel(Color(0.035, 0.025, 0.024, 0.96))
-	panel.custom_minimum_size = Vector2(minf(get_viewport().get_visible_rect().size.x - 32.0, 660.0), 0)
-	var margin := UiStyle.make_margin(panel, 22)
-	center.remove_child(content)
-	center.add_child(panel)
-	margin.add_child(content)
-	var title := content.get_node("Title") as Label
-	title.text = "전투 종료"
-	title.add_theme_color_override("font_color", Color(0.95, 0.48, 0.31))
-	_reflow_result_content(content)
-	var restart := content.get_node("ButtonContainer/RestartButton") as Button
-	restart.text = "다시 도전"
-	UiStyle.apply_button(restart, true)
-	var lobby := content.get_node("ButtonContainer/LobbyButton") as Button
-	lobby.text = "마을로"
-	UiStyle.apply_button(lobby)
 
-func _reflow_result_content(content: VBoxContainer):
-	var old_stats := content.get_node("Stats") as VBoxContainer
-	var summary := GridContainer.new()
-	summary.columns = 2
-	summary.add_theme_constant_override("h_separation", 8)
-	summary.add_theme_constant_override("v_separation", 8)
-	var rewards := HBoxContainer.new()
-	rewards.add_theme_constant_override("separation", 8)
-	var labels_by_name: Dictionary = {}
-	for child in old_stats.get_children():
-		if child is Label:
-			labels_by_name[child.name] = child
-		old_stats.remove_child(child)
-	content.remove_child(old_stats)
-	var sections := VBoxContainer.new()
-	sections.add_theme_constant_override("separation", 8)
-	var time_card := UiStyle.make_panel(Color(0.16, 0.035, 0.025, 0.98))
-	time_card.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.16, 0.035, 0.025, 0.98), UiStyle.GOLD, 1))
-	time_card.custom_minimum_size.y = 94
-	var time_margin := UiStyle.make_margin(time_card, 12)
-	var time_label := labels_by_name["TimeStat"] as Label
-	time_label.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
-	time_label.add_theme_font_size_override("font_size", 27)
-	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	time_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	time_margin.add_child(time_label)
-	sections.add_child(time_card)
-	sections.add_child(UiStyle.make_label("전투 기록", 15, UiStyle.GOLD_BRIGHT))
-	for stat_name in ["KillStat", "LevelStat", "GoldStat", "XPStat"]:
-		_add_result_card(summary, labels_by_name[stat_name] as Label, 68)
-	sections.add_child(summary)
-	sections.add_child(UiStyle.make_label("획득 보상", 15, UiStyle.GOLD_BRIGHT))
-	for reward_name in ["CardsStat", "ItemsStat"]:
-		_add_result_card(rewards, labels_by_name[reward_name] as Label, 82)
-	sections.add_child(rewards)
-	var record_panel := UiStyle.make_panel(Color(0.18, 0.035, 0.024, 0.98))
-	record_panel.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.18, 0.035, 0.024, 0.98), UiStyle.GOLD, 1))
-	var record_margin := UiStyle.make_margin(record_panel, 10)
-	var record := labels_by_name["RecordStat"] as Label
-	record.add_theme_color_override("font_color", Color(1.0, 0.72, 0.36))
-	record.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	record.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	record_margin.add_child(record)
-	sections.add_child(record_panel)
-	content.add_child(sections)
-	content.move_child(sections, 1)
-	old_stats.queue_free()
+func _result_state() -> int:
+	return GameManager.GameState.GAME_OVER
 
-func _add_result_card(parent: Control, label: Label, height: float):
-	var card := UiStyle.make_panel(UiStyle.INK_SOFT)
-	card.add_theme_stylebox_override("panel", UiStyle.panel_style(UiStyle.INK_SOFT, Color(0.48, 0.32, 0.18, 0.72), 1))
-	card.custom_minimum_size.y = height
-	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var margin := UiStyle.make_margin(card, 10)
-	label.add_theme_color_override("font_color", UiStyle.IVORY)
-	label.add_theme_font_size_override("font_size", 15)
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	margin.add_child(label)
-	parent.add_child(card)
 
-func _on_state_changed(new_state):
-	if new_state == GameManager.GameState.GAME_OVER:
-		var mins := int(GameManager.battle_time / 60.0)
-		var secs = int(GameManager.battle_time) % 60
-		var result = GameData.last_battle_result
-		kill_stat.text = "처치한 몬스터: " + str(result.get("kills", GameManager.kill_count))
-		time_stat.text = "생존 시간: %02d:%02d" % [mins, secs]
-		level_stat.text = "도달 서바이벌 레벨: Lv.%d" % int(result.get("survival_level", 1))
-		gold_stat.text = "이번 던전 골드: %d · 지급: +%d" % [int(result.get("gold_found", 0)), int(result.get("gold_earned", 0))]
-		xp_stat.text = "획득 성장 재화: +%d" % int(result.get("growth_currency_earned", 0))
-		var earned_cards: Array = result.get("cards_earned", [])
-		cards_stat.text = "획득 카드: " + (", ".join(PackedStringArray(earned_cards)) if not earned_cards.is_empty() else "없음")
-		var earned_items = result.get("items_earned", [])
-		var items_text = ", ".join(PackedStringArray(earned_items)) if not earned_items.is_empty() else "없음"
-		items_stat.text = "획득 아이템: " + items_text
-		var new_records: Array[String] = []
-		if bool(result.get("new_best_time", false)): new_records.append("최고 생존 시간")
-		if bool(result.get("new_best_level", false)): new_records.append("최고 서바이벌 레벨")
-		record_stat.text = "🏆 최고 기록 갱신: " + (", ".join(PackedStringArray(new_records)) if not new_records.is_empty() else "없음")
-		visible = true
-	else:
-		visible = false
+func _on_state_changed(state: int) -> void:
+	detail.hide()
+	visible = state == _result_state()
+	if visible:
+		_render_result(GameData.last_battle_result)
 
-func _on_restart_pressed():
-	GameManager.restart()
 
-func _on_lobby_pressed():
-	GameManager.go_to_lobby()
+func _render_result(result: Dictionary) -> void:
+	for child in body.get_children():
+		body.remove_child(child)
+		child.queue_free()
+	var won := bool(result.get("won", false))
+	var heading := "생존 실패"
+	if won:
+		heading = "생존 귀환" if result.get("returned", false) else "생존 성공"
+	var crest := RESULT_CREST.new()
+	crest.successful = won
+	crest.custom_minimum_size.y = 346
+	body.add_child(crest)
+	var hero := VBoxContainer.new()
+	hero.alignment = BoxContainer.ALIGNMENT_CENTER
+	hero.add_theme_constant_override("separation", 3)
+	var crest_inset := UiStyle.make_margin(crest, 36)
+	crest_inset.add_child(hero)
+	var title := UiStyle.plaque(heading, Color("#234682"), Color("#ffda8b"), Color("#fff4df"), 43)
+	title.custom_minimum_size.y = 76
+	hero.add_child(title)
+	var context := UiStyle.make_label("%s  ·  %s" % [result.get("stage_name", ""), result.get("difficulty", "")], 20)
+	context.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	context.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hero.add_child(context)
+	var time := UiStyle.make_label(UiStyle.format_time(float(result.get("time", 0))), 76, Color.WHITE)
+	UiStyle.ink_outline(time, 11, Color("#1a2c59"))
+	time.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hero.add_child(time)
+	var time_title := UiStyle.make_label("생존 시간", 21, Color("#bcdcff"))
+	time_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hero.add_child(time_title)
+	if result.get("new_stage_record", false) or result.get("new_best_time", false) or result.get("new_best_level", false):
+		var record := UiStyle.make_label("✦  신규 기록", 19, UiStyle.GOLD_BRIGHT)
+		record.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		hero.add_child(record)
+
+	UiStyle.divider(body)
+	var damage: Dictionary = result.get("damage_by_source", {})
+	var total := 0.0
+	for amount in damage.values():
+		total += float(amount)
+	_stat_row(body, "처치 수", str(result.get("kills", 0)))
+	_stat_row(body, "도달 레벨", "Lv.%d" % int(result.get("survival_level", 1)))
+	_stat_row(body, "총 피해량", "%.0f" % total)
+	UiStyle.divider(body)
+	body.add_child(UiStyle.plaque("획득 보상", Color("#283a67"), Color("#cfb679"), Color("#fff2cc"), 28))
+	var growth := int(result.get("growth_currency_earned", 0))
+	if growth > 0:
+		_stat_row(body, "성장 재화", "+%d" % growth)
+	_add_reward_items(result)
+	if not damage.is_empty():
+		var breakdown := VBoxContainer.new()
+		breakdown.add_theme_constant_override("separation", 8)
+		var toggle := UiStyle.make_button("상세 전투 기록  ▾", Vector2(0, 52))
+		UiStyle.skin_button(toggle, Color("#30477b"), Color("#839dd9"))
+		toggle.pressed.connect(func():
+			breakdown.visible = not breakdown.visible
+			toggle.text = "상세 전투 기록  ▴" if breakdown.visible else "상세 전투 기록  ▾"
+		)
+		body.add_child(toggle)
+		body.add_child(breakdown)
+		var sources := damage.keys()
+		sources.sort_custom(func(a: String, b: String): return float(damage[a]) > float(damage[b]))
+		for source in sources:
+			var amount := float(damage[source])
+			var name := str(GameData.skill_meta.get(source, {}).get("name", source))
+			var captions := {"basic": "기본 공격", "card_effect": "카드 효과", "item": "전투 아이템", "other": "기타"}
+			_stat_row(breakdown, str(captions.get(source, name)), "%.0f  ·  %.1f%%" % [amount, 100.0 * amount / maxf(total, 0.001)])
+		breakdown.hide()
+
+
+func _stat_row(parent: Control, caption: String, value: String) -> void:
+	var row := HBoxContainer.new()
+	row.custom_minimum_size.y = 34
+	parent.add_child(row)
+	var label := UiStyle.make_label(caption, 20, UiStyle.MUTED)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	row.add_child(UiStyle.make_label(value, 22))
+
+
+func _add_reward_items(result: Dictionary) -> void:
+	var rewards: Array[Dictionary] = [{
+		"name": "골드", "type": "material", "icon": "🟡", "count": int(result.get("gold_earned", 0))
+	}]
+	for reward in result.get("items_earned", []):
+		var text := str(reward)
+		var separator := text.rfind(" x")
+		var name := text if separator < 0 else text.substr(0, separator)
+		var count := 1 if separator < 0 else maxi(1, int(text.substr(separator + 2)))
+		var item := {"name": name, "icon": "◆", "count": count}
+		for stored in GameData.inventory:
+			if stored.get("name") == name:
+				item = stored.duplicate()
+				item["count"] = count
+				break
+		rewards.append(item)
+	for reward in result.get("cards_earned", []):
+		rewards.append({"name": str(reward), "type": "card", "icon": "▤", "count": 1})
+	if rewards.is_empty():
+		return
+	var grid := GridContainer.new()
+	grid.columns = 5
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 8)
+	body.add_child(grid)
+	for item in rewards:
+		var button := UiStyle.make_button("%s\n×%d" % [item.get("icon", "◆"), item.get("count", 1)], Vector2(0, 96))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.tooltip_text = str(item.name)
+		button.add_theme_font_size_override("font_size", 24)
+		var trim := UiStyle.AMBER if item.name == "골드" else UiStyle.grade_color(str(item.get("grade", "")))
+		UiStyle.skin_button(button, Color("#465b92"), trim)
+		button.pressed.connect(func(): detail.show_item(item))
+		grid.add_child(button)

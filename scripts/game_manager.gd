@@ -6,6 +6,8 @@ signal kill_count_changed(count)
 signal location_changed(new_loc)
 signal boss_defeated(defeated_count: int, next_reward_multiplier: float)
 
+const FIRST_BOSS_TIME := 180.0
+
 enum GameState { PLAYING, PAUSED, LEVEL_UP, BOSS_DECISION, GAME_OVER, VICTORY }
 enum Location { TITLE, CHARACTER_SELECT, LOBBY, BATTLE, CARD_DECK }
 
@@ -19,7 +21,7 @@ var run_settled: bool = false
 var boss_defeated_count: int = 0
 var boss_decision_pending: bool = false
 var boss_reward_multiplier: float = 1.0
-var next_boss_time: float = 180.0
+var next_boss_time: float = FIRST_BOSS_TIME
 var starting_draft_picks: int = 0
 var level_card_picks: int = 0
 var _last_time_signal_second: int = -1
@@ -122,7 +124,7 @@ func go_to_battle(stage_id: String = "") -> bool:
 	boss_defeated_count = 0
 	boss_decision_pending = false
 	boss_reward_multiplier = 1.0
-	next_boss_time = 180.0
+	next_boss_time = FIRST_BOSS_TIME
 	battle_time = 0.0
 	_last_time_signal_second = 0
 	kill_count = 0
@@ -265,10 +267,12 @@ func create_return_portal() -> bool:
 	return true
 
 func confirm_return_to_town():
-	if current_location != Location.BATTLE or current_state == GameState.GAME_OVER:
+	if current_location != Location.BATTLE or run_settled or current_state in [GameState.GAME_OVER, GameState.VICTORY]:
 		return
+	current_state = GameState.VICTORY
+	get_tree().paused = true
 	settle_dungeon(true)
-	go_to_lobby()
+	state_changed.emit(current_state)
 
 func restart():
 	get_tree().paused = false
@@ -280,7 +284,7 @@ func restart():
 	boss_defeated_count = 0
 	boss_decision_pending = false
 	boss_reward_multiplier = 1.0
-	next_boss_time = 180.0
+	next_boss_time = FIRST_BOSS_TIME
 	current_state = GameState.PLAYING
 	battle_time = 0.0
 	_last_time_signal_second = 0

@@ -117,6 +117,7 @@ var player_current_hp: float = 100.0
 var survival_bonuses: Dictionary = {}
 var survival_card_counts: Dictionary = {}
 var survival_kills: int = 0
+var battle_damage_by_source: Dictionary = {}
 
 # --- UI / Tutorial / Meta state ---
 var input_mode: String = "auto" # auto, pc, mobile
@@ -201,6 +202,7 @@ var stages: Dictionary = {
 	"stage_1": {
 		"id": "stage_1",
 		"name": "평화로운 초원 외곽",
+		"art": "res://assets/ui/dungeon_gate_v2.png",
 		"chapter": "제 1장 : 모험의 서막",
 		"level_req": 1,
 		"difficulty": "★☆☆☆☆",
@@ -213,6 +215,8 @@ var stages: Dictionary = {
 	"stage_2": {
 		"id": "stage_2",
 		"name": "어둠의 안개 숲",
+		"art": "res://assets/ui/stage_forest.png",
+		"requires_clear": "stage_1",
 		"chapter": "제 2장 : 음산한 숲길",
 		"level_req": 5,
 		"difficulty": "★★★☆☆",
@@ -225,6 +229,8 @@ var stages: Dictionary = {
 	"stage_3": {
 		"id": "stage_3",
 		"name": "망자의 지하 묘지",
+		"art": "res://assets/ui/stage_crypt.png",
+		"requires_clear": "stage_2",
 		"chapter": "제 3장 : 심연의 군주",
 		"level_req": 10,
 		"difficulty": "★★★★★",
@@ -603,6 +609,7 @@ func get_skill_damage_multiplier(skill_key: String) -> float:
 # -------------------------------------------------------------
 
 func record_battle_result(won: bool, time_sec: float, kills: int) -> Dictionary:
+	var new_stage_record := time_sec > get_stage_best_survival(current_selected_stage_id)
 	var stage = stages.get(current_selected_stage_id, stages["stage_1"])
 	var first_clear = won and not stage.get("cleared", false)
 
@@ -655,6 +662,7 @@ func record_battle_result(won: bool, time_sec: float, kills: int) -> Dictionary:
 		previous_best_level = int(active_profile.get("best_survival_level", 1))
 		active_profile["best_survival_time"] = max(previous_best_time, time_sec)
 		active_profile["best_survival_level"] = max(previous_best_level, player_level)
+	_record_stage_survival(time_sec)
 	last_battle_result = {
 		"won": won,
 		"time": time_sec,
@@ -665,6 +673,9 @@ func record_battle_result(won: bool, time_sec: float, kills: int) -> Dictionary:
 		"cards_earned": earned_cards,
 		"items_earned": earned_items,
 		"stage_name": stage.name,
+		"difficulty": stage.get("difficulty", ""),
+		"damage_by_source": battle_damage_by_source.duplicate(),
+		"new_stage_record": new_stage_record,
 		"new_best_time": time_sec > previous_best_time,
 		"new_best_level": player_level > previous_best_level
 	}
@@ -678,6 +689,7 @@ func record_battle_result(won: bool, time_sec: float, kills: int) -> Dictionary:
 	return last_battle_result
 
 func record_infinite_dungeon_result(time_sec: float, kills: int, paid_gold: int, returned_to_town: bool) -> Dictionary:
+	var new_stage_record := time_sec > get_stage_best_survival(current_selected_stage_id)
 	var previous_best := 0.0
 	var previous_level := 1
 	if not active_character_id.is_empty() and character_profiles.has(active_character_id):
@@ -686,12 +698,17 @@ func record_infinite_dungeon_result(time_sec: float, kills: int, paid_gold: int,
 		previous_level = int(profile.get("best_survival_level", 1))
 		profile["best_survival_time"] = maxf(previous_best, time_sec)
 		profile["best_survival_level"] = maxi(previous_level, player_level)
+	_record_stage_survival(time_sec)
+	var stage: Dictionary = stages.get(current_selected_stage_id, {})
 	player_gold += paid_gold
 	last_battle_result = {
 		"won": returned_to_town, "returned": returned_to_town, "time": time_sec,
 		"kills": kills, "survival_level": player_level, "gold_earned": paid_gold,
 		"gold_found": GameManager.dungeon_gold, "growth_currency_earned": 0,
-		"cards_earned": [], "items_earned": [], "stage_name": "무한 던전",
+		"cards_earned": [], "items_earned": [], "stage_name": stage.get("name", "무한 던전"),
+		"difficulty": stage.get("difficulty", ""),
+		"damage_by_source": battle_damage_by_source.duplicate(),
+		"new_stage_record": new_stage_record,
 		"new_best_time": time_sec > previous_best, "new_best_level": player_level > previous_level
 	}
 	_update_quest_progress("q_first_battle", kills)
@@ -743,14 +760,24 @@ func _grant_reward_item(reward: String):
 func is_stage_unlocked(stage_id: String) -> bool:
 	if not stages.has(stage_id):
 		return false
-	match stage_id:
-		"stage_1":
-			return true
-		"stage_2":
-			return stages.get("stage_1", {}).get("cleared", false)
-		"stage_3":
-			return stages.get("stage_2", {}).get("cleared", false)
-	return false
+	var prerequisite := str(stages[stage_id].get("requires_clear", ""))
+	return prerequisite.is_empty() or bool(stages.get(prerequisite, {}).get("cleared", false))
+
+func get_stage_lock_reason(stage_id: String) -> String:
+	var prerequisite := str(stages.get(stage_id, {}).get("requires_clear", ""))
+	return "%s 클리어 후 해금" % stages.get(prerequisite, {}).get("name", "이전 던전")
+
+func get_stage_best_survival(stage_id: String) -> float:
+	var profile := get_character_profile(active_character_id)
+	return float(profile.get("stage_survival_records", {}).get(stage_id, 0.0))
+
+func _record_stage_survival(time_sec: float) -> void:
+	if not character_profiles.has(active_character_id):
+		return
+	var profile: Dictionary = character_profiles[active_character_id]
+	var records: Dictionary = profile.get("stage_survival_records", {})
+	records[current_selected_stage_id] = maxf(get_stage_best_survival(current_selected_stage_id), time_sec)
+	profile["stage_survival_records"] = records
 
 func _add_player_xp(amount: int):
 	player_current_xp += amount
@@ -893,6 +920,7 @@ func is_bestiary_unlocked(monster_id: String) -> bool:
 # -------------------------------------------------------------
 
 func begin_survival_run():
+	battle_damage_by_source.clear()
 	player_level = 1
 	player_current_xp = 0
 	player_xp_to_next = 10

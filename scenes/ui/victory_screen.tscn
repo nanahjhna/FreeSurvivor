@@ -1,118 +1,14 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/ui/victory_screen.gd" id="1_vic"]
+[ext_resource type="Script" path="res://scenes/ui/victory_screen.gd" id="1_result"]
 
 [node name="VictoryScreen" type="CanvasLayer"]
 process_mode = 3
 layer = 15
-script = ExtResource("1_vic")
+script = ExtResource("1_result")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.04, 0.12, 0.05, 0.85)
-
-[node name="CenterContainer" type="CenterContainer" parent="."]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
-layout_mode = 2
-theme_override_constants/separation = 28
-alignment = 1
-
-[node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_y = 4
-theme_override_font_sizes/font_size = 54
-text = "🏆 승 리 ! 🏆"
-horizontal_alignment = 1
-
-[node name="Sub" type="Label" parent="CenterContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.95, 0.85, 1)
-theme_override_font_sizes/font_size = 20
-text = "5분 동안 치열한 전투에서 살아남았습니다!"
-horizontal_alignment = 1
-
-[node name="Stats" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="KillStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "처치한 몬스터: 0"
-horizontal_alignment = 1
-
-[node name="TimeStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "생존 시간: 05:00 (클리어!)"
-horizontal_alignment = 1
-
-[node name="LevelStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "도달 서바이벌 레벨: Lv.1"
-horizontal_alignment = 1
-
-[node name="GoldStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "획득 골드: +0"
-horizontal_alignment = 1
-
-[node name="XPStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "획득 성장 재화: +0"
-horizontal_alignment = 1
-
-[node name="CardsStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "획득 카드: 없음"
-horizontal_alignment = 1
-
-[node name="ItemsStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "획득 아이템: 없음"
-horizontal_alignment = 1
-
-[node name="RecordStat" type="Label" parent="CenterContainer/VBoxContainer/Stats"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.25, 1)
-theme_override_font_sizes/font_size = 18
-text = "최고 기록 갱신: 없음"
-horizontal_alignment = 1
-
-[node name="ButtonContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="RestartButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
-custom_minimum_size = Vector2(180, 50)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "전투 다시 시작"
-
-[node name="LobbyButton" type="Button" parent="CenterContainer/VBoxContainer/ButtonContainer"]
-custom_minimum_size = Vector2(180, 50)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-text = "마을로 돌아가기"
-
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/RestartButton" to="." method="_on_restart_pressed"]
-[connection signal="pressed" from="CenterContainer/VBoxContainer/ButtonContainer/LobbyButton" to="." method="_on_lobby_pressed"]
+color = Color(0.025, 0.02, 0.028, 0.75)

@@ -130,6 +130,7 @@ func _spawn_registered_effect(
 		if effect == null:
 			push_warning("효과 씬은 SkillEffectBase를 상속해야 합니다: %s" % scene_path)
 			return
+		effect.damage_source = skill_id
 		get_tree().current_scene.add_child(effect)
 		effect.cast(player, target, direction.rotated(Vector3.UP, angle), damage_multiplier, definition)
 

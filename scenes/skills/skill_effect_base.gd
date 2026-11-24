@@ -1,6 +1,14 @@
 extends Area3D
 class_name SkillEffectBase
 
+var damage_source := "other"
+
+func hit_target(body: Node, amount: float, critical: bool) -> void:
+	if body is BaseMonster:
+		body.take_damage(amount, critical, damage_source)
+	elif body.has_method("take_damage"):
+		body.call("take_damage", amount, critical)
+
 ## All active skill scenes share this cast contract so the manager can create
 ## them from skill data without knowing each concrete effect class.
 func cast(

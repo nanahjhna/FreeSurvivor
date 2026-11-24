@@ -597,16 +597,16 @@ func _release_basic_attack(dir_to_target: Vector3, target: Node3D) -> void:
 	if monster_target != null and not card_hit_bonuses.is_empty():
 		dmg = _apply_card_hit_effects(monster_target, dmg)
 	if target.has_method("take_damage"):
-		target.take_damage(dmg, is_critical)
+		target.take_damage(dmg, is_critical, "basic")
 		if randf() < GameData.get_survival_bonus("extra_attack"):
-			target.take_damage(dmg * 0.8, false)
+			target.take_damage(dmg * 0.8, false, "basic")
 		if randf() < GameData.get_survival_bonus("lightning_proc"):
-			target.take_damage(dmg * 0.5, false)
+			target.take_damage(dmg * 0.5, false, "basic")
 		if randf() < GameData.get_survival_bonus("chain_lightning"):
 			var bounced := 0
 			for enemy in get_tree().get_nodes_in_group("enemies"):
 				if enemy != target and is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= 8.0:
-					enemy.take_damage(dmg * 0.5)
+					enemy.take_damage(dmg * 0.5, false, "basic")
 					bounced += 1
 					if bounced >= 2:
 						break
@@ -634,7 +634,7 @@ func on_monster_killed(_monster: Node):
 	if GameData.get_survival_bonus("kill_explosion") > 0.0 and randf() < GameData.get_survival_bonus("kill_explosion"):
 		for enemy in get_tree().get_nodes_in_group("enemies"):
 			if is_instance_valid(enemy) and global_position.distance_to(enemy.global_position) <= 4.0:
-				enemy.take_damage(base_attack_damage)
+				enemy.take_damage(base_attack_damage, false, "card_effect")
 
 func _apply_card_hit_effects(monster: BaseMonster, damage: float) -> float:
 	if monster.current_hp <= monster.max_hp * 0.4:
@@ -691,7 +691,7 @@ func _use_bomb():
 		if is_instance_valid(e) and not e.get("is_dead"):
 			if global_position.distance_to(e.global_position) <= 16.0:
 				if e.has_method("take_damage"):
-					e.take_damage(80.0 * GameData.attack_damage_mult)
+					e.take_damage(80.0 * GameData.attack_damage_mult, false, "item")
 	_show_damage_popup(0, true, false, "BOMB!")
 
 func gain_xp(amount: int):

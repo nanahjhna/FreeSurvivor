@@ -2,293 +2,327 @@ extends CanvasLayer
 
 signal closed()
 
-@onready var grid_container: GridContainer = $Panel/Margin/VBox/Body/LeftArea/Scroll/GridContainer
-@onready var item_name_lbl: Label = $Panel/Margin/VBox/Body/RightDetail/Content/Header/Info/NameLabel
-@onready var item_grade_lbl: Label = $Panel/Margin/VBox/Body/RightDetail/Content/Header/Info/GradeLabel
-@onready var item_icon_lbl: Label = get_node(
-	"Panel/Margin/VBox/Body/RightDetail/Content/Header/IconPanel/IconLabel"
-)
-@onready var item_stats_lbl: Label = $Panel/Margin/VBox/Body/RightDetail/Content/StatsLabel
-@onready var item_desc_lbl: Label = $Panel/Margin/VBox/Body/RightDetail/Content/DescLabel
-@onready var action_btn: Button = $Panel/Margin/VBox/Body/RightDetail/Content/ActionBtn
-@onready var left_area: VBoxContainer = $Panel/Margin/VBox/Body/LeftArea
+const ITEM_DETAIL := preload("res://scenes/ui/item_detail.gd")
+const CHARACTER_PORTRAIT := preload("res://scenes/ui/character_portrait.gd")
+const EQUIPMENT_TYPES := ["weapon", "armor", "accessory"]
+const SLOT_TITLES := {"weapon": "무기", "armor": "방어구", "accessory": "장신구"}
+const SLOT_ICONS := {"weapon": "⚔", "armor": "🛡", "accessory": "✦"}
 
-var current_filter: String = "all"
-var selected_item_idx: int = 0
-var display_items: Array[Dictionary] = []
-var auto_equip_button: Button
-var equipment_slot_row: HBoxContainer
-var equipment_slot_buttons: Dictionary = {}
+var heading: Label
+var count_label: Label
+var filters: HBoxContainer
+var grid: GridContainer
+var equipment: VBoxContainer
+var item_detail: ITEM_DETAIL
+var selected_item: Dictionary = {}
+var current_filter := "all"
+var equipment_mode := false
+var forge_mode := false
+var equipment_identity: Label
+var portrait_holder: CenterContainer
+var portrait: CHARACTER_PORTRAIT
+var mode_buttons: Dictionary = {}
+var filter_buttons: Dictionary = {}
+var slot_buttons: Dictionary = {}
 
-func _ready():
+
+func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	visible = false
-	var portrait := UiStyle.fit_modal($Panel, Vector2(760, 990))
-	$Panel.add_theme_stylebox_override("panel", UiStyle.panel_style())
-	$Panel/Margin/VBox/Body/RightDetail.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
-	UiStyle.apply_button(action_btn, true)
-	for tab_node in [$Panel/Margin/VBox/Tabs/TabAll, $Panel/Margin/VBox/Tabs/TabGear, $Panel/Margin/VBox/Tabs/TabMat, $Panel/Margin/VBox/Header/CloseBtn]:
-		UiStyle.apply_button(tab_node as Button)
-	grid_container.columns = clampi(int((get_viewport().get_visible_rect().size.x - 96.0) / 118.0), 3, 6) if portrait else 6
+	hide()
+	var layout := UiStyle.dialog_layout(self, "")
+	var frame := layout.get_parent().get_parent() as PanelContainer
+	frame.add_theme_stylebox_override("panel", UiStyle.frame(Color("#edcb94"), Color("#ac7549"), 20, 5))
+	var header_band := UiStyle.make_panel()
+	header_band.add_theme_stylebox_override("panel", UiStyle.frame(Color("#54348c"), Color("#c798ef"), 12, 3))
+	layout.add_child(header_band)
+	var header := HBoxContainer.new()
+	header_band.add_child(header)
+	heading = UiStyle.make_label("가방", 34, Color("#fff1e0"))
+	UiStyle.ink_outline(heading, 6, Color("#372255"))
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(heading)
+	count_label = UiStyle.make_label("", 19, Color("#ead3fb"))
+	count_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	header.add_child(count_label)
+	var close_button := UiStyle.make_button("×", Vector2(56, 52))
+	close_button.tooltip_text = "닫기"
+	close_button.add_theme_font_size_override("font_size", 27)
+	UiStyle.skin_button(close_button, Color("#763f7b"), Color("#e5b5f4"))
+	close_button.pressed.connect(close)
+	header.add_child(close_button)
+	UiStyle.divider(layout)
+
+	var modes := HBoxContainer.new()
+	layout.add_child(modes)
+	for entry in [[false, "인벤토리"], [true, "장비 관리"]]:
+		var button := _tab(modes, entry[1])
+		button.pressed.connect(_show_mode.bind(entry[0]))
+		mode_buttons[entry[0]] = button
+
+	var body := UiStyle.scroll_column(layout)
+	equipment = VBoxContainer.new()
+	equipment.add_theme_constant_override("separation", 10)
+	body.add_child(equipment)
+	equipment_identity = UiStyle.make_label("", 29, UiStyle.PAPER_INK)
+	equipment_identity.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	equipment_identity.custom_minimum_size.y = 52
+	equipment_identity.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	equipment.add_child(equipment_identity)
+	var platform := PanelContainer.new()
+	platform.add_theme_stylebox_override("panel", UiStyle.frame(Color("#f7dfaa"), Color("#bf9361"), 14, 2))
+	equipment.add_child(platform)
+	var stage_light := TextureRect.new()
+	stage_light.texture = UiStyle.tint_gradient(Color("#efd09b"), Color("#fff0c4"))
+	stage_light.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stage_light.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	platform.add_child(stage_light)
+	var slots := HBoxContainer.new()
+	slots.custom_minimum_size.y = 342
+	slots.add_theme_constant_override("separation", 2)
+	platform.add_child(slots)
+	var left := VBoxContainer.new()
+	left.alignment = BoxContainer.ALIGNMENT_CENTER
+	left.add_theme_constant_override("separation", 15)
+	slots.add_child(left)
+	portrait_holder = CenterContainer.new()
+	portrait_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slots.add_child(portrait_holder)
+	var right := VBoxContainer.new()
+	right.alignment = BoxContainer.ALIGNMENT_CENTER
+	slots.add_child(right)
+	for type in EQUIPMENT_TYPES:
+		var slot := UiStyle.make_button("", Vector2(108, 113))
+		slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slot.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		slot.pressed.connect(_open_equipped.bind(type))
+		(right if type == "armor" else left).add_child(slot)
+		slot_buttons[type] = slot
+	var auto_equip := UiStyle.make_button("추천 장비 장착", Vector2(0, 52))
+	UiStyle.skin_button(auto_equip, Color("#a26a36"), Color("#ffe3a0"))
+	auto_equip.add_theme_font_size_override("font_size", 21)
+	auto_equip.pressed.connect(_auto_equip_recommended)
+	equipment.add_child(auto_equip)
+	UiStyle.divider(equipment)
+	equipment.add_child(UiStyle.make_label("보유 장비", 25, UiStyle.PAPER_INK))
+
+	filters = HBoxContainer.new()
+	body.add_child(filters)
+	for entry in [["all", "전체"], ["gear", "장비"], ["mat", "재료·소모품"]]:
+		var button := _tab(filters, entry[1])
+		button.pressed.connect(_set_filter.bind(entry[0]))
+		filter_buttons[entry[0]] = button
+	grid = GridContainer.new()
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 9)
+	grid.add_theme_constant_override("v_separation", 9)
+	body.add_child(grid)
+
+	item_detail = ITEM_DETAIL.new()
+	item_detail.action_requested.connect(_on_item_action)
+	add_child(item_detail)
+	get_viewport().size_changed.connect(_layout_grid)
+	GameData.data_updated.connect(_refresh)
+	_layout_grid()
+
+
+func _tab(parent: Control, caption: String) -> Button:
+	var button := UiStyle.make_button(caption, Vector2(0, 54))
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.add_child(button)
+	return button
+
+
+func _layout_grid() -> void:
+	var width := get_viewport().get_visible_rect().size.x
+	var safe := UiStyle.safe_insets(get_viewport())
+	grid.columns = clampi(int((minf(width, 700.0) - safe.x - safe.z - 88.0) / 106.0), 2, 5)
+
+
+func open(show_equipment: bool = false, at_forge: bool = false) -> void:
+	forge_mode = at_forge
+	show()
+	_show_mode(show_equipment)
+
+
+func close() -> void:
+	item_detail.hide()
 	if portrait:
-		var margin := $Panel/Margin as MarginContainer
-		margin.add_theme_constant_override("margin_left", 16)
-		margin.add_theme_constant_override("margin_right", 16)
-		$Panel/Margin/VBox/Body/LeftArea/Scroll.custom_minimum_size.y = 300
-		$Panel/Margin/VBox/Header/CloseBtn.custom_minimum_size = Vector2(52, 48)
-		for tab_node in [$Panel/Margin/VBox/Tabs/TabAll, $Panel/Margin/VBox/Tabs/TabGear, $Panel/Margin/VBox/Tabs/TabMat]:
-			var tab := tab_node as Button
-			tab.custom_minimum_size.x = 0
-			tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			tab.add_theme_font_size_override("font_size", 14)
-		$Panel/Margin/VBox/Tabs/TabMat.text = "기타"
-	_build_equipment_strip()
-	auto_equip_button = UiStyle.make_button("✨ 추천 장비 자동 장착", Vector2(0, 44))
-	auto_equip_button.tooltip_text = "직업과 장비 능력치를 비교해 가장 높은 점수의 장비를 장착합니다. 기존 장비는 삭제하거나 판매하지 않습니다."
-	auto_equip_button.pressed.connect(_auto_equip_recommended)
-	action_btn.get_parent().add_child(auto_equip_button)
-	GameData.data_updated.connect(_refresh_ui)
-
-func open():
-	visible = true
-	_refresh_ui()
-
-func close():
-	visible = false
+		portrait.set_portrait_active(false)
+	hide()
 	closed.emit()
 
-func _refresh_ui():
-	for tab_node in [$Panel/Margin/VBox/Tabs/TabAll, $Panel/Margin/VBox/Tabs/TabGear, $Panel/Margin/VBox/Tabs/TabMat]:
-		var tab := tab_node as Button
-		UiStyle.apply_button(tab)
-		var selected: bool = (tab.name == "TabAll" and current_filter == "all") or (tab.name == "TabGear" and current_filter == "gear") or (tab.name == "TabMat" and current_filter == "mat")
-		if selected:
-			tab.add_theme_stylebox_override("normal", UiStyle.button_style(Color(0.25, 0.045, 0.028, 0.98), UiStyle.GOLD_BRIGHT))
-	_build_display_items()
-	_refresh_equipment_strip()
-	_populate_grid()
-	_show_detail(selected_item_idx)
 
-func _build_equipment_strip():
-	var heading := UiStyle.make_label("현재 장착", 14, UiStyle.GOLD_BRIGHT)
-	left_area.add_child(heading)
-	left_area.move_child(heading, 0)
-	equipment_slot_row = HBoxContainer.new()
-	equipment_slot_row.add_theme_constant_override("separation", 8)
-	left_area.add_child(equipment_slot_row)
-	left_area.move_child(equipment_slot_row, 1)
-	for slot in [["weapon", "⚔", "무기"], ["armor", "🛡", "방어구"], ["accessory", "✦", "장신구"]]:
-		var button := UiStyle.make_button("", Vector2(0, 72))
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override("font_size", 12)
-		button.pressed.connect(_on_equipped_slot_pressed.bind(str(slot[0])))
-		equipment_slot_buttons[str(slot[0])] = button
-		equipment_slot_row.add_child(button)
+func _show_mode(show_equipment: bool) -> void:
+	equipment_mode = show_equipment
+	current_filter = "all"
+	_refresh()
 
-func _refresh_equipment_strip():
-	var leader_id := GameData.get_leader_id()
-	var equipment_value: Variant = GameData.equipped_gear.get(leader_id, {})
-	var equipment: Dictionary = equipment_value if equipment_value is Dictionary else {}
-	for slot_name in equipment_slot_buttons:
-		var button := equipment_slot_buttons[slot_name] as Button
-		var item_id := str(equipment.get(slot_name, ""))
-		var item := GameData._get_inventory_item(item_id) if not item_id.is_empty() else {}
-		var slot_title := "무기" if slot_name == "weapon" else ("방어구" if slot_name == "armor" else "장신구")
-		var icon := "⚔" if slot_name == "weapon" else ("🛡" if slot_name == "armor" else "✦")
-		button.text = "%s  %s\n%s" % [icon, slot_title, str(item.get("name", "빈 슬롯"))]
-		button.disabled = item_id.is_empty()
-		button.tooltip_text = str(item.get("name", "장착된 아이템이 없습니다."))
 
-func _on_equipped_slot_pressed(slot_name: String):
-	var equipment_value: Variant = GameData.equipped_gear.get(GameData.get_leader_id(), {})
-	var equipment: Dictionary = equipment_value if equipment_value is Dictionary else {}
-	var equipped_id := str(equipment.get(slot_name, ""))
-	if equipped_id.is_empty():
+func _set_filter(filter: String) -> void:
+	current_filter = filter
+	_refresh()
+
+
+func _refresh() -> void:
+	if not visible:
 		return
-	current_filter = "gear"
-	for index in range(display_items.size()):
-		if str(display_items[index].get("id", "")) == equipped_id:
-			selected_item_idx = index
-			_refresh_ui()
-			return
-
-func _build_display_items():
-	display_items = GameData.inventory.duplicate()
-	var consumables = [
-		{
-			"id": "consumable_1", "type": "consumable", "name": "치유 물약",
-			"icon": "🧪", "desc": "HP를 35 회복합니다.",
-			"count": GameData.item_counts.get(1, 0)
-		},
-		{
-			"id": "consumable_2", "type": "consumable", "name": "화면 폭탄",
-			"icon": "💣", "desc": "주변 적에게 큰 피해를 줍니다.",
-			"count": GameData.item_counts.get(2, 0)
-		},
-		{
-			"id": "consumable_3", "type": "consumable", "name": "질풍 물약",
-			"icon": "💨", "desc": "5초 동안 이동속도가 증가합니다.",
-			"count": GameData.item_counts.get(3, 0)
-		}
-	]
-	for consumable in consumables:
-		display_items.append(consumable)
-	display_items.sort_custom(func(a: Dictionary, b: Dictionary):
-		var grade_order := {"SSR":4, "SR":3, "R":2, "N":1}
-		var a_grade := int(grade_order.get(a.get("grade", "N"), 0))
-		var b_grade := int(grade_order.get(b.get("grade", "N"), 0))
-		return a_grade > b_grade if a_grade != b_grade else str(a.get("type", "")) < str(b.get("type", ""))
-	)
-
-func _populate_grid():
-	for child in grid_container.get_children():
+	heading.text = ("대장간" if forge_mode else "장비 관리") if equipment_mode else "가방"
+	equipment.visible = equipment_mode
+	var leader: Dictionary = GameData.characters.get(GameData.get_leader_id(), {})
+	equipment_identity.text = "%s  %s" % [leader.get("icon", "⚔"), leader.get("name", "")]
+	filters.visible = not equipment_mode
+	for mode in mode_buttons:
+		_skin_tab(mode_buttons[mode], mode == equipment_mode)
+		mode_buttons[mode].add_theme_font_size_override("font_size", 19)
+	for filter in filter_buttons:
+		_skin_tab(filter_buttons[filter], current_filter == filter)
+		filter_buttons[filter].add_theme_font_size_override("font_size", 18)
+	_refresh_equipped()
+	_refresh_portrait()
+	var items := _inventory_items()
+	var displayed := 0
+	for child in grid.get_children():
+		grid.remove_child(child)
 		child.queue_free()
-	
-	for i in range(display_items.size()):
-		var itm = display_items[i]
-		if current_filter != "all":
-			if current_filter == "gear" and itm.type not in ["weapon", "armor", "accessory"]:
-				continue
-			elif current_filter == "mat" and itm.type != "material" and itm.type != "consumable":
-				continue
-		
-		var slot_btn := Button.new()
-		slot_btn.custom_minimum_size = Vector2(88, 96)
-		slot_btn.toggle_mode = true
-		slot_btn.button_pressed = (i == selected_item_idx)
-		var grade := str(itm.get("grade", "N"))
-		var grade_color := Color(0.68, 0.53, 0.34)
-		match grade:
-			"R": grade_color = Color(0.76, 0.58, 0.36)
-			"SR": grade_color = Color(0.9, 0.43, 0.28)
-			"SSR": grade_color = UiStyle.GOLD_BRIGHT
-		slot_btn.add_theme_stylebox_override("normal", UiStyle.button_style(Color(0.055, 0.03, 0.027, 0.98), grade_color))
-		slot_btn.add_theme_stylebox_override("hover", UiStyle.button_style(Color(0.17, 0.045, 0.025, 1.0), grade_color.lightened(0.2)))
-		slot_btn.add_theme_stylebox_override("pressed", UiStyle.button_style(Color(0.25, 0.045, 0.028, 1.0), UiStyle.GOLD_BRIGHT))
-		slot_btn.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		
-		var vbox = VBoxContainer.new()
-		vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		
-		var ic = Label.new()
-		ic.text = itm.get("icon", "📦")
-		ic.add_theme_font_size_override("font_size", 28)
-		ic.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_child(ic)
-		if itm.has("grade"):
-			var grade_label := UiStyle.make_label(grade, 11, grade_color)
-			grade_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			grade_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			vbox.add_child(grade_label)
-		
-		if itm.has("count"):
-			var cnt = Label.new()
-			cnt.text = "x" + str(itm.count)
-			cnt.add_theme_font_size_override("font_size", 11)
-			cnt.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			cnt.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			vbox.add_child(cnt)
-		
-		slot_btn.add_child(vbox)
-		var itm_idx = i
-		slot_btn.pressed.connect(func(): _on_item_clicked(itm_idx))
-		grid_container.add_child(slot_btn)
-
-func _on_item_clicked(idx: int):
-	selected_item_idx = idx
-	_refresh_ui()
-
-func _show_detail(idx: int):
-	if idx < 0 or idx >= display_items.size():
-		return
-	var itm = display_items[idx]
-	item_name_lbl.text = itm.get("name", "아이템")
-	item_grade_lbl.text = "%s  ·  %s" % [str(itm.get("grade", "일반")), str(itm.get("type", "기타"))]
-	item_icon_lbl.text = itm.get("icon", "📦")
-	item_desc_lbl.text = itm.get("desc", "")
-	
-	var stats_text = ""
-	if itm.has("atk") and itm.atk > 0:
-		stats_text += "공격력: +%d  " % itm.atk
-	if itm.has("def") and itm.def > 0:
-		stats_text += "방어력: +%d  " % itm.def
-	if itm.has("hp") and itm.hp > 0:
-		stats_text += "HP: +%d  " % itm.hp
-	if itm.has("spd") and itm.spd != 0:
-		stats_text += "이동속도: +%.1f  " % itm.spd
-	
-	if stats_text == "":
-		stats_text = "보유 수량: %d개" % itm.get("count", 1)
-	item_stats_lbl.text = stats_text
-	
-	if itm.type in ["weapon", "armor", "accessory"]:
-		action_btn.visible = true
-
-		var leader_id = GameData.get_leader_id()
-		var equipped_id = GameData.equipped_gear.get(leader_id, {}).get(itm.type, null)
-		action_btn.text = "해제" if equipped_id == itm.id else "⚔️ 장착"
-		if equipped_id != null and equipped_id != itm.id:
-			var current := GameData._get_inventory_item(str(equipped_id))
-			item_stats_lbl.text += "\n장착 중 대비  공격 %+d · 방어 %+d · HP %+d · 속도 %+.1f" % [
-				int(itm.get("atk", 0)) - int(current.get("atk", 0)), int(itm.get("def", 0)) - int(current.get("def", 0)),
-				int(itm.get("hp", 0)) - int(current.get("hp", 0)), float(itm.get("spd", 0.0)) - float(current.get("spd", 0.0))]
-	else:
-		action_btn.visible = false
-
-func _on_action_pressed():
-	if selected_item_idx < 0 or selected_item_idx >= display_items.size():
-		return
-	var itm = display_items[selected_item_idx]
-	if itm.type not in ["weapon", "armor", "accessory"]:
-		return
-
-	var leader_char_id = GameData.get_leader_id()
-	if not GameData.equipped_gear.has(leader_char_id):
-		GameData.equipped_gear[leader_char_id] = {}
-	if GameData.equipped_gear[leader_char_id].get(itm.type, null) == itm.id:
-		GameData.equipped_gear[leader_char_id][itm.type] = null
-	else:
-		GameData.equipped_gear[leader_char_id][itm.type] = itm.id
-	GameData.recalculate_party_stats()
-	GameData.save_to_disk()
-	GameData.data_updated.emit()
-	_show_detail(selected_item_idx)
-
-func _auto_equip_recommended():
-	var leader_id := GameData.get_leader_id()
-	var best_by_type: Dictionary = {}
-	var best_score: Dictionary = {}
-	for item in GameData.inventory:
-		var item_type := str(item.get("type", ""))
-		if item_type not in ["weapon", "armor", "accessory"]:
+	for item in items:
+		var is_gear := str(item.get("type", "")) in EQUIPMENT_TYPES
+		if (equipment_mode or current_filter == "gear") and not is_gear:
 			continue
-		var score := _equipment_score(item)
-		if not best_score.has(item_type) or score > float(best_score[item_type]):
-			best_score[item_type] = score
-			best_by_type[item_type] = str(item.get("id", ""))
-	if not GameData.equipped_gear.has(leader_id):
-		GameData.equipped_gear[leader_id] = {}
-	for item_type in best_by_type:
-		GameData.equipped_gear[leader_id][item_type] = best_by_type[item_type]
+		if current_filter == "mat" and str(item.get("type", "")) not in ["material", "consumable"]:
+			continue
+		var grade := str(item.get("grade", ""))
+		var button := UiStyle.make_button("%s\n%s" % [item.get("icon", "◆"), "×%d" % int(item.count) if item.has("count") else grade], Vector2(80, 96))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.tooltip_text = str(item.get("name", ""))
+		button.add_theme_font_size_override("font_size", 30)
+		var color := UiStyle.grade_color(grade)
+		UiStyle.skin_button(button, _slot_face(grade), color)
+		button.pressed.connect(_open_item.bind(item))
+		grid.add_child(button)
+		displayed += 1
+	count_label.text = "%d종" % displayed
+	if displayed == 0:
+		grid.add_child(UiStyle.make_label("보유한 아이템이 없습니다.", 18, UiStyle.PAPER_INK))
+
+func _skin_tab(button: Button, selected: bool) -> void:
+	if selected:
+		UiStyle.skin_button(button, Color("#67479b"), Color("#e4c3fb"))
+	else:
+		UiStyle.skin_button(button, Color("#e1b27e"), Color("#c19062"), UiStyle.PAPER_INK)
+
+func _slot_face(grade: String) -> Color:
+	match grade:
+		"SSR": return Color("#ad6637")
+		"SR": return Color("#6847a5")
+		"R": return Color("#3762a5")
+	return Color("#575267")
+
+func _refresh_portrait() -> void:
+	if equipment_mode and portrait == null:
+		portrait = CHARACTER_PORTRAIT.new()
+		portrait.custom_minimum_size = Vector2(240, 326)
+		portrait_holder.add_child(portrait)
+	if portrait:
+		portrait.set_portrait_active(equipment_mode)
+		if equipment_mode:
+			portrait.show_character(GameData.get_leader_id())
+
+
+func _inventory_items() -> Array[Dictionary]:
+	var items := GameData.inventory.duplicate()
+	for item in [
+		{"slot": 1, "name": "치유 물약", "icon": "🧪", "desc": "HP를 35 회복합니다."},
+		{"slot": 2, "name": "화면 폭탄", "icon": "💣", "desc": "주변 적에게 큰 피해를 줍니다."},
+		{"slot": 3, "name": "질풍 물약", "icon": "💨", "desc": "5초간 이동 속도가 증가합니다."}
+	]:
+		var slot := int(item.slot)
+		var amount := int(GameData.item_counts.get(slot, 0))
+		if amount > 0:
+			items.append(item.merged({"type": "consumable", "count": amount}))
+	var grades := {"SSR": 4, "SR": 3, "R": 2, "N": 1}
+	items.sort_custom(func(a: Dictionary, b: Dictionary):
+		return int(grades.get(a.get("grade", ""), 0)) > int(grades.get(b.get("grade", ""), 0)))
+	return items
+
+
+func _equipped_item(slot: String) -> Dictionary:
+	var equipped: Dictionary = GameData.equipped_gear.get(GameData.get_leader_id(), {})
+	return GameData._get_inventory_item(str(equipped.get(slot, "")))
+
+
+func _refresh_equipped() -> void:
+	for slot in EQUIPMENT_TYPES:
+		var button: Button = slot_buttons[slot]
+		var item := _equipped_item(slot)
+		button.text = "%s\n%s" % [item.get("icon", SLOT_ICONS[slot]), SLOT_TITLES[slot]]
+		button.tooltip_text = str(item.get("name", "비어 있음"))
+		button.disabled = item.is_empty()
+		var grade := str(item.get("grade", ""))
+		UiStyle.skin_button(button, _slot_face(grade), UiStyle.grade_color(grade))
+		button.add_theme_font_size_override("font_size", 22)
+
+
+func _open_equipped(slot: String) -> void:
+	var item := _equipped_item(slot)
+	if not item.is_empty():
+		_open_item(item)
+
+
+func _open_item(item: Dictionary) -> void:
+	selected_item = item
+	var slot := str(item.get("type", ""))
+	var action := ""
+	var comparison := ""
+	if slot in EQUIPMENT_TYPES:
+		var equipped := _equipped_item(slot)
+		var is_equipped: bool = not equipped.is_empty() and equipped.id == item.id
+		action = "장착 해제" if is_equipped else "장착"
+		if not equipped.is_empty() and not is_equipped:
+			comparison = "장착 중 대비  공격 %+d · 방어 %+d · HP %+d · 이동 %+.1f" % [
+				int(item.get("atk", 0)) - int(equipped.get("atk", 0)),
+				int(item.get("def", 0)) - int(equipped.get("def", 0)),
+				int(item.get("hp", 0)) - int(equipped.get("hp", 0)),
+				float(item.get("spd", 0)) - float(equipped.get("spd", 0))]
+	item_detail.show_item(item, action, comparison)
+
+
+func _on_item_action() -> void:
+	var slot := str(selected_item.get("type", ""))
+	var id := str(selected_item.get("id", ""))
+	if slot not in EQUIPMENT_TYPES or GameData._get_inventory_item(id).is_empty():
+		return
+	var leader := GameData.get_leader_id()
+	var current: Dictionary = GameData.equipped_gear.get(leader, {})
+	current[slot] = null if current.get(slot) == id else id
+	GameData.equipped_gear[leader] = current
+	_commit_equipment()
+	_open_item(selected_item)
+
+
+func _auto_equip_recommended() -> void:
+	var leader := GameData.get_leader_id()
+	var current: Dictionary = GameData.equipped_gear.get(leader, {})
+	var best_scores := {}
+	for item in GameData.inventory:
+		var slot := str(item.get("type", ""))
+		if slot not in EQUIPMENT_TYPES:
+			continue
+		var score := float(item.get("atk", 0)) * 3.0 + float(item.get("def", 0)) * 2.0 + float(item.get("hp", 0)) * 0.35 + float(item.get("spd", 0)) * 12.0
+		if not best_scores.has(slot) or score > float(best_scores[slot]):
+			best_scores[slot] = score
+			current[slot] = str(item.get("id", ""))
+	GameData.equipped_gear[leader] = current
+	_commit_equipment()
+	UiFeedback.show_success("추천 장비를 장착했습니다.")
+
+
+func _commit_equipment() -> void:
 	GameData.recalculate_party_stats()
 	GameData.save_to_disk()
 	GameData.data_updated.emit()
-	UiFeedback.show_success("추천 장비를 장착했습니다. 기존 장비는 인벤토리에 유지됩니다.")
 
-func _equipment_score(item: Dictionary) -> float:
-	return float(item.get("atk", 0)) * 3.0 + float(item.get("def", 0)) * 2.0 + float(item.get("hp", 0)) * 0.35 + float(item.get("spd", 0.0)) * 12.0
 
-func _on_tab_all(): current_filter = "all"; _refresh_ui()
-func _on_tab_gear(): current_filter = "gear"; _refresh_ui()
-func _on_tab_mat(): current_filter = "mat"; _refresh_ui()
-
-func _on_close_pressed():
-	close()
-
-func _unhandled_input(event: InputEvent):
+func _unhandled_input(event: InputEvent) -> void:
 	if visible and not GameActions.is_capturing() and event.is_action_pressed("ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()

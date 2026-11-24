@@ -63,7 +63,7 @@ func _tick_card_statuses(delta: float):
 		if effect.until_tick <= 0.0:
 			effect.until_tick += 1.0
 			effect.ticks -= 1
-			take_damage(float(effect.damage))
+			take_damage(float(effect.damage), false, "card_effect")
 			if effect.ticks == 0:
 				card_statuses.erase(status)
 			if is_dead:
@@ -126,10 +126,13 @@ func perform_attack():
 		if dist <= attack_range + 0.8:
 			target.take_damage(attack_damage)
 
-func take_damage(amount: float, is_crit: bool = false):
+func take_damage(amount: float, is_crit: bool = false, source: String = "other"):
 	if is_dead:
 		return
-	
+
+	if GameManager.current_location == GameManager.Location.BATTLE and amount > 0.0:
+		var totals := GameData.battle_damage_by_source
+		totals[source] = float(totals.get(source, 0.0)) + minf(current_hp, amount)
 	current_hp -= amount
 	_show_damage_popup(amount, is_crit)
 	_flash_hit()

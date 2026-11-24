@@ -131,7 +131,7 @@ func _interact(entry: Dictionary):
 		"card_dungeon":
 			GameManager.go_to_deck_builder()
 		"forge":
-			_open_hud_screen("inventory")
+			_open_hud_screen("forge")
 			UiFeedback.show_info("대장간에서 장비를 관리합니다.")
 		"shop":
 			_open_hud_screen("shop")
@@ -142,7 +142,7 @@ func _interact(entry: Dictionary):
 			_open_hud_screen("quest")
 		"npc_blacksmith":
 			_show_npc_dialog(node, "대장간에서 장비를 손볼 수 있습니다.", [
-				{"label": "🔨 장비 관리 열기", "action": "inventory"},
+				{"label": "🔨 장비 관리 열기", "action": "forge"},
 				{"label": "📖 도감 보기", "action": "collection"}
 			])
 		"npc_merchant":
@@ -153,6 +153,7 @@ func _interact(entry: Dictionary):
 		"npc_innkeeper":
 			_show_npc_dialog(node, "따뜻한 침대와 식사가 준비되어 있어요. 50 골드면 체력을 회복할 수 있습니다.", [
 				{"label": "🏨 휴식하기 (50 골드)", "action": "rest"},
+				{"label": "캐릭터 변경", "action": "character_select"},
 				{"label": "💬 그냥 대화하기", "action": ""}
 			])
 		"npc_guard":

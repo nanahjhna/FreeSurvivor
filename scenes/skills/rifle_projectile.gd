@@ -48,8 +48,7 @@ func _on_body_entered(body: Node) -> void:
 	if _visual_only:
 		queue_free()
 		return
-	if body.has_method("take_damage"):
-		body.take_damage(_damage, true)
+	hit_target(body, _damage, true)
 	_remaining_hits -= 1
 	if _remaining_hits <= 0:
 		queue_free()

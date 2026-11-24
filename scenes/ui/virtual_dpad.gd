@@ -12,6 +12,9 @@ var _stick_radius: float = 1.0
 var _deadzone: float = 0.14
 var _floating_mode: bool = false
 var _touch_bounds: Rect2 = Rect2()
+var reserved_bottom := 108.0
+var use_combat_layout := false
+var _rest_position := Vector2.ZERO
 var _active_touch_id: int = -1
 var _mouse_pressed: bool = false
 var _move_vector: Vector2 = Vector2.ZERO
@@ -25,6 +28,10 @@ func _ready() -> void:
 	_base_style = _make_round_style(Color(0.025, 0.028, 0.035, 0.56), Color(0.77, 0.60, 0.38, 0.68), 2)
 	_knob_idle_style = _make_round_style(Color(0.24, 0.19, 0.15, 0.82), Color(0.95, 0.77, 0.51, 0.88), 2)
 	_knob_active_style = _make_round_style(Color(0.54, 0.27, 0.12, 0.94), Color(1.0, 0.84, 0.55, 1.0), 3)
+	if use_combat_layout:
+		_base_style = _make_round_style(Color(0.03, 0.10, 0.22, 0.48), Color("#638cc5"), 3)
+		_knob_idle_style = _make_round_style(Color(0.12, 0.35, 0.69, 0.74), Color("#83c6ff"), 4)
+		_knob_active_style = _make_round_style(Color("#246cc8"), Color("#a3e1ff"), 5)
 	_build()
 	get_viewport().size_changed.connect(_relayout)
 	_floating_mode = GameActions.is_mobile()
@@ -59,34 +66,27 @@ func _relayout() -> void:
 	var visible_rect: Rect2 = get_viewport().get_visible_rect()
 	var viewport_size: Vector2 = visible_rect.size
 	var side: float = clampf(viewport_size.x * 0.31, 170.0, 220.0)
-	var safe_left: float = 0.0
-	var safe_top: float = 0.0
-	var safe_bottom: float = 0.0
-	if OS.has_feature("mobile"):
-		var safe_area: Rect2i = DisplayServer.get_display_safe_area()
-		if safe_area.size.x > 0 and safe_area.size.y > 0:
-			var screen_to_viewport: Transform2D = get_viewport().get_screen_transform().affine_inverse()
-			var safe_start: Vector2 = screen_to_viewport * Vector2(safe_area.position)
-			var safe_end: Vector2 = screen_to_viewport * Vector2(safe_area.end)
-			safe_left = maxf(0.0, safe_start.x - visible_rect.position.x)
-			safe_top = maxf(0.0, safe_start.y - visible_rect.position.y)
-			safe_bottom = maxf(0.0, visible_rect.end.y - safe_end.y)
+	var safe := UiStyle.safe_insets(get_viewport())
 	var left_margin: float = maxf(16.0, viewport_size.x * 0.035)
 	var bottom_margin: float = clampf(viewport_size.y * 0.12, 100.0, 175.0)
 	_touch_bounds = Rect2(
-		visible_rect.position + Vector2(safe_left, safe_top),
-		viewport_size - Vector2(safe_left, safe_top + safe_bottom)
+		visible_rect.position + Vector2(safe.x, safe.y),
+		viewport_size - Vector2(safe.x + safe.z, safe.y + safe.w)
 	)
-	_base.position = Vector2(
-		visible_rect.position.x + safe_left + left_margin,
-		maxf(visible_rect.position.y + safe_top + 16.0, visible_rect.end.y - safe_bottom - bottom_margin - side)
+	_rest_position = Vector2(
+		visible_rect.position.x + safe.x + left_margin,
+		maxf(visible_rect.position.y + safe.y + 16.0, visible_rect.end.y - safe.w - bottom_margin - side)
 	)
 	_base.size = Vector2.ONE * side
-	_base.visible = not _floating_mode
-	_stick_center = _base.size * 0.5
 	_stick_radius = side * 0.32
 	var knob_side: float = side * 0.36
 	_knob.size = Vector2.ONE * knob_side
+	_reset_visual()
+
+func _reset_visual() -> void:
+	_base.position = _rest_position
+	_base.modulate.a = 0.55 if _floating_mode and use_combat_layout else 1.0
+	_stick_center = _base.size * 0.5
 	_update_visual()
 
 
@@ -96,10 +96,14 @@ func _base_contains(viewport_position: Vector2) -> bool:
 func _can_start_touch(viewport_position: Vector2) -> bool:
 	if not _floating_mode:
 		return _base_contains(viewport_position)
+	if not use_combat_layout:
+		var zone := Rect2(_touch_bounds.position, Vector2(_touch_bounds.size.x * 0.58, _touch_bounds.size.y))
+		return zone.has_point(viewport_position)
 	# Keep movement on the left side, where no combat/action buttons are placed.
+	var top := _touch_bounds.size.y * 0.34
 	var left_control_area := Rect2(
-		_touch_bounds.position,
-		Vector2(_touch_bounds.size.x * 0.58, _touch_bounds.size.y)
+		_touch_bounds.position + Vector2(0, top),
+		Vector2(_touch_bounds.size.x * 0.55, maxf(0.0, _touch_bounds.size.y - top - reserved_bottom))
 	)
 	return left_control_area.has_point(viewport_position)
 
@@ -112,7 +116,7 @@ func _place_floating_base(viewport_position: Vector2) -> void:
 	# Anchor the stick at the finger-down point, even if the visual base was
 	# clamped near a screen edge.
 	_stick_center = _base.make_canvas_position_local(viewport_position)
-	_base.visible = true
+	_base.modulate.a = 1.0
 
 
 func _update_from_position(viewport_position: Vector2) -> void:
@@ -150,9 +154,7 @@ func _input(event: InputEvent) -> void:
 		elif touch.index == _active_touch_id:
 			_active_touch_id = -1
 			_move_vector = Vector2.ZERO
-			if _floating_mode:
-				_base.visible = false
-			_update_visual()
+			_reset_visual()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
@@ -170,9 +172,7 @@ func _input(event: InputEvent) -> void:
 		elif not mouse_event.pressed and _mouse_pressed:
 			_mouse_pressed = false
 			_move_vector = Vector2.ZERO
-			if _floating_mode:
-				_base.visible = false
-			_update_visual()
+			_reset_visual()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and _mouse_pressed:
 		_update_from_position((event as InputEventMouseMotion).position)
@@ -184,9 +184,8 @@ func _process(_delta: float) -> void:
 		_active_touch_id = -1
 		_mouse_pressed = false
 		_move_vector = Vector2.ZERO
-		if _floating_mode:
-			_base.visible = false
-		_update_visual()
+		_reset_visual()
+	_base.visible = not get_tree().paused and (use_combat_layout or not _floating_mode or _active_touch_id >= 0)
 	if not is_instance_valid(_player):
 		_player = get_tree().get_first_node_in_group("player") as PlayerCharacter
 		if _player == null:

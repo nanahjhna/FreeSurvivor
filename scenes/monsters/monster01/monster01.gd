@@ -31,8 +31,8 @@ func perform_attack():
 	_play_model_animation("Attack", true)
 
 
-func take_damage(amount: float, is_crit: bool = false):
-	super.take_damage(amount, is_crit)
+func take_damage(amount: float, is_crit: bool = false, source: String = "other"):
+	super.take_damage(amount, is_crit, source)
 	if not is_dead:
 		_play_model_animation("Hit", true)
 

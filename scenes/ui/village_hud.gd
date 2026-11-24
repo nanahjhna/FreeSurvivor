@@ -78,7 +78,7 @@ func _build_bottom_menu():
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	margin.add_child(row)
-	for item in [["캐릭터", "character"], ["장비", "inventory"], ["스킬", "skill"], ["퀘스트", "quest"]]:
+	for item in [["캐릭터", "character"], ["장비", "equipment"], ["스킬", "skill"], ["퀘스트", "quest"]]:
 		var button := UiStyle.make_button(str(item[0]), Vector2(0, 48))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 14)
@@ -233,11 +233,18 @@ func _on_action_requested(action_id: String):
 	if action_id == "card_deck":
 		GameManager.go_to_deck_builder()
 		return
+	if action_id in ["equipment", "forge"]:
+		open_screen(action_id)
+		return
 	if not screens.has(action_id):
 		return
 	open_screen(action_id)
 
 func open_screen(screen_id: String):
+	var at_forge := screen_id == "forge"
+	var equipment := at_forge or screen_id == "equipment"
+	if equipment:
+		screen_id = "inventory"
 	if not screens.has(screen_id):
 		return
 	if active_screen_id == screen_id:
@@ -249,7 +256,10 @@ func open_screen(screen_id: String):
 			_close_screen_instance(old_screen)
 	active_screen_id = screen_id
 	var screen = screens[screen_id]
-	screen.call("open")
+	if equipment:
+		screen.call("open", true, at_forge)
+	else:
+		screen.call("open")
 	get_tree().paused = true
 	_switching = false
 	if screen_id == "character":
@@ -298,6 +308,10 @@ func _on_dialog_option(action_id: String):
 	if action_id == "rest":
 		_rest_at_inn()
 		return
+	if action_id == "character_select":
+		GameData.save_to_disk()
+		GameManager.go_to_character_select()
+		return
 	_on_action_requested(action_id)
 
 func _open_battle_prep():
@@ -337,7 +351,7 @@ func show_npc_dialog(npc_name: String, role: String, line: String, options: Arra
 func _on_landmark_selected(landmark_id: String):
 	match landmark_id:
 		"forge":
-			open_screen("inventory")
+			open_screen("forge")
 		"shop":
 			open_screen("shop")
 		"inn":

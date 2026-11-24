@@ -2,280 +2,179 @@ extends CanvasLayer
 
 signal closed()
 
-const STAGE_CARD_TEXTURES := [
-	preload("res://assets/ui/stage_grassland.png"),
-	preload("res://assets/ui/stage_forest.png"),
-	preload("res://assets/ui/stage_crypt.png")
-]
+const GATE_ART := preload("res://assets/ui/dungeon_gate_v2.png")
 
-@onready var stage_title_lbl: Label = $Panel/Margin/VBox/Body/StageInfo/Margin/VBox/TopRow/StageTitle
-@onready var chapter_lbl: Label = $Panel/Margin/VBox/Body/StageInfo/Margin/VBox/TopRow/ChapterLabel
-@onready var diff_lbl: Label = $Panel/Margin/VBox/Body/StageInfo/Margin/VBox/TopRow/DiffLabel
-@onready var desc_lbl: Label = $Panel/Margin/VBox/Body/StageInfo/Margin/VBox/DescLabel
-@onready var monsters_lbl: Label = $Panel/Margin/VBox/Body/StageInfo/Margin/VBox/MonstersLabel
+var current_stage_id := ""
+var stage_buttons := {}
+var art: TextureRect
+var stage_name: Label
+var chapter: Label
+var record: Label
+var details: Label
+var rewards: Label
+var start_button: Button
 
-@onready var power_lbl: Label = $Panel/Margin/VBox/Body/FighterPreview/PowerLabel
 
-@onready var reward_gold_lbl: Label = $Panel/Margin/VBox/Body/RewardBox/Margin/HBox/GoldLabel
-@onready var reward_xp_lbl: Label = $Panel/Margin/VBox/Body/RewardBox/Margin/HBox/XPLabel
-@onready var reward_items_lbl: Label = $Panel/Margin/VBox/Body/RewardBox/Margin/HBox/ItemsLabel
-
-@onready var stage_tabs: Container = $Panel/Margin/VBox/StageTabs
-@onready var start_button: Button = $Panel/Margin/VBox/BottomRow/StartBattleBtn
-@onready var stage_tab_buttons: Array[Button] = [
-	$Panel/Margin/VBox/StageTabs/Stage1Btn,
-	$Panel/Margin/VBox/StageTabs/Stage2Btn,
-	$Panel/Margin/VBox/StageTabs/Stage3Btn
-]
-
-var current_stage_id: String = "stage_1"
-var stage_ids: Array[String] = ["stage_1", "stage_2", "stage_3"]
-var stage_scroll: ScrollContainer
-
-func _ready():
+func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	visible = false
-	$Panel.add_theme_stylebox_override("panel", UiStyle.panel_style())
-	UiStyle.apply_button(start_button, true)
-	UiStyle.apply_button($Panel/Margin/VBox/BottomRow/CancelBtn as Button)
-	for tab in stage_tab_buttons:
-		UiStyle.apply_button(tab)
-	_apply_menu_layout()
-	_build_stage_cards()
+	hide()
+	var layout := UiStyle.dialog_layout(self, "")
+	var frame := layout.get_parent().get_parent() as PanelContainer
+	frame.clip_contents = true
+	frame.add_theme_stylebox_override("panel", UiStyle.frame(Color(0.105, 0.058, 0.052, 0.80), Color("#7c5039"), 18))
+	var header := HBoxContainer.new()
+	layout.add_child(header)
+	var heading := UiStyle.plaque("던전 선택", Color("#4f2927"), Color("#ad7451"), UiStyle.AMBER, 35)
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(heading)
+	var close_button := UiStyle.make_button("×", Vector2(56, 62))
+	close_button.tooltip_text = "닫기"
+	UiStyle.skin_button(close_button, Color("#572e27"), Color("#c38757"))
+	close_button.add_theme_font_size_override("font_size", 28)
+	close_button.pressed.connect(close)
+	header.add_child(close_button)
+	UiStyle.divider(layout)
+
+	var selector := ScrollContainer.new()
+	selector.custom_minimum_size.y = 96
+	selector.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	layout.add_child(selector)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 8)
+	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	selector.add_child(tabs)
+	for id in GameData.stages:
+		var stage: Dictionary = GameData.stages[id]
+		var button := UiStyle.make_button(str(stage.get("name", id)), Vector2(172, 78))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.pressed.connect(_select_stage.bind(str(id)))
+		tabs.add_child(button)
+		stage_buttons[id] = button
+
+	var body := UiStyle.scroll_column(layout)
+	var reward_plate := UiStyle.plaque("", Color("#493020"), Color("#a37846"), UiStyle.AMBER, 20)
+	body.add_child(reward_plate)
+	rewards = reward_plate.get_child(0) as Label
+	var hero := Control.new()
+	hero.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.49, 300, 730)
+	hero.clip_contents = true
+	body.add_child(hero)
+	art = TextureRect.new()
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	art.texture = GATE_ART
+	hero.add_child(art)
+	var shade := TextureRect.new()
+	var gradient := Gradient.new()
+	gradient.colors = PackedColorArray([Color(0.03, 0.025, 0.03, 0.0), Color("#22130f")])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill_from = Vector2(0, 0.48)
+	texture.fill_to = Vector2(0, 1)
+	shade.texture = texture
+	shade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hero.add_child(shade)
+	var caption := VBoxContainer.new()
+	caption.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	caption.offset_left = 18
+	caption.offset_right = -18
+	caption.offset_bottom = -16
+	caption.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	hero.add_child(caption)
+	chapter = UiStyle.make_label("", 17, UiStyle.GOLD_BRIGHT)
+	chapter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UiStyle.ink_outline(chapter)
+	caption.add_child(chapter)
+	stage_name = UiStyle.make_title("", 36)
+	stage_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UiStyle.ink_outline(stage_name, 6)
+	stage_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	caption.add_child(stage_name)
+	details = _paragraph(body)
+	UiStyle.divider(body)
+	record = _paragraph(body)
+	start_button = UiStyle.make_button("던전 입장", Vector2(280, 74), true)
+	start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	UiStyle.skin_button(start_button, Color("#913c33"), Color("#edaf70"))
+	start_button.add_theme_font_size_override("font_size", 25)
+	start_button.pressed.connect(_on_start_battle_pressed)
+	layout.add_child(start_button)
 
 
-func _apply_menu_layout():
-	var viewport_size := get_viewport().get_visible_rect().size
-	var portrait := viewport_size.y >= viewport_size.x
-	var panel := $Panel as PanelContainer
-	if portrait:
-		var panel_size := Vector2(minf(viewport_size.x - 24.0, 560.0), minf(viewport_size.y - 48.0, 900.0))
-		panel.custom_minimum_size = panel_size
-		panel.offset_left = -panel_size.x * 0.5
-		panel.offset_right = panel_size.x * 0.5
-		panel.offset_top = -panel_size.y * 0.5
-		panel.offset_bottom = panel_size.y * 0.5
-		var margin := $Panel/Margin as MarginContainer
-		for side in ["margin_left", "margin_right"]:
-			margin.add_theme_constant_override(side, 12)
-		for side in ["margin_top", "margin_bottom"]:
-			margin.add_theme_constant_override(side, 12)
-		for tab in stage_tab_buttons:
-			tab.custom_minimum_size = Vector2(panel_size.x - 40.0, 150.0)
-			tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		# Put stage title, chapter, and difficulty on separate lines so their
-		# combined text widths cannot push the panel beyond a narrow phone screen.
-		var stage_info_vbox := $Panel/Margin/VBox/Body/StageInfo/Margin/VBox as VBoxContainer
-		var chapter_parent := chapter_lbl.get_parent()
-		chapter_parent.remove_child(chapter_lbl)
-		chapter_parent.remove_child(diff_lbl)
-		stage_info_vbox.add_child(chapter_lbl)
-		stage_info_vbox.add_child(diff_lbl)
-		stage_info_vbox.move_child(chapter_lbl, 1)
-		stage_info_vbox.move_child(diff_lbl, 2)
-		chapter_lbl.add_theme_font_size_override("font_size", 12)
-		diff_lbl.add_theme_font_size_override("font_size", 12)
-		chapter_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		diff_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		# Stack reward labels on phones instead of letting a long row get clipped.
-		var reward_row := $Panel/Margin/VBox/Body/RewardBox/Margin/HBox as HBoxContainer
-		var reward_parent := reward_row.get_parent()
-		var reward_column := VBoxContainer.new()
-		reward_column.add_theme_constant_override("separation", 6)
-		for reward_label in [reward_gold_lbl, reward_xp_lbl, reward_items_lbl]:
-			reward_row.remove_child(reward_label)
-			reward_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			reward_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			reward_column.add_child(reward_label)
-		reward_parent.remove_child(reward_row)
-		reward_parent.add_child(reward_column)
-		reward_row.queue_free()
-		start_button.custom_minimum_size = Vector2(110, 30)
-		start_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		$Panel/Margin/VBox/BottomRow/CancelBtn.custom_minimum_size = Vector2(70, 28)
-		$Panel/Margin/VBox/BottomRow/StartBattleBtn.add_theme_font_size_override("font_size", 14)
-	else:
-		var panel_size := Vector2(minf(880.0, viewport_size.x - 48.0), minf(580.0, viewport_size.y - 48.0))
-		panel.custom_minimum_size = panel_size
-		panel.offset_left = -panel_size.x * 0.5
-		panel.offset_right = panel_size.x * 0.5
-		panel.offset_top = -panel_size.y * 0.5
-		panel.offset_bottom = panel_size.y * 0.5
-		for tab in stage_tab_buttons:
-			tab.custom_minimum_size = Vector2(190, 184)
+func _paragraph(parent: Control) -> Label:
+	var label := UiStyle.make_label("", 21)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_constant_override("line_spacing", 6)
+	parent.add_child(label)
+	return label
 
-func _build_stage_cards():
-	var portrait := get_viewport().get_visible_rect().size.y >= get_viewport().get_visible_rect().size.x
-	var old_tabs := stage_tabs
-	stage_scroll = ScrollContainer.new()
-	stage_scroll.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.35, 360.0, 450.0) if portrait else 192.0
-	stage_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED if portrait else ScrollContainer.SCROLL_MODE_AUTO
-	stage_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO if portrait else ScrollContainer.SCROLL_MODE_DISABLED
-	stage_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var parent := old_tabs.get_parent()
-	var index := old_tabs.get_index()
-	parent.add_child(stage_scroll)
-	parent.move_child(stage_scroll, index)
-	if portrait:
-		var vertical_tabs := VBoxContainer.new()
-		vertical_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		vertical_tabs.add_theme_constant_override("separation", 8)
-		for tab in stage_tab_buttons:
-			old_tabs.remove_child(tab)
-			vertical_tabs.add_child(tab)
-		old_tabs.queue_free()
-		stage_scroll.add_child(vertical_tabs)
-		stage_tabs = vertical_tabs
-	else:
-		old_tabs.reparent(stage_scroll)
-		stage_tabs.add_theme_constant_override("separation", 8)
-	for i in range(stage_tab_buttons.size()):
-		var tab := stage_tab_buttons[i]
-		var stage: Dictionary = GameData.stages.get(stage_ids[i], {})
-		tab.text = ""
-		tab.clip_contents = true
-		tab.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var art := TextureRect.new()
-		art.name = "StageArt"
-		art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		art.offset_left = 3.0
-		art.offset_top = 3.0
-		art.offset_right = -3.0
-		art.offset_bottom = -3.0
-		art.texture = STAGE_CARD_TEXTURES[i]
-		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		tab.add_child(art)
-		var tint := ColorRect.new()
-		tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		tint.color = Color(0.055, 0.012, 0.008, 0.34)
-		tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		tab.add_child(tint)
-		var content := MarginContainer.new()
-		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
-			content.add_theme_constant_override(side, 10)
-		tab.add_child(content)
-		var stack := VBoxContainer.new()
-		stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		content.add_child(stack)
-		var chapter := UiStyle.make_label("제 %d장" % (i + 1), 13, Color(1.0, 0.87, 0.54))
-		chapter.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		stack.add_child(chapter)
-		var spacer := Control.new()
-		spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		stack.add_child(spacer)
-		var title := UiStyle.make_label(str(stage.get("name", "지역")), 20 if portrait else 18, Color.WHITE)
-		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		title.add_theme_color_override("font_outline_color", Color(0.01, 0.02, 0.04, 0.9))
-		title.add_theme_constant_override("outline_size", 4)
-		title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		stack.add_child(title)
-		var reward_value: Variant = stage.get("rewards", {})
-		var reward: Dictionary = reward_value if reward_value is Dictionary else {}
-		var gold := UiStyle.make_label("◆  %d 골드" % int(reward.get("gold", 0)), 13, Color(1.0, 0.88, 0.51))
-		gold.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		stack.add_child(gold)
-		var lock := UiStyle.make_label("🔒 잠김", 13, Color(0.88, 0.9, 0.97))
-		lock.name = "LockLabel"
-		lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		stack.add_child(lock)
-		tab.add_theme_stylebox_override("normal", _stage_card_style(false))
-		tab.add_theme_stylebox_override("hover", _stage_card_style(true))
-		tab.add_theme_stylebox_override("pressed", _stage_card_style(true))
-		tab.add_theme_stylebox_override("disabled", _stage_card_style(false))
 
-func _stage_card_style(selected: bool) -> StyleBoxFlat:
-	var border := UiStyle.GOLD_BRIGHT if selected else Color(0.48, 0.34, 0.22, 0.86)
-	var style := UiStyle.button_style(Color(0.065, 0.035, 0.03, 0.98), border)
-	var width := 3 if selected else 1
-	style.border_width_left = width
-	style.border_width_top = width
-	style.border_width_right = width
-	style.border_width_bottom = width
-	return style
-
-func open(stage_id: String = "stage_1"):
-	current_stage_id = stage_id if GameData.is_stage_unlocked(stage_id) else "stage_1"
-	GameData.current_selected_stage_id = current_stage_id
+func open(stage_id: String = "") -> void:
+	current_stage_id = stage_id if GameData.stages.has(stage_id) else str(GameData.stages.keys().front())
 	get_tree().paused = true
-	visible = true
-	_refresh_ui()
+	show()
+	_select_stage(current_stage_id)
 
-func close():
-	visible = false
+
+func close() -> void:
+	hide()
 	get_tree().paused = false
 	closed.emit()
 
-func _refresh_ui():
-	var stage = GameData.stages.get(current_stage_id, GameData.stages["stage_1"])
-	stage_title_lbl.text = stage.name
-	chapter_lbl.text = stage.chapter
-	diff_lbl.text = "난이도: " + stage.difficulty
-	if GameData.is_stage_unlocked(current_stage_id):
-		desc_lbl.text = stage.desc + "\n시작 카드 10장 · 5레벨마다 카드 선택"
-	else:
-		desc_lbl.text = stage.desc + "\n🔒 이전 지역 클리어가 필요합니다."
-	monsters_lbl.text = "출현 몬스터  ·  " + ", ".join(stage.monster_types)
-	start_button.disabled = not GameData.is_stage_unlocked(current_stage_id)
-	if start_button.disabled:
-		start_button.text = "🔒 잠긴 스테이지"
-		start_button.tooltip_text = "이전 지역을 클리어해야 입장할 수 있습니다."
-	else:
-		start_button.text = "⚔️ 전투 시작 [F]"
-		start_button.tooltip_text = "전투 전에 서바이벌 강화 카드 10장을 고릅니다. 이후 Lv.5마다 새 카드를 선택합니다."
-	for i in range(stage_tab_buttons.size()):
-		var tab := stage_tab_buttons[i]
-		tab.disabled = not GameData.is_stage_unlocked(stage_ids[i])
-		tab.button_pressed = stage_ids[i] == current_stage_id
-		tab.tooltip_text = "" if not tab.disabled else "이전 지역 클리어 후 해금됩니다."
-		var art := tab.get_node_or_null("StageArt") as TextureRect
-		if art:
-			art.modulate = Color(0.38, 0.42, 0.5, 1.0) if tab.disabled else (Color.WHITE if tab.button_pressed else Color(0.77, 0.82, 0.9, 1.0))
-		var lock := tab.find_child("LockLabel", true, false) as Label
-		if lock:
-			lock.visible = tab.disabled
-	call_deferred("_focus_selected_stage_card")
-	
-	reward_gold_lbl.text = "💰 골드: +" + str(stage.rewards.gold)
-	reward_xp_lbl.text = "✨ 성장 재화: 생존 시간·처치·클리어에 따라 지급"
-	reward_items_lbl.text = "🎁 클리어 카드 1장 · " + ", ".join(stage.rewards.items)
-	
-	var power = GameData.get_party_combat_power()
-	power_lbl.text = "%s 전투력: %d  (권장: %d)" % [GameData.characters[GameData.get_leader_id()].name, power, stage.level_req * 180]
 
-func _focus_selected_stage_card():
-	if stage_scroll == null or not is_instance_valid(stage_scroll):
-		return
-	var index := stage_ids.find(current_stage_id)
-	if index < 0 or index >= stage_tab_buttons.size():
-		return
-	var tab := stage_tab_buttons[index]
-	if get_viewport().get_visible_rect().size.y >= get_viewport().get_visible_rect().size.x:
-		stage_scroll.scroll_vertical = maxi(0, int(tab.position.y + tab.size.y * 0.5 - stage_scroll.size.y * 0.5))
-	else:
-		stage_scroll.scroll_horizontal = maxi(0, int(tab.position.x + tab.size.x * 0.5 - stage_scroll.size.x * 0.5))
-
-func _on_stage_selected(stage_id: String):
-	if not GameData.is_stage_unlocked(stage_id):
-		return
+func _select_stage(stage_id: String) -> void:
 	current_stage_id = stage_id
-	GameData.current_selected_stage_id = stage_id
-	_refresh_ui()
+	var stage: Dictionary = GameData.stages[stage_id]
+	var unlocked := GameData.is_stage_unlocked(stage_id)
+	var art_path := str(stage.get("art", ""))
+	var selected_art := load(art_path) as Texture2D if not art_path.is_empty() else null
+	art.texture = GATE_ART if selected_art == null else selected_art
+	stage_name.text = str(stage.get("name", stage_id))
+	chapter.text = "%s  ·  %s" % [stage.get("chapter", ""), stage.get("difficulty", "")]
+	details.text = "무한 생존  ·  첫 보스 %s\n등장 적  %s\n쓰러지면 처치 골드 50%% 회수" % [
+		UiStyle.format_time(GameManager.FIRST_BOSS_TIME), ", ".join(stage.get("monster_types", []))
+	]
+	rewards.text = "◆  처치 골드  ·  귀환 시 전액 회수"
+	var best := GameData.get_stage_best_survival(stage_id)
+	record.text = "%s  ·  던전 최고 기록 %s" % [
+		"클리어" if stage.get("cleared", false) else "미클리어",
+		UiStyle.format_time(best) if best > 0.0 else "—"
+	]
+	start_button.disabled = not unlocked
+	start_button.text = "던전 입장" if unlocked else GameData.get_stage_lock_reason(stage_id)
+	if unlocked:
+		GameData.current_selected_stage_id = stage_id
+	for id in stage_buttons:
+		var button: Button = stage_buttons[id]
+		var entry: Dictionary = GameData.stages[id]
+		button.text = str(entry.get("name", id))
+		if not GameData.is_stage_unlocked(id):
+			button.text = "잠김  ·  " + button.text
+			button.tooltip_text = GameData.get_stage_lock_reason(id)
+		else:
+			button.tooltip_text = ""
+		var chosen: bool = id == stage_id
+		UiStyle.skin_button(button, Color("#8a5636") if chosen else Color("#3f312e"), UiStyle.AMBER if chosen else Color("#806455"))
+		button.add_theme_font_size_override("font_size", 17)
 
-func _on_start_battle_pressed():
-	if not GameData.is_stage_unlocked(current_stage_id):
-		return
-	close()
-	GameManager.go_to_battle(current_stage_id)
 
-func _on_close_pressed():
-	close()
-
-func _unhandled_input(event: InputEvent):
-	if visible and not GameActions.is_capturing() and event.is_action_pressed("ui_cancel"):
+func _on_start_battle_pressed() -> void:
+	if GameData.is_stage_unlocked(current_stage_id):
 		close()
+		GameManager.go_to_battle(current_stage_id)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible or GameActions.is_capturing():
+		return
+	if event.is_action_pressed("ui_cancel"):
+		close()
+		get_viewport().set_input_as_handled()
+	elif GameActions.get_action_for_event(event) == "battle_start":
+		_on_start_battle_pressed()
 		get_viewport().set_input_as_handled()

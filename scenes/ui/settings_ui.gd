@@ -30,8 +30,8 @@ var _camera_settings_changed := false
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
-	panel.add_theme_stylebox_override("panel", UiStyle.panel_style())
-	$Backdrop.color = Color(0.015, 0.025, 0.05, 0.55)
+	panel.add_theme_stylebox_override("panel", UiStyle.frame(UiStyle.PAPER, Color("#bd8b58"), 24, 6))
+	$Backdrop.color = Color(0.025, 0.02, 0.028, 0.75)
 	var viewport_size := get_viewport().get_visible_rect().size
 	var portrait := viewport_size.y >= viewport_size.x
 	_portrait_layout = portrait
@@ -45,12 +45,9 @@ func _ready():
 			margin.add_theme_constant_override(side, 16)
 		for side in ["margin_top", "margin_bottom"]:
 			margin.add_theme_constant_override(side, 18)
-	if master_slider:
-		master_slider.value = 80
-	if bgm_slider:
-		bgm_slider.value = 75
-	if sfx_slider:
-		sfx_slider.value = 85
+	_style_audio_slider(master_slider, "Master", false)
+	_style_audio_slider(bgm_slider, "BGM")
+	_style_audio_slider(sfx_slider, "SFX")
 	_build_controls_section()
 	_build_camera_section()
 	_build_hud_section()
@@ -61,9 +58,11 @@ func _ready():
 		close_btn.text = "✕"
 		close_btn.custom_minimum_size = Vector2(52, 48)
 		UiStyle.apply_button(close_btn)
+		UiStyle.skin_button(close_btn, Color("#34678d"), Color("#bcdded"))
 	var confirm_btn := get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ConfirmBtn") as Button
 	if confirm_btn:
 		UiStyle.apply_button(confirm_btn, true)
+		UiStyle.skin_button(confirm_btn, UiStyle.BLUE, UiStyle.BLUE_EDGE)
 		confirm_btn.text = "완료"
 	var reset_btn := get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ResetSaveBtn") as Button
 	if reset_btn:
@@ -75,10 +74,90 @@ func _ready():
 	if confirm_btn:
 		confirm_btn.custom_minimum_size = Vector2(0, 56 if portrait else 46)
 		confirm_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		confirm_btn.add_theme_font_size_override("font_size", 20)
+	var title := $CenterContainer/Panel/Margin/VBox/Header/TitleLabel as Label
+	title.text = "환경 설정"
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", Color.WHITE)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	UiStyle.ink_outline(title, 7, Color("#24446f"))
+	var header := title.get_parent()
+	var header_parent := header.get_parent()
+	var banner := UiStyle.make_panel()
+	banner.add_theme_stylebox_override("panel", UiStyle.frame(Color("#3c83b1"), Color("#b3e2f7"), 12, 4))
+	header_parent.add_child(banner)
+	header_parent.move_child(banner, header.get_index())
+	header.reparent(banner, false)
+	_set_paper_text(content_box)
+	var layout := content_box.get_parent()
+	var content_index := content_box.get_index()
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	layout.add_child(scroll)
+	layout.move_child(scroll, content_index)
+	content_box.reparent(scroll, false)
+	content_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content_box.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	get_viewport().size_changed.connect(_fit_panel)
+	_fit_panel()
 	_set_advanced_open(not portrait)
 	_advanced_button.visible = portrait
 	GameActions.bindings_changed.connect(_refresh_key_list)
 	GameActions.input_mode_changed.connect(_refresh_input_mode)
+
+func _set_paper_text(parent: Node) -> void:
+	for child in parent.get_children():
+		if child is Label:
+			child.add_theme_color_override("font_color", UiStyle.PAPER_INK)
+		elif child is CheckBox:
+			child.add_theme_color_override("font_color", UiStyle.PAPER_INK)
+			child.add_theme_color_override("font_hover_color", UiStyle.PAPER_INK)
+		_set_paper_text(child)
+
+func _fit_panel() -> void:
+	var viewport_size := get_viewport().get_visible_rect().size
+	var safe := UiStyle.safe_insets(get_viewport())
+	var center := $CenterContainer as CenterContainer
+	center.offset_left = safe.x + 20
+	center.offset_top = safe.y + 20
+	center.offset_right = -safe.z - 20
+	center.offset_bottom = -safe.w - 20
+	panel.custom_minimum_size = Vector2(
+		minf(660, viewport_size.x - safe.x - safe.z - 40),
+		minf(760, viewport_size.y - safe.y - safe.w - 40)
+	)
+
+func _style_audio_slider(slider: HSlider, bus: String, connect_change: bool = true) -> void:
+	var row := slider.get_parent() as HBoxContainer
+	var bus_index := AudioServer.get_bus_index(bus)
+	if bus_index < 0:
+		row.hide()
+		return
+	row.custom_minimum_size.y = 52
+	row.add_theme_constant_override("separation", 12)
+	(row.get_node("Lbl") as Label).add_theme_font_size_override("font_size", 19)
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color("#c29d6f")
+	track.set_corner_radius_all(5)
+	track.content_margin_top = 4
+	track.content_margin_bottom = 4
+	var fill := track.duplicate() as StyleBoxFlat
+	fill.bg_color = Color("#5f9c58")
+	slider.add_theme_stylebox_override("slider", track)
+	slider.add_theme_stylebox_override("grabber_area", fill)
+	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
+	slider.set_value_no_signal(db_to_linear(AudioServer.get_bus_volume_db(bus_index)) * 100)
+	var amount := UiStyle.make_label("%d%%" % int(slider.value), 16, UiStyle.MUTED)
+	amount.custom_minimum_size.x = 52
+	amount.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	amount.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(amount)
+	slider.value_changed.connect(func(value: float):
+		amount.text = "%d%%" % int(value)
+		if connect_change:
+			AudioServer.set_bus_volume_db(bus_index, linear_to_db(value / 100.0))
+	)
 
 func _build_controls_section():
 	if key_guide:

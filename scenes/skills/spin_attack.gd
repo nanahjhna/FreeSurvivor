@@ -35,5 +35,4 @@ func _process(delta: float):
 func _on_body_entered(body: Node):
 	if body.is_in_group("enemies") and not hit_targets.has(body):
 		hit_targets.append(body)
-		if body.has_method("take_damage"):
-			body.take_damage(damage, false)
+		hit_target(body, damage, false)
