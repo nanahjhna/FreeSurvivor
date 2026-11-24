@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_skill"]
+[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="2_effect"]
+
+[resource]
+script = ExtResource("1_skill")
+id = "Sword_Regular_B_Rec"
+display_name = "기본 베기 B"
+description = "반대 방향으로 이어 베어 주변의 적을 밀어냅니다."
+icon = "⚔️"
+cooldown = 0.9
+damage_ratio = 0.95
+range = 3.6
+cast_type = "spin"
+animation_key = "Sword_Regular_B_Rec"
+animation_duration = 0.9
+impact_delay = 0.24
+bonus_type = "area"
+effect_scene = ExtResource("2_effect")
+implemented = true
+support_status = "animation_skill"

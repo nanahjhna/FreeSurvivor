@@ -210,6 +210,7 @@ var stages: Dictionary = {
 		"monster_types": ["감염자", "거대 감염자 (보스)"],
 		"rewards": {"gold": 400, "xp": 60, "items": ["강화석 x2", "치유 물약 x2"]},
 		"scene": "res://scenes/stages/stage_grassland.tscn",
+		"preview_scene": "res://scenes/stages/stage_grassland.tscn",
 		"cleared": false
 	},
 	"stage_2": {
@@ -577,7 +578,7 @@ func _migrate_skill_loadout(saved_loadout: Dictionary):
 	var migrated: Dictionary = {}
 	var assigned: Dictionary = {}
 	for slot in slots:
-		var skill_id := str(saved_loadout.get(slot, ""))
+		var skill_id := CHARACTER_SKILL_DATABASE.canonicalize_skill_id(get_leader_id(), str(saved_loadout.get(slot, "")))
 		if skill_meta.has(skill_id) and str(skill_meta[skill_id].get("cast_type", "passive")) != "passive" and not assigned.has(skill_id):
 			migrated[slot] = skill_id
 			assigned[skill_id] = true

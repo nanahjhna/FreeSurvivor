@@ -96,3 +96,20 @@ static func get_default_loadout(character_class_id: String) -> Dictionary:
 			continue
 		result[str(slot)] = skill.legacy_id if not skill.legacy_id.is_empty() else skill.id
 	return result
+
+
+static func canonicalize_skill_id(character_class_id: String, skill_id: String) -> String:
+	var candidate := str(skill_id)
+	if candidate.is_empty():
+		return candidate
+	var skill_set := get_skill_set(character_class_id)
+	if skill_set.has(candidate):
+		return candidate
+	var legacy_skill := SkillRegistry.get_by_id(candidate)
+	if legacy_skill == null or legacy_skill.animation_key.is_empty():
+		return candidate
+	for canonical_id in get_skill_ids(character_class_id):
+		var canonical_skill := SkillRegistry.get_by_id(str(canonical_id))
+		if canonical_skill != null and canonical_skill.animation_key == legacy_skill.animation_key:
+			return str(canonical_id)
+	return candidate

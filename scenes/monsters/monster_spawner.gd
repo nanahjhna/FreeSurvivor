@@ -56,13 +56,13 @@ func _spawn_boss():
 	if player == null or not is_instance_valid(player):
 		return
 	UiFeedback.show_info("보스 등장! 거대 감염자를 처치하세요!")
-	var angle := randf() * TAU
 	var dist := max_spawn_dist + 3.0
 	var boss_hp: float = 900.0 * (1.0 + float(GameManager.boss_defeated_count) * 0.35)
+	var spawn_pos := _get_safe_spawn_position(dist)
 	var boss := MonsterManager.spawn_monster(
 		boss_monster_id,
 		get_tree().current_scene,
-		player.global_position + Vector3(cos(angle) * dist, 0.0, sin(angle) * dist),
+		spawn_pos,
 		{
 			"max_hp": boss_hp,
 			"move_speed": 1.7 + float(GameManager.boss_defeated_count) * 0.05,
@@ -82,9 +82,8 @@ func _on_boss_died(_boss: BaseMonster):
 	boss_spawned = false
 
 func _spawn_single_monster(current_time: float):
-	var angle = randf() * TAU
 	var dist = randf_range(min_spawn_dist, max_spawn_dist)
-	var spawn_pos = player.global_position + Vector3(cos(angle) * dist, 0.0, sin(angle) * dist)
+	var spawn_pos = _get_safe_spawn_position(dist)
 	
 	var monster_id := "infected"
 	if not monster_pool.is_empty():
@@ -97,3 +96,20 @@ func _spawn_single_monster(current_time: float):
 	monster.current_hp = monster.max_hp
 	monster.attack_damage *= difficulty
 	monster.global_position = spawn_pos
+
+func _constrain_spawn_position(world_position: Vector3) -> Vector3:
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_method("constrain_spawn_position"):
+		return scene.call("constrain_spawn_position", world_position)
+	return world_position
+
+func _get_safe_spawn_position(distance: float) -> Vector3:
+	var origin := player.global_position
+	for _attempt in range(12):
+		var angle := randf() * TAU
+		var candidate := _constrain_spawn_position(origin + Vector3(cos(angle) * distance, 0.0, sin(angle) * distance))
+		if candidate.distance_to(origin) >= min_spawn_dist * 0.75:
+			return candidate
+	# The fallback still stays inside the stage and avoids placing a monster on top
+	# of the player when the player is standing in a corner.
+	return _constrain_spawn_position(origin + Vector3(0.0, 0.0, -distance))

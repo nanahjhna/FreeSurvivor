@@ -15,7 +15,8 @@ func cast(caster: Node3D, _target: Node3D, cast_direction: Vector3, damage_multi
 	if direction.is_zero_approx():
 		direction = -caster.global_basis.z
 	_direction = direction.normalized()
-	_damage = float(caster.get("base_attack_damage")) * damage_multiplier
+	var resolved_damage := float(get_meta("resolved_damage", 0.0))
+	_damage = resolved_damage if resolved_damage > 0.0 else float(caster.get("base_attack_damage")) * damage_multiplier
 	_remaining_hits = maxi(1, int(definition.get("projectile_pierce", 1)))
 	_visual_only = bool(definition.get("visual_only", false))
 	apply_definition_visual(definition)
@@ -32,6 +33,10 @@ func _ready() -> void:
 	collision_mask = 2
 	monitoring = true
 	body_entered.connect(_on_body_entered)
+	var range_multiplier := maxf(1.0, float(get_meta("range_multiplier", 1.0)))
+	scale = Vector3.ONE * range_multiplier
+	var effect_range := maxf(0.1, float(get_meta("effect_range", speed * lifetime)))
+	lifetime = effect_range / speed
 
 
 func _physics_process(delta: float) -> void:

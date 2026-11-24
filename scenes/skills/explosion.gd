@@ -10,17 +10,21 @@ func cast(caster: Node3D, _target: Node3D, _direction: Vector3, damage_multiplie
 
 func setup(origin: Vector3, dmg_mult: float):
 	global_position = origin + Vector3(0, 0.5, 0)
-	damage = 65.0 * dmg_mult
+	var resolved_damage := float(get_meta("resolved_damage", 0.0))
+	damage = resolved_damage if resolved_damage > 0.0 else 65.0 * dmg_mult
 
 func _ready():
 	collision_layer = 4 # Layer 3: PlayerAttacks
 	collision_mask = 2  # Layer 2: Enemies
 	body_entered.connect(_on_body_entered)
 	
-	scale = Vector3(0.1, 0.1, 0.1)
+	var range_multiplier := maxf(1.0, float(get_meta("range_multiplier", 1.0)))
+	var effect_range := maxf(0.1, float(get_meta("effect_range", 8.5)))
+	var size_multiplier := effect_range / 8.5
+	scale = Vector3(0.1, 0.1, 0.1) * size_multiplier
 	var tween = create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(self, "scale", Vector3.ONE, lifetime).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "scale", Vector3.ONE * size_multiplier, lifetime).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.set_parallel(false)
 	tween.tween_callback(queue_free)
 

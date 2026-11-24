@@ -65,6 +65,7 @@ script = ExtResource("7_environment")
 
 [node name="Player" parent="." instance=ExtResource("2_player")]
 position = Vector3(0, 0.1, 8.7)
+is_combat_enabled = false
 
 [node name="BattlePortal" parent="." instance=ExtResource("3_portal")]
 position = Vector3(0, 0, -38)

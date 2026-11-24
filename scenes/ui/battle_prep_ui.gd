@@ -3,6 +3,7 @@ extends CanvasLayer
 signal closed()
 
 const GATE_ART := preload("res://assets/ui/dungeon_gate_v2.png")
+const STAGE_PREVIEW_SCENE := preload("res://scenes/ui/stage_preview_world.tscn")
 
 var current_stage_id := ""
 var stage_buttons := {}
@@ -13,6 +14,7 @@ var record: Label
 var details: Label
 var rewards: Label
 var start_button: Button
+var stage_preview: SubViewportContainer
 
 
 func _ready() -> void:
@@ -48,6 +50,13 @@ func _ready() -> void:
 		var button := UiStyle.make_button(str(stage.get("name", id)), Vector2(172, 78))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		var thumbnail := load(str(stage.get("art", ""))) as Texture2D
+		if thumbnail:
+			button.icon = thumbnail
+			button.expand_icon = true
+			button.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			button.add_theme_constant_override("icon_max_width", 52)
+			button.add_theme_constant_override("h_separation", 8)
 		button.pressed.connect(_select_stage.bind(str(id)))
 		tabs.add_child(button)
 		stage_buttons[id] = button
@@ -60,6 +69,18 @@ func _ready() -> void:
 	hero.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.49, 300, 730)
 	hero.clip_contents = true
 	body.add_child(hero)
+	stage_preview = SubViewportContainer.new()
+	stage_preview.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	stage_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage_preview.stretch = true
+	var stage_preview_viewport := SubViewport.new()
+	stage_preview_viewport.name = "StagePreviewViewport"
+	stage_preview_viewport.own_world_3d = true
+	stage_preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	stage_preview_viewport.add_child(STAGE_PREVIEW_SCENE.instantiate())
+	stage_preview.add_child(stage_preview_viewport)
+	stage_preview.visible = false
+	hero.add_child(stage_preview)
 	art = TextureRect.new()
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -134,6 +155,9 @@ func _select_stage(stage_id: String) -> void:
 	var art_path := str(stage.get("art", ""))
 	var selected_art := load(art_path) as Texture2D if not art_path.is_empty() else null
 	art.texture = GATE_ART if selected_art == null else selected_art
+	var has_live_preview := not str(stage.get("preview_scene", "")).is_empty()
+	stage_preview.visible = has_live_preview
+	art.visible = not has_live_preview
 	stage_name.text = str(stage.get("name", stage_id))
 	chapter.text = "%s  ·  %s" % [stage.get("chapter", ""), stage.get("difficulty", "")]
 	details.text = "무한 생존  ·  첫 보스 %s\n등장 적  %s\n쓰러지면 처치 골드 50%% 회수" % [

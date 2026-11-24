@@ -23,8 +23,6 @@ func _ready():
 	battle_portal.battle_requested.connect(_on_battle_requested)
 	
 	if player:
-		# Disable combat features in town
-		player.is_combat_enabled = false
 		if player.has_method("set_head_hp_bar_visible"):
 			player.call("set_head_hp_bar_visible", false)
 		if player.has_method("set_first_person_mode"):

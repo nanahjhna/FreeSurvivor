@@ -1,7 +1,5 @@
 extends Control
 
-const CHARACTER_PORTRAIT := preload("res://scenes/ui/character_portrait.gd")
-
 @onready var start_button: Button = $Center/VBox/Buttons/StartBtn
 @onready var settings_button: Button = $Center/VBox/Buttons/SettingsBtn
 @onready var quit_button: Button = $Center/VBox/Buttons/QuitBtn
@@ -27,7 +25,6 @@ func _ready() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		UiStyle.skin_button(button, Color("#27254e"), Color("#827ab2"))
 		button.add_theme_font_size_override("font_size", 20)
-	_build_portrait.call_deferred()
 	get_viewport().size_changed.connect(_layout)
 	_layout()
 
@@ -44,17 +41,6 @@ func _layout() -> void:
 	$Center/VBox/TitleGroup/SecondTitle.add_theme_font_size_override("font_size", 82 if portrait else 56)
 	$BottomLeft.offset_left = 24 + safe.x
 	$BottomLeft.offset_top = -38 - safe.w
-
-func _build_portrait() -> void:
-	var portrait := CHARACTER_PORTRAIT.new()
-	add_child(portrait)
-	move_child(portrait, $Center.get_index())
-	portrait.anchor_left = 0.07
-	portrait.anchor_right = 0.93
-	portrait.anchor_top = 0.23
-	portrait.anchor_bottom = 0.82
-	portrait.show_character(GameData.get_leader_id())
-	settings_ui.visibility_changed.connect(func(): portrait.set_portrait_active(not settings_ui.visible))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if settings_ui.visible:

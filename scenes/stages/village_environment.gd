@@ -3,7 +3,9 @@ extends Node3D
 
 const KIT := "res://assets/map/Medieval Village MegaKit[Standard]/glTF/"
 const WALKABLE_AREA := Rect2i(-33, -39, 67, 71)
-const FOUNTAIN := Vector3(-4.4, 0, 0)
+# The plaza paving is centered on the village origin; keep the fountain on that
+# same axis so the focal point is visually centered from the lobby camera.
+const FOUNTAIN := Vector3(0, 0, 0)
 const CARD_GATE := Vector3(-14, 0, 23)
 const CLEARANCE := 0.85
 const HOUSE_SCALE := Vector3(1.22, 1.55, 1.16)

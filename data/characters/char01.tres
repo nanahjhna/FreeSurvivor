@@ -1,54 +1,8 @@
 [gd_resource type="Resource" script_class="CharacterData" format=3 uid="uid://ca2mhv8lvvxdr"]
 
 [ext_resource type="Script" uid="uid://dpjtcnv2duboh" path="res://scripts/resources/character_data.gd" id="1_g6opw"]
-[ext_resource type="Script" uid="uid://by4uujmb8456t" path="res://scripts/resources/skill_data.gd" id="2_4lpyr"]
-[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="3_spin"]
 [ext_resource type="PackedScene" path="res://assets/weapon/SteelSword.fbx" id="4_sword"]
 [ext_resource type="PackedScene" uid="uid://eikb1imoc8y4" path="res://assets/char/char01/char01.glb" id="5_character"]
-
-[sub_resource type="Resource" id="Resource_t4jxg"]
-script = ExtResource("2_4lpyr")
-id = "skill877"
-legacy_id = "archer_q"
-slot_key = "q"
-reference_name = "발차기"
-reference_description = "발차기로 주변 적에게 피해를 줍니다."
-icon = "🦵"
-display_name = "발차기"
-description = "발차기로 주변 적에게 피해를 줍니다."
-cooldown = 2.8
-damage_ratio = 1.45
-cooldown_step = 0.1
-damage_step = 0.18
-range = 4.0
-cast_type = "spin"
-animation_key = "Kick"
-animation_duration = 1.74
-effect_scene = ExtResource("3_spin")
-implemented = true
-support_status = "game_skill"
-
-[sub_resource type="Resource" id="Resource_mwx4j"]
-script = ExtResource("2_4lpyr")
-id = "skill878"
-legacy_id = "archer_w"
-slot_key = "w"
-reference_name = "공중 내려베기"
-reference_description = "공중에서 검을 내려쳐 주변 적에게 피해를 줍니다."
-icon = "⚔️"
-display_name = "공중 내려베기"
-description = "공중에서 검을 내려쳐 주변 적에게 피해를 줍니다."
-cooldown = 6.0
-damage_ratio = 0.85
-cooldown_step = 0.12
-damage_step = 0.12
-range = 4.0
-cast_type = "spin"
-animation_key = "AirSlash"
-animation_duration = 1.9
-effect_scene = ExtResource("3_spin")
-implemented = true
-support_status = "game_skill"
 
 [resource]
 script = ExtResource("1_g6opw")
@@ -66,6 +20,14 @@ animation_source_clips = {
 "Idle": "Idle_Sword",
 "Walk": "Great_Sword_Walk",
 "Run": "Great_Sword_Run",
+"Sword_Regular_A_Rec": "Sword_Regular_A_Rec",
+"Sword_Regular_B_Rec": "Sword_Regular_B_Rec",
+"Sword_Regular_C_RM": "Sword_Regular_C_RM",
+"Great_Sword_Kick": "Great_Sword_Kick",
+"Sword_Attack_Air_Vertical": "Sword_Attack_Air_Vertical",
+"UnarmedIdle": "Standing_Idle",
+"UnarmedWalk": "Unarmed_Walk_Forward",
+"UnarmedRun": "Unarmed_Run_Forward",
 "Attack": "Sword_Regular_A_Rec",
 "AttackAlt": "Sword_Regular_B_Rec",
 "AttackBase": "Sword_Regular_C_RM",
@@ -92,6 +54,14 @@ animation_aliases = {
 "Jump": ["Jump"],
 "Kick": ["Kick"],
 "Run": ["Run"],
+"Sword_Regular_A_Rec": ["Sword_Regular_A_Rec"],
+"Sword_Regular_B_Rec": ["Sword_Regular_B_Rec"],
+"Sword_Regular_C_RM": ["Sword_Regular_C_RM"],
+"Great_Sword_Kick": ["Great_Sword_Kick"],
+"Sword_Attack_Air_Vertical": ["Sword_Attack_Air_Vertical"],
+"UnarmedIdle": ["UnarmedIdle"],
+"UnarmedRun": ["UnarmedRun"],
+"UnarmedWalk": ["UnarmedWalk"],
 "Victory": ["Victory"],
 "Walk": ["Walk"]
 }
@@ -106,7 +76,11 @@ base_hp = 105.0
 base_atk = 18.0
 base_def = 7.0
 base_spd = 7.4
-skills = Array[ExtResource("2_4lpyr")]([SubResource("Resource_t4jxg"), SubResource("Resource_mwx4j")])
+skill_ids = Array[String](["Sword_Regular_A_Rec", "Sword_Regular_B_Rec", "Sword_Regular_C_RM", "Great_Sword_Kick", "Sword_Attack_Air_Vertical"])
+skill_loadout = {
+"q": "Great_Sword_Kick",
+"w": "Sword_Attack_Air_Vertical"
+}
 signature_skill = "발차기"
 weapon_name = "강철 검"
 weapon_scene = ExtResource("4_sword")

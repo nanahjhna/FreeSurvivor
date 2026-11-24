@@ -215,6 +215,8 @@ func settle_dungeon(returned_to_town: bool) -> int:
 func register_boss_defeat():
 	if current_location != Location.BATTLE or boss_decision_pending or current_state != GameState.PLAYING:
 		return
+	if _is_battle_player_dead():
+		return
 	boss_defeated_count += 1
 	boss_reward_multiplier = 1.0 + float(boss_defeated_count) * 0.5
 	boss_decision_pending = true
@@ -269,10 +271,16 @@ func create_return_portal() -> bool:
 func confirm_return_to_town():
 	if current_location != Location.BATTLE or run_settled or current_state in [GameState.GAME_OVER, GameState.VICTORY]:
 		return
+	if _is_battle_player_dead():
+		return
 	current_state = GameState.VICTORY
 	get_tree().paused = true
 	settle_dungeon(true)
 	state_changed.emit(current_state)
+
+func _is_battle_player_dead() -> bool:
+	var player := get_tree().get_first_node_in_group("player") as PlayerCharacter
+	return player != null and player.is_dead
 
 func restart():
 	get_tree().paused = false

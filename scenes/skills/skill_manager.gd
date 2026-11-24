@@ -29,6 +29,8 @@ func _process(delta: float):
 	if player == null or not is_instance_valid(player):
 		player = get_tree().get_first_node_in_group("player")
 		return
+	if player.is_dead:
+		return
 	
 	# Update cooldown values every frame but refresh the HUD at 10 Hz.
 	_cooldown_ui_timer += delta
@@ -77,7 +79,7 @@ func try_cast(skill_key: String, target: Node3D = null) -> bool:
 		return false
 	if player == null or not is_instance_valid(player):
 		player = get_tree().get_first_node_in_group("player")
-	if player == null or not is_instance_valid(player):
+	if player == null or not is_instance_valid(player) or player.is_dead:
 		return false
 	if player.has_method("is_skill_animation_busy") and player.is_skill_animation_busy():
 		return false
@@ -85,7 +87,7 @@ func try_cast(skill_key: String, target: Node3D = null) -> bool:
 		return false
 	if str(GameData.skill_meta.get(ability_id, {}).get("cast_type", "")) == "heal" and player.current_hp >= player.max_hp:
 		return false
-	var meta: Dictionary = GameData.skill_meta[ability_id]
+	var meta: Dictionary = GameData.skill_meta[ability_id].duplicate(true)
 	var cast_type := str(meta.get("cast_type", ""))
 	if cast_type != "heal" and str(meta.get("effect_scene", "")).is_empty():
 		push_warning("스킬 효과 씬이 등록되지 않았습니다: %s" % ability_id)
@@ -94,15 +96,52 @@ func try_cast(skill_key: String, target: Node3D = null) -> bool:
 	emit_signal("skill_cooldown_updated", skill_key, cooldowns[skill_key], get_max_cooldown(skill_key))
 	if player.has_method("play_skill_animation"):
 		player.play_skill_animation(skill_key, ability_id)
-	var skill_power := GameData.get_skill_damage_multiplier(ability_id)
+	var runtime_definition := _prepare_skill_definition(ability_id, meta)
 	if cast_type == "heal":
 		player.heal(player.max_hp * float(meta.get("heal_ratio", 0.2)))
 	else:
-		var damage_multiplier := GameData.attack_damage_mult * skill_power * _get_survival_skill_multiplier(ability_id)
-		if bool(meta.get("uses_magic_power", false)):
-			damage_multiplier *= _get_magic_power_multiplier()
-		_spawn_registered_effect(ability_id, meta, target, _get_cast_direction(target), damage_multiplier)
+		var damage_multiplier := _get_skill_total_multiplier(ability_id, runtime_definition)
+		var direction := _get_cast_direction(target)
+		var delay := maxf(0.0, float(runtime_definition.get("impact_delay", 0.0)))
+		if delay > 0.0:
+			get_tree().create_timer(delay).timeout.connect(func():
+				if is_instance_valid(player) and not player.is_dead and GameManager.current_state == GameManager.GameState.PLAYING:
+					_spawn_registered_effect(ability_id, runtime_definition, target, direction, damage_multiplier)
+			)
+		else:
+			_spawn_registered_effect(ability_id, runtime_definition, target, direction, damage_multiplier)
 	return true
+
+
+func _prepare_skill_definition(skill_id: String, definition: Dictionary) -> Dictionary:
+	var prepared := definition.duplicate(true)
+	prepared["skill_id"] = skill_id
+	prepared["resolved_damage"] = _get_skill_attack_power(prepared) * GameData.get_skill_damage_multiplier(skill_id) * GameData.attack_damage_mult * _get_survival_skill_multiplier(skill_id, prepared)
+	prepared["range_multiplier"] = _get_skill_range_multiplier(prepared)
+	prepared["effect_range"] = maxf(0.1, float(prepared.get("range", 1.0))) * float(prepared["range_multiplier"])
+	return prepared
+
+
+func _get_skill_attack_power(definition: Dictionary) -> float:
+	var stats := player.get("stat_manager") as StatManager
+	if stats == null:
+		return float(player.get("base_attack_damage"))
+	if bool(definition.get("uses_magic_power", false)):
+		return stats.mag_atk()
+	return stats.phys_atk(bool(player.get("_has_ranged_weapon")))
+
+
+func _get_skill_total_multiplier(_skill_id: String, definition: Dictionary) -> float:
+	var attack_power := maxf(1.0, _get_skill_attack_power(definition))
+	var resolved_damage := maxf(0.0, float(definition.get("resolved_damage", attack_power)))
+	return resolved_damage / attack_power
+
+
+func _get_skill_range_multiplier(definition: Dictionary) -> float:
+	var bonus := GameData.get_survival_bonus("area_damage") + GameData.get_survival_bonus("attack_range")
+	if str(definition.get("cast_type", "")) in ["spin", "burst", "flame"] or str(definition.get("bonus_type", "")) == "area":
+		return maxf(1.0, 1.0 + bonus)
+	return 1.0
 
 
 func _spawn_registered_effect(
@@ -131,6 +170,9 @@ func _spawn_registered_effect(
 			push_warning("효과 씬은 SkillEffectBase를 상속해야 합니다: %s" % scene_path)
 			return
 		effect.damage_source = skill_id
+		effect.set_meta("resolved_damage", float(definition.get("resolved_damage", 0.0)))
+		effect.set_meta("range_multiplier", float(definition.get("range_multiplier", 1.0)))
+		effect.set_meta("effect_range", float(definition.get("effect_range", 0.0)))
 		get_tree().current_scene.add_child(effect)
 		effect.cast(player, target, direction.rotated(Vector3.UP, angle), damage_multiplier, definition)
 
@@ -216,13 +258,16 @@ func _get_magic_power_multiplier() -> float:
 		return 1.0
 	return clampf(stats.mag_atk() / 20.0, 0.7, 1.6)
 
-func _get_survival_skill_multiplier(skill_id: String = "") -> float:
-	var multiplier := 1.0 + GameData.get_survival_bonus("damage") + GameData.get_survival_bonus("damage_reckless") + GameData.get_survival_bonus("skill_damage") + GameData.get_survival_bonus("magic_damage")
-	var skill_meta: Dictionary = GameData.skill_meta.get(skill_id, {})
+func _get_survival_skill_multiplier(skill_id: String = "", definition: Dictionary = {}) -> float:
+	var multiplier := 1.0 + GameData.get_survival_bonus("damage") + GameData.get_survival_bonus("damage_reckless") + GameData.get_survival_bonus("skill_damage")
+	var skill_meta: Dictionary = definition if not definition.is_empty() else GameData.skill_meta.get(skill_id, {})
 	var bonus_type := str(skill_meta.get("bonus_type", ""))
+	if bool(skill_meta.get("uses_magic_power", false)):
+		multiplier += GameData.get_survival_bonus("magic_damage")
+	else:
+		multiplier += GameData.get_survival_bonus("physical_damage")
 	if bonus_type == "fire":
 		multiplier += GameData.get_survival_bonus("fire_damage")
 	if bonus_type == "area":
 		multiplier += GameData.get_survival_bonus("area_damage")
 	return multiplier
-

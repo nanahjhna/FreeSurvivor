@@ -23,9 +23,13 @@ var slot_list: HBoxContainer
 var class_list: VBoxContainer
 var detail_name: Label
 var detail_subtitle: Label
-var detail_stats: Label
-var detail_equipment: Label
+var detail_name_row: HBoxContainer
+var detail_stats_grid: GridContainer
+var detail_stat_cells: Array[Label] = []
+var detail_equipment_row: HBoxContainer
+var detail_equipment_cells: Array[Label] = []
 var detail_progress: Label
+var detail_progress_block: VBoxContainer
 var feedback_label: Label
 var delete_button: Button
 var enter_button: Button
@@ -295,27 +299,69 @@ func _create_new_character_button() -> Button:
 
 
 func _build_detail_panel(panel: VBoxContainer):
-	var name_parent: Container = panel
-	var stats_parent: Container = panel
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 8)
+	panel.add_child(name_row)
+	detail_name_row = name_row
 	detail_name = UiStyle.make_title("", 31)
-	detail_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name_parent.add_child(detail_name)
+	detail_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_row.add_child(detail_name)
 	detail_subtitle = UiStyle.make_label("", 14 if _is_portrait_layout() else 15, Color(0.82, 0.72, 0.58))
-	detail_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name_parent.add_child(detail_subtitle)
+	name_row.add_child(detail_subtitle)
 	if not _is_portrait_layout():
 		panel.add_child(HSeparator.new())
-	detail_stats = UiStyle.make_label("", 19, UiStyle.IVORY)
-	detail_stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_stats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_parent.add_child(detail_stats)
-	detail_equipment = UiStyle.make_label("", 14, Color(1.0, 0.84, 0.42))
-	detail_equipment.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	panel.add_child(detail_equipment)
+	var stats_grid := GridContainer.new()
+	stats_grid.add_theme_constant_override("hseparation", 12)
+	stats_grid.add_theme_constant_override("vseparation", 6)
+	panel.add_child(stats_grid)
+	detail_stats_grid = stats_grid
+	detail_stats_grid.columns = 3
+	var equipment_row := HBoxContainer.new()
+	equipment_row.add_theme_constant_override("separation", 12)
+	panel.add_child(equipment_row)
+	detail_equipment_row = equipment_row
+	var detail_equipment_weapon := UiStyle.make_label("", 14, Color(1.0, 0.84, 0.42))
+	var detail_equipment_armor := UiStyle.make_label("", 14, Color(1.0, 0.84, 0.42))
+	var detail_equipment_skill := UiStyle.make_label("", 14, Color(1.0, 0.84, 0.42))
+	detail_equipment_cells.clear()
+	detail_equipment_cells.append(detail_equipment_weapon)
+	detail_equipment_cells.append(detail_equipment_armor)
+	detail_equipment_cells.append(detail_equipment_skill)
+	for detail_equipment_cell in detail_equipment_cells:
+		detail_equipment_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		detail_equipment_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		detail_equipment_row.add_child(detail_equipment_cell)
+	var progress_block := VBoxContainer.new()
+	progress_block.add_theme_constant_override("separation", 2)
+	panel.add_child(progress_block)
+	detail_progress_block = progress_block
 	detail_progress = UiStyle.make_label("", 13, UiStyle.MUTED)
-	detail_progress.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail_progress.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel.add_child(detail_progress)
+	progress_block.add_child(detail_progress)
+
+func _populate_stat_grid(stats: StatManager, class_id: String) -> void:
+	for child in detail_stats_grid.get_children():
+		detail_stats_grid.remove_child(child)
+		child.queue_free()
+	detail_stat_cells.clear()
+	var stat_cell_texts: Array = [
+		"STR %d" % stats.get_stat("STR"),
+		"AGI %d" % stats.get_stat("AGI"),
+		"VIT %d" % stats.get_stat("VIT"),
+		"INT %d" % stats.get_stat("INT"),
+		"DEX %d" % stats.get_stat("DEX"),
+		"LUK %d" % stats.get_stat("LUK"),
+		"HP %d" % stats.max_hp(),
+		"공격 %.1f" % stats.phys_atk(class_id == "archer"),
+		"방어 %.1f" % stats.phys_def(),
+	]
+	for text_value in stat_cell_texts:
+		var stat_cell := Label.new()
+		stat_cell.text = str(text_value)
+		stat_cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		stat_cell.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		detail_stats_grid.add_child(stat_cell)
+		detail_stat_cells.append(stat_cell)
 
 
 func _add_feedback(layout: VBoxContainer, text: String) -> Label:
@@ -377,8 +423,13 @@ func _update_selected_profile():
 	if not exists:
 		detail_name.text = "저장된 캐릭터 없음"
 		detail_subtitle.text = "새 캐릭터를 생성하세요."
-		detail_stats.text = ""
-		detail_equipment.text = ""
+		for detail_stat_grid_child in detail_stats_grid.get_children():
+			detail_stats_grid.remove_child(detail_stat_grid_child)
+			detail_stat_grid_child.queue_free()
+		detail_stat_cells.clear()
+		detail_equipment_cells[0].text = ""
+		detail_equipment_cells[1].text = ""
+		detail_equipment_cells[2].text = ""
 		detail_progress.text = ""
 		_set_preview_class(GameData.FIGHTER_ID, {})
 		return
@@ -388,24 +439,15 @@ func _update_selected_profile():
 	detail_name.text = "%s  %s" % [str(class_data.get("icon", "⚔️")), str(profile.get("name", ""))]
 	var state: Dictionary = profile.get("state", {})
 	var saved: Dictionary = state.get("characters", {}).get(class_id, {})
-	detail_subtitle.text = "%s  ·  Lv.%d" % [class_data.get("role", class_id), int(saved.get("level", 1))]
-	if _is_portrait_layout():
-		detail_stats.text = "STR %d  AGI %d  VIT %d\nINT %d  DEX %d  LUK %d" % [
-			stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"),
-			stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK")]
-	else:
-		detail_stats.text = (
-			"영구 능력치\nSTR %d   AGI %d   VIT %d\nINT %d   DEX %d   LUK %d\n\nHP %d\n물리 공격 %.1f   마법 공격 %.1f\n물리 방어 %.1f   마법 방어 %.1f"
-			% [stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"), stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK"),
-			stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.mag_atk(), stats.phys_def(), stats.mag_def()])
+	detail_subtitle.text = "Lv.%d" % int(saved.get("level", 1))
+	_populate_stat_grid(stats, class_id)
 	var equipment := _get_profile_equipment(profile)
+	detail_equipment_cells[0].text = "무기  %s" % str(equipment.weapon)
+	detail_equipment_cells[1].text = "방어구  %s" % str(equipment.armor)
+	detail_equipment_cells[2].text = "대표 스킬  %s" % str(class_data.get("signature_skill", ""))
 	if _is_portrait_layout():
-		detail_equipment.text = "HP %d · 공격 %.1f · 방어 %.1f\n무기 %s · 방어구 %s" % [stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.phys_def(), equipment.weapon, equipment.armor]
 		detail_progress.text = _passive_text(class_id)
-		if detail_progress.text.is_empty():
-			detail_progress.text = "대표 스킬  %s" % str(class_data.get("signature_skill", ""))
 	else:
-		detail_equipment.text = "장착 무기  %s\n장착 방어구  %s" % [equipment.weapon, equipment.armor]
 		detail_progress.text = "최고 생존 시간  %s\n최고 서바이벌 레벨  %d\n총 플레이 시간  %s\n마지막 접속  %s" % [
 			_format_survival_time(float(profile.get("best_survival_time", 0.0))), int(profile.get("best_survival_level", 1)),
 			_format_play_time(int(profile.get("play_time_seconds", 0))), str(profile.get("last_played_at", "아직 접속하지 않음"))]
@@ -534,22 +576,16 @@ func _select_class(class_id: String):
 		return
 	selected_class_id = class_id
 	var stats := GameData.get_class_template_stat_manager(class_id)
-	detail_name.text = "%s  %s" % [str(character.get("icon", "⚔️")), str(character.get("role", class_id))]
-	detail_subtitle.text = str(character.get("title", ""))
-	if _is_portrait_layout():
-		detail_stats.text = "STR %d  AGI %d  VIT %d\nINT %d  DEX %d  LUK %d" % [
-			stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"),
-			stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK")]
-	else:
-		detail_stats.text = (
-			"기본 능력치\nSTR %d   AGI %d   VIT %d\nINT %d   DEX %d   LUK %d\n\n초기 전투 수치\nHP %d\n물리 공격 %.1f   마법 공격 %.1f\n물리 방어 %.1f   마법 방어 %.1f"
-			% [stats.get_stat("STR"), stats.get_stat("AGI"), stats.get_stat("VIT"), stats.get_stat("INT"), stats.get_stat("DEX"), stats.get_stat("LUK"),
-			stats.max_hp(), stats.phys_atk(class_id == "archer"), stats.mag_atk(), stats.phys_def(), stats.mag_def()])
+	detail_name.text = "%s  %s" % [str(character.get("icon", "⚔️")), str(character.get("name", character.get("role", class_id)))]
+	detail_subtitle.text = "Lv.%d" % int(character.get("level", 1))
+	_populate_stat_grid(stats, class_id)
 	var registered_character := CharacterRegistry.get_by_id(class_id)
 	var weapon_name := str(character.get("weapon_name", CLASS_WEAPONS.get(class_id, "기본 무기")))
 	if registered_character != null and registered_character.weapon_scene != null:
 		weapon_name = registered_character.weapon_name
-	detail_equipment.text = "대표 무기  %s\n대표 스킬  %s" % [weapon_name, str(character.get("signature_skill", ""))]
+	detail_equipment_cells[0].text = "대표 무기  %s" % weapon_name
+	detail_equipment_cells[1].text = "방어구  %s" % "없음"
+	detail_equipment_cells[2].text = "대표 스킬  %s" % str(character.get("signature_skill", ""))
 	detail_progress.text = "%s\n\n전투 스타일: %s" % [str(character.get("desc", "")), str(character.get("combat_style", CLASS_GROWTH.get(class_id, "균형 성장")))]
 	for child in class_list.get_children():
 		if child is Button:

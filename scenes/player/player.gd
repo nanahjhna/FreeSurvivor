@@ -322,7 +322,8 @@ func set_character_appearance(character_id: String):
 		character_model.scale *= Vector3.ONE * character_visual_scale
 		character_model.visible = not first_person_mode
 		_setup_model_animations()
-		_attach_character_weapon(character_id)
+		if is_combat_enabled or preview_only:
+			_attach_character_weapon(character_id)
 		_setup_gait(character_data, float(definition.get("base_spd", base_move_speed)))
 
 func _setup_gait(data: CharacterData, class_speed: float) -> void:
@@ -666,6 +667,8 @@ func _handle_items(_delta: float):
 		use_item(3)
 
 func use_item(slot: int) -> bool:
+	if is_dead:
+		return false
 	if GameData.item_counts.get(slot, 0) <= 0:
 		var names := {1: "치유 물약", 2: "화면 폭탄", 3: "질풍 물약"}
 		UiFeedback.show_error("%s이(가) 없습니다." % names.get(slot, "아이템"))
@@ -720,6 +723,8 @@ func gain_xp(amount: int):
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 
 func heal(amount: float):
+	if is_dead:
+		return
 	current_hp = min(current_hp + amount, max_hp)
 	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
@@ -864,17 +869,15 @@ func die():
 	if is_dead:
 		return
 	is_dead = true
+	velocity = Vector3.ZERO
+	_moving_by_input = false
 	_pending_ranged_shots.clear()
 	_ranged_aim_target = null
 	emit_signal("died")
-	if _play_model_animation("Death", true):
-		var death_wait := create_tween()
-		death_wait.tween_interval(maxf(2.0, model_animation_player.current_animation_length))
-		death_wait.tween_callback(func(): GameManager.game_over())
-	else:
+	if not _play_model_animation("Death", true):
 		var tween = create_tween()
 		tween.tween_property(visual_root, "rotation:x", -PI / 2.0, 0.4)
-		tween.tween_callback(func(): GameManager.game_over())
+		tween.tween_callback(GameManager.game_over)
 
 
 func _setup_model_animations():
@@ -902,7 +905,11 @@ func _setup_model_animations():
 		_map_animation_alias("Walk", ["Walk", "Run"])
 		_map_animation_alias("Run", ["Run", "Walk"])
 		_map_animation_alias("AttackAlt", ["Attack"])
+		_map_animation_alias("Death", ["Death"])
 	for clip_key in ["Idle", "Walk", "Run"]:
+		var unarmed_key: String = "Unarmed" + clip_key
+		if not is_combat_enabled and not preview_only and model_clips.has(unarmed_key):
+			model_clips[clip_key] = model_clips[unarmed_key]
 		if model_clips.has(clip_key):
 			var clip := model_animation_player.get_animation(model_clips[clip_key])
 			if clip:
@@ -935,6 +942,9 @@ func _on_model_animation_finished(animation_name: StringName):
 	if str(animation_name) == active_action_clip:
 		active_action_clip = ""
 		_skill_animation_busy = false
+		if is_dead and animation_name == model_clips.get("Death", &""):
+			GameManager.game_over()
+			return
 		if _ranged_attack_busy:
 			_character_attack_animation_finished = true
 			if not _weapon_fire_animation_busy:
@@ -958,6 +968,8 @@ func _begin_attack_animation_recovery() -> void:
 
 
 func _play_model_animation(clip_key: String, action: bool = false, animation_duration: float = 0.0) -> bool:
+	if is_dead and clip_key != "Death":
+		return false
 	if model_animation_player == null or not model_clips.has(clip_key):
 		return false
 	var clip_name := str(model_clips[clip_key])
