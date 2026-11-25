@@ -7,6 +7,8 @@ signal location_changed(new_loc)
 signal boss_defeated(defeated_count: int, next_reward_multiplier: float)
 
 const FIRST_BOSS_TIME := 180.0
+const VILLAGE_SCENE := "res://scenes/stages/village_lobby.tscn"
+const VILLAGE_ANIMATION_SOURCE := "res://assets/rig/exported-model.glb"
 
 enum GameState { PLAYING, PAUSED, LEVEL_UP, BOSS_DECISION, GAME_OVER, VICTORY }
 enum Location { TITLE, CHARACTER_SELECT, LOBBY, BATTLE, CARD_DECK }
@@ -47,7 +49,7 @@ func _ready():
 		GameData.create_character_profile(0, GameData.FIGHTER_ID, "무도가")
 
 func _process(delta: float):
-	if current_location == Location.BATTLE and current_state == GameState.PLAYING:
+	if current_location == Location.BATTLE and current_state == GameState.PLAYING and not SceneTransition.is_transitioning:
 		battle_time += delta
 		var current_second := int(battle_time)
 		if current_second != _last_time_signal_second:
@@ -55,67 +57,67 @@ func _process(delta: float):
 			time_updated.emit(battle_time)
 
 func go_to_title():
+	SceneTransition.change_scene("res://scenes/ui/title_screen.tscn", _prepare_title)
+
+func _prepare_title() -> void:
 	if current_location == Location.BATTLE:
 		GameData.end_survival_run()
 	starting_draft_picks = 0
 	level_card_picks = 0
 	GameData.save_to_disk()
-	current_location = Location.TITLE
-	current_state = GameState.PLAYING
-	get_tree().paused = false
-	state_changed.emit(current_state)
-	location_changed.emit(current_location)
-	SceneTransition.change_scene("res://scenes/ui/title_screen.tscn")
+	_set_playing_location(Location.TITLE)
 
 func go_to_character_select():
-	current_location = Location.CHARACTER_SELECT
-	current_state = GameState.PLAYING
-	get_tree().paused = false
-	state_changed.emit(current_state)
-	location_changed.emit(current_location)
-	SceneTransition.change_scene("res://scenes/ui/character_select.tscn")
+	SceneTransition.change_scene("res://scenes/ui/character_select.tscn", _set_playing_location.bind(Location.CHARACTER_SELECT))
 
 func go_to_lobby():
 	if GameData.active_character_id.is_empty():
 		go_to_character_select()
 		return
+	SceneTransition.change_scene(VILLAGE_SCENE, _prepare_lobby, VILLAGE_ANIMATION_SOURCE)
+
+func _prepare_lobby() -> void:
 	if current_location == Location.BATTLE:
 		GameData.end_survival_run()
 	starting_draft_picks = 0
 	level_card_picks = 0
 	GameData.save_to_disk()
-	current_location = Location.LOBBY
+	_set_playing_location(Location.LOBBY)
+
+func _set_playing_location(location: Location) -> void:
+	current_location = location
 	current_state = GameState.PLAYING
-	get_tree().paused = false
 	state_changed.emit(current_state)
 	location_changed.emit(current_location)
-	SceneTransition.change_scene("res://scenes/stages/village_lobby.tscn")
 
 func go_to_deck_builder():
 	if GameData.active_character_id.is_empty():
 		go_to_character_select()
 		return
-	current_location = Location.CARD_DECK
-	current_state = GameState.PLAYING
-	get_tree().paused = false
-	SceneTransition.change_scene("res://scenes/ui/deck_builder.tscn")
+	SceneTransition.change_scene("res://scenes/ui/deck_builder.tscn", _prepare_card_screen)
 
 func go_to_card_dungeon():
 	if not deck_manager.validate_deck(card_manager.owned):
 		return
-	GameData.save_to_disk()
+	SceneTransition.change_scene("res://scenes/ui/card_dungeon.tscn", _prepare_card_screen.bind(true))
+
+func _prepare_card_screen(save_progress: bool = false) -> void:
+	if save_progress:
+		GameData.save_to_disk()
 	current_location = Location.CARD_DECK
 	current_state = GameState.PLAYING
-	get_tree().paused = false
-	SceneTransition.change_scene("res://scenes/ui/card_dungeon.tscn")
 
 func go_to_battle(stage_id: String = "") -> bool:
-	if stage_id != "":
-		if not GameData.is_stage_unlocked(stage_id):
-			return false
-		GameData.current_selected_stage_id = stage_id
-	elif not GameData.is_stage_unlocked(GameData.current_selected_stage_id):
+	var target_id := stage_id if not stage_id.is_empty() else GameData.current_selected_stage_id
+	if SceneTransition.is_transitioning or not GameData.is_stage_unlocked(target_id):
 		return false
+	var stage_info: Dictionary = GameData.stages.get(target_id, GameData.stages["stage_1"])
+	var scene_path := str(stage_info.get("scene", "res://scenes/stages/stage_grassland.tscn"))
+	SceneTransition.change_scene(scene_path, _prepare_battle.bind(target_id))
+	return true
+
+func _prepare_battle(stage_id: String) -> void:
+	GameData.current_selected_stage_id = stage_id
 	GameData.begin_survival_run()
 	starting_draft_picks = 10
 	level_card_picks = 0
@@ -128,25 +130,16 @@ func go_to_battle(stage_id: String = "") -> bool:
 	battle_time = 0.0
 	_last_time_signal_second = 0
 	kill_count = 0
-	current_location = Location.BATTLE
-	current_state = GameState.PLAYING
-	get_tree().paused = false
-	state_changed.emit(current_state)
-	location_changed.emit(current_location)
+	_set_playing_location(Location.BATTLE)
 	time_updated.emit(0.0)
 	kill_count_changed.emit(0)
-
-	var stage_info = GameData.stages.get(GameData.current_selected_stage_id, GameData.stages["stage_1"])
-	var scene_path = stage_info.get("scene", "res://scenes/stages/stage_grassland.tscn")
-	SceneTransition.change_scene(scene_path)
-	return true
 
 func add_kill():
 	kill_count += 1
 	kill_count_changed.emit(kill_count)
 
 func toggle_pause():
-	if current_location != Location.BATTLE:
+	if current_location != Location.BATTLE or SceneTransition.is_transitioning:
 		return
 	if current_state == GameState.PLAYING:
 		pause_game()
@@ -283,21 +276,6 @@ func _is_battle_player_dead() -> bool:
 	return player != null and player.is_dead
 
 func restart():
-	get_tree().paused = false
-	GameData.begin_survival_run()
-	starting_draft_picks = 10
-	level_card_picks = 0
-	dungeon_gold = 0
-	run_settled = false
-	boss_defeated_count = 0
-	boss_decision_pending = false
-	boss_reward_multiplier = 1.0
-	next_boss_time = FIRST_BOSS_TIME
-	current_state = GameState.PLAYING
-	battle_time = 0.0
-	_last_time_signal_second = 0
-	kill_count = 0
-	state_changed.emit(current_state)
-	time_updated.emit(0.0)
-	kill_count_changed.emit(0)
-	get_tree().reload_current_scene()
+	var scene := get_tree().current_scene
+	if scene != null:
+		SceneTransition.change_scene(scene.scene_file_path, _prepare_battle.bind(GameData.current_selected_stage_id))

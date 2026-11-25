@@ -13,21 +13,13 @@ func _ready() -> void:
 func _scan_folder() -> void:
 	_by_id.clear()
 	_aliases.clear()
-	var directory := DirAccess.open(MONSTER_FOLDER)
-	if directory == null:
-		push_warning("MonsterRegistry 폴더를 열 수 없습니다: " + MONSTER_FOLDER)
-		return
-	var paths: Array[String] = []
-	directory.list_dir_begin()
-	var file_name := directory.get_next()
-	while not file_name.is_empty():
-		if not directory.current_is_dir() and file_name.get_extension().to_lower() == "tres":
-			paths.append(MONSTER_FOLDER.path_join(file_name))
-		file_name = directory.get_next()
-	directory.list_dir_end()
-	paths.sort()
-	for path in paths:
-		var monster := load(path) as MonsterData
+	var files := ResourceLoader.list_directory(MONSTER_FOLDER)
+	files.sort()
+	for file_name in files:
+		if file_name.get_extension().to_lower() != "tres":
+			continue
+		var path := MONSTER_FOLDER.path_join(file_name)
+		var monster := ResourceLoader.load(path) as MonsterData
 		if monster == null:
 			push_warning("MonsterRegistry가 MonsterData를 읽지 못했습니다: " + path)
 			continue

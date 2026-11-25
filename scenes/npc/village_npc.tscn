@@ -95,3 +95,14 @@ font_size = 26
 modulate = Color(0.82, 0.92, 1, 0.95)
 outline_size = 10
 outline_modulate = Color(0.03, 0.08, 0.15, 0.96)
+
+[node name="AttentionMark" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.42, 0)
+billboard = 1
+no_depth_test = true
+text = "!"
+font_size = 44
+modulate = Color(1, 0.08, 0.08, 1)
+outline_size = 10
+outline_modulate = Color(0.18, 0, 0, 1)
+visible = false

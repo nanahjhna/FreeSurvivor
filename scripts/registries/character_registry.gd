@@ -13,21 +13,13 @@ func _ready() -> void:
 func _scan_folder() -> void:
 	_by_id.clear()
 	_aliases.clear()
-	var directory := DirAccess.open(CHARACTER_FOLDER)
-	if directory == null:
-		push_warning("CharacterRegistry 폴더를 열 수 없습니다: " + CHARACTER_FOLDER)
-		return
-	var paths: Array[String] = []
-	directory.list_dir_begin()
-	var file_name := directory.get_next()
-	while not file_name.is_empty():
-		if not directory.current_is_dir() and file_name.get_extension().to_lower() == "tres":
-			paths.append(CHARACTER_FOLDER.path_join(file_name))
-		file_name = directory.get_next()
-	directory.list_dir_end()
-	paths.sort()
-	for path in paths:
-		var character := load(path) as CharacterData
+	var files := ResourceLoader.list_directory(CHARACTER_FOLDER)
+	files.sort()
+	for file_name in files:
+		if file_name.get_extension().to_lower() != "tres":
+			continue
+		var path := CHARACTER_FOLDER.path_join(file_name)
+		var character := ResourceLoader.load(path) as CharacterData
 		if character == null:
 			push_warning("CharacterRegistry가 CharacterData를 읽지 못했습니다: " + path)
 			continue

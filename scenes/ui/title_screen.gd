@@ -10,18 +10,13 @@ extends Control
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameManager.current_location = GameManager.Location.TITLE
-	start_button.text = "게임 시작"
+	start_button.text = "게스트로 시작"
 	settings_button.text = "환경 설정"
 	quit_button.text = "종료"
 	version_label.text = "v1.0.0"
 	UiStyle.skin_button(start_button, Color("#ffbe43"), Color("#ffe9a8"), Color("#4e2a1e"))
 	start_button.add_theme_font_size_override("font_size", 30)
-	var buttons := $Center/VBox/Buttons as VBoxContainer
-	var utilities := HBoxContainer.new()
-	utilities.add_theme_constant_override("separation", 10)
-	buttons.add_child(utilities)
 	for button in [settings_button, quit_button]:
-		button.reparent(utilities, false)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		UiStyle.skin_button(button, Color("#27254e"), Color("#827ab2"))
 		button.add_theme_font_size_override("font_size", 20)
@@ -29,10 +24,19 @@ func _ready() -> void:
 	_layout()
 
 
+func prepare_transition(report_progress: Callable) -> void:
+	await $VillageBackground.prepare_transition(report_progress)
+
+
 func _layout() -> void:
 	var viewport_size := get_viewport_rect().size
 	var safe := UiStyle.safe_insets(get_viewport())
 	var portrait := viewport_size.y >= viewport_size.x
+	var title_box := $Center/VBox as VBoxContainer
+	title_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	var spacer := $Center/VBox/Spacer as Control
+	spacer.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	spacer.custom_minimum_size.y = clampf(viewport_size.y * 0.055, 34.0, 72.0)
 	UiStyle.apply_safe_margins($Center, 24)
 	$Center.add_theme_constant_override("margin_top", ceili(safe.y + viewport_size.y * 0.053))
 	$Center.add_theme_constant_override("margin_bottom", ceili(safe.w + viewport_size.y * 0.065))

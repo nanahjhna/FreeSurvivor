@@ -77,10 +77,6 @@ func _connect_signals():
 	if player_node:
 		_setup_player(player_node)
 
-	skill_manager = get_tree().root.find_child("SkillManager", true, false)
-	if skill_manager and skill_manager.has_signal("skill_cooldown_updated"):
-		skill_manager.skill_cooldown_updated.connect(_on_skill_cooldown_updated)
-
 func _setup_player(p: Node3D):
 	if p.has_signal("hp_changed"):
 		p.hp_changed.connect(_on_hp_changed)
@@ -89,33 +85,22 @@ func _setup_player(p: Node3D):
 		p.exp_changed.connect(_on_exp_changed)
 	if p.has_signal("leveled_up"):
 		p.leveled_up.connect(_on_leveled_up)
+	skill_manager = p.get_node_or_null("SkillManager")
+	if skill_manager and skill_manager.has_signal("skill_cooldown_updated"):
+		skill_manager.skill_cooldown_updated.connect(_on_skill_cooldown_updated)
 
 func _process(delta: float):
 	_boss_scan_timer = maxf(0.0, _boss_scan_timer - delta)
-	if player_node == null:
+	if not is_instance_valid(player_node):
 		player_node = get_tree().get_first_node_in_group("player")
 		if player_node:
 			_setup_player(player_node)
-	if player_node != null and is_instance_valid(player_node) and hp_bar != null:
-		var curr := float(player_node.get("current_hp"))
-		var maximum := float(player_node.get("max_hp"))
-		hp_bar.max_value = maximum
-		hp_bar.value = curr
-		if hp_label != null:
-			hp_label.text = str(int(curr)) + " / " + str(int(maximum))
-		if player_node.has_method("sync_head_hp_bar"):
-			player_node.call("sync_head_hp_bar", hp_bar.value, hp_bar.max_value)
-
-	if skill_manager == null or not is_instance_valid(skill_manager):
-		skill_manager = get_tree().root.find_child("SkillManager", true, false)
 
 	_indicator_update_timer += delta
 	if _indicator_update_timer >= 0.12:
 		_indicator_update_timer = 0.0
 		indicator_overlay.queue_redraw()
 		_update_encounter_strip()
-	if dungeon_gold_label:
-		dungeon_gold_label.text = "💰 %d" % GameManager.dungeon_gold
 
 func _build_infinite_dungeon_controls():
 	dungeon_gold_label = Label.new()
@@ -879,6 +864,7 @@ func _on_time_updated(time_sec: float):
 	var difficulty := 1 + int(floor(time_sec / 180.0))
 	time_label.text = "%02d:%02d" % [mins, secs]
 	stage_label.text = "난이도 %d" % difficulty
+	dungeon_gold_label.text = "💰 %d" % GameManager.dungeon_gold
 
 func _on_kill_count_changed(count: int):
 	kill_label.text = "⚔ %d" % count

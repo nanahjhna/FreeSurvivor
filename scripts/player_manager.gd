@@ -5,10 +5,9 @@ const FALLBACK_CHARACTER_MODEL := "res://assets/char/char03/char03.glb"
 
 func get_definition(player_id: String) -> Dictionary:
 	var character := CharacterRegistry.get_by_id(player_id)
-	var lookup_id := player_id
-	if character != null and not character.legacy_id.is_empty():
-		lookup_id = character.legacy_id
-	var definition: Variant = GameData.characters.get(lookup_id, {})
+	var definition: Variant = GameData.characters.get(player_id, {})
+	if character != null and not GameData.characters.has(player_id):
+		definition = GameData.characters.get(character.id, GameData.characters.get(character.legacy_id, {}))
 	if not definition is Dictionary:
 		return {}
 	var resolved: Dictionary = definition.duplicate(true)

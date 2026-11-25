@@ -3,16 +3,17 @@ extends Node3D
 
 const KIT := "res://assets/map/Medieval Village MegaKit[Standard]/glTF/"
 const WALKABLE_AREA := Rect2i(-33, -39, 67, 71)
-const CARD_GATE := Vector3(-14, 0, 23)
 const CLEARANCE := 0.85
 const HOUSE_SCALE := Vector3(1.22, 1.55, 1.16)
 const FURNITURE_SCALE := Vector3(1.2, 1.38, 1.2)
+const LANTERN_SCALE := Vector3(1.45, 1.65, 1.45)
 const GATE_SCALE := Vector3(1.0, 1.35, 1.0)
 const SIDE_WALL_HEIGHT := 3.6
 const NORTH_WALL_HEIGHT := 4.2
 const WALL_THICKNESS := 0.95
 const GATE_TOWER_OFFSET := 5.5
 
+var preview_only := false
 var destinations: Dictionary = {}
 var _mesh_cache: Dictionary = {}
 var _batches: Dictionary = {}
@@ -20,17 +21,23 @@ var _obstacles: Array[Rect2] = []
 var _walk_grid := AStarGrid2D.new()
 var _rng := RandomNumberGenerator.new()
 
-func build(north_gate: Vector3) -> void:
+func build(north_gate: Vector3, report_progress: Callable = Callable()) -> void:
 	_rng.seed = 10405
 	_build_paving(north_gate)
 	_build_boundary(north_gate.x)
+	if report_progress.is_valid():
+		await report_progress.call(81.0, "마을 건물 배치 중…")
 	_build_houses()
 	_build_plaza()
+	if report_progress.is_valid():
+		await report_progress.call(85.0, "마을 소품 배치 중…")
 	_build_street_details()
 	_build_gate(north_gate)
-	_build_card_court()
-	_flush_batches()
-	_build_walk_grid()
+	if report_progress.is_valid():
+		await report_progress.call(88.0, "마을 지형 표시 중…")
+	await _flush_batches(report_progress.is_valid())
+	if not preview_only:
+		_build_walk_grid()
 
 func _build_paving(north_gate: Vector3) -> void:
 	# Short UV repeats keep the stones the same size on avenues and in alleys.
@@ -178,22 +185,6 @@ func _build_gate(center: Vector3) -> void:
 	for x in [-2.625, -0.875, 0.875, 2.625]:
 		_place("Prop_MetalFence_Simple", Vector3(center.x + x, 0, rear_z), 0, Vector3(0.9, 1.45, 1))
 	_pave(Vector2(center.x, center.z + 0.5), Vector2(7, 3), "Floor_Brick", 0.045)
-
-func _build_card_court() -> void:
-	var frame := Transform3D(Basis.from_scale(GATE_SCALE), CARD_GATE)
-	for side in [-1.0, 1.0]:
-		var pier := CARD_GATE + Vector3(side * 3.2, 0, 0)
-		_solid("CardGatePier", pier, Vector3(1.25, 3.8, 1.25) * GATE_SCALE)
-		for face in range(4):
-			var wall := Transform3D(Basis(Vector3.UP, float(face) * PI * 0.5).scaled_local(GATE_SCALE), pier)
-			_at(wall, "Wall_UnevenBrick_Straight", Vector3(0, 0, 0.64), 0, Vector3(0.64, 1.25, 1))
-		_at(frame, "Roof_Tower_RoundTiles", Vector3(side * 3.2, 3.68, 0), 0, Vector3(0.31, 0.32, 0.31))
-		_at(frame, "Prop_Vine4", Vector3(side * 3.2, 2.6, -0.72), PI, Vector3(0.62, 0.75, 1), false)
-		_lantern(pier + Vector3(side * 0.8, 0, -1.4))
-	_at(frame, "Wall_Arch", Vector3.ZERO, PI, Vector3(2.8, 1.42, 1))
-	_at(frame, "Roof_RoundTiles_4x4", Vector3(0, 4.22, 0), 0, Vector3(1.17, 0.45, 0.53))
-	for x in [-2.0, 0.0, 2.0]:
-		_at(frame, "Wall_UnevenBrick_Straight", Vector3(x, 3.94, -0.14), PI, Vector3(1, 0.18, 1))
 
 func decorate_portal(portal: Area3D, caption: String, tint: Color) -> void:
 	var collision := portal.get_node("CollisionShape3D") as CollisionShape3D
@@ -343,13 +334,13 @@ func _supply_corner(pos: Vector3, yaw: float) -> void:
 	_solid("SupplyCrates", pos, Vector3(2.35, 1.15, 1.25), yaw)
 
 func _lantern(pos: Vector3) -> void:
-	var lantern := _scaled_detail(self, pos, FURNITURE_SCALE)
+	var lantern := _scaled_detail(self, pos, LANTERN_SCALE)
 	var iron := _material(Color(0.19, 0.15, 0.11), 0.65)
 	var glass := _material(Color(1, 0.68, 0.29), 0.45)
 	glass.emission_enabled = true
 	glass.emission = Color(1, 0.54, 0.19)
 	glass.emission_energy_multiplier = 0.9
-	_place("Prop_Brick4", pos + Vector3(0, 0.12, 0) * FURNITURE_SCALE, 0, FURNITURE_SCALE * 1.25)
+	_place("Prop_Brick4", pos + Vector3(0, 0.12, 0) * LANTERN_SCALE, 0, LANTERN_SCALE * 1.25)
 	_round_mesh(lantern, Vector3(0, 1.22, 0), 0.06, 0.09, 2.35, iron)
 	_box_mesh(lantern, Vector3(0, 2.53, 0), Vector3(0.34, 0.36, 0.34), glass, false)
 	_round_mesh(lantern, Vector3(0, 2.80, 0), 0.07, 0.30, 0.22, iron, 4).rotation.y = PI * 0.25
@@ -380,11 +371,15 @@ func _solid(node_name: String, pos: Vector3, size: Vector3, yaw: float = 0.0) ->
 	body.collision_mask = 1
 	_add_shape(body, Vector3(0, size.y * 0.5, 0), size)
 	add_child(body, true)
+	if preview_only:
+		return body
 	var footprint := body.transform * AABB(-size * 0.5, size) # only X/Z are used for routing
 	_obstacles.append(Rect2(Vector2(footprint.position.x, footprint.position.z), Vector2(footprint.size.x, footprint.size.z)))
 	return body
 
 func _add_shape(body: StaticBody3D, pos: Vector3, size: Vector3) -> void:
+	if preview_only:
+		return
 	var shape := BoxShape3D.new()
 	shape.size = size
 	var collider := CollisionShape3D.new()
@@ -513,7 +508,8 @@ func _queue_mesh(piece: String, placement: Transform3D, shadow: bool) -> void:
 			_batches[key] = [model, shadow, []]
 		_batches[key][2].append(placement * part[1])
 
-func _flush_batches() -> void:
+func _flush_batches(spread_over_frames: bool) -> void:
+	var frame_start := Time.get_ticks_usec()
 	for batch in _batches.values():
 		var transforms: Array = batch[2]
 		var item: GeometryInstance3D
@@ -534,4 +530,7 @@ func _flush_batches() -> void:
 			item = multi
 		item.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if batch[1] else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(item)
+		if spread_over_frames and Time.get_ticks_usec() - frame_start >= 8000:
+			await get_tree().process_frame
+			frame_start = Time.get_ticks_usec()
 	_batches.clear()

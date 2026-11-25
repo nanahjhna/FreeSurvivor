@@ -119,6 +119,7 @@ func to_legacy_dictionary() -> Dictionary:
 		"skill_loadout": skill_loadout.duplicate(true),
 		"signature_skill": signature_skill,
 		"weapon_name": weapon_name,
+		"attack_style": attack_style,
 		"weapon_scene": weapon_scene.resource_path if weapon_scene != null else "",
 		"weapon_bone_name": weapon_bone_name,
 		"weapon_mount_position": weapon_mount_position,

@@ -83,7 +83,6 @@ func _draw_village_elements(center: Vector2, radius: float, p_pos: Vector3):
 		"shop": Color(0.47, 0.77, 0.93),
 		"inn": Color(0.86, 0.52, 0.49),
 		"quest": Color(1.0, 0.81, 0.43),
-		"card_dungeon": Color(0.82, 0.5, 1.0),
 	}
 	for id in colors:
 		if not _village_pins.has(id):
@@ -91,9 +90,7 @@ func _draw_village_elements(center: Vector2, radius: float, p_pos: Vector3):
 		var pin := _world_to_map(_village_pins[id], p_pos, center, radius)
 		if not _inside_map(pin):
 			continue
-		if id == "card_dungeon":
-			_draw_diamond(pin, 5.0, colors[id])
-		elif id == "fountain":
+		if id == "fountain":
 			draw_circle(pin, 4.5, colors[id])
 		else:
 			draw_rect(Rect2(pin - Vector2(2.7, 2.7), Vector2(5.4, 5.4)), colors[id])

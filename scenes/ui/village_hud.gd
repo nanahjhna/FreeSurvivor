@@ -8,15 +8,13 @@ const QUEST_UI: PackedScene = preload("res://scenes/ui/quest_ui.tscn")
 const SHOP_UI: PackedScene = preload("res://scenes/ui/shop_ui.tscn")
 const MAP_UI: PackedScene = preload("res://scenes/ui/map_ui.tscn")
 const VIRTUAL_DPAD: PackedScene = preload("res://scenes/ui/virtual_dpad.tscn")
-const ROUTE_COLOR := Color("#ffd47e")
-const ROUTE_OUTLINE := Color("#342419")
+const ROUTE_COLOR := Color("#a7a7a7")
 const TRAVEL_DESTINATIONS := [
 	["대장간", "forge", "장비 강화·교체"],
 	["스킬 상점", "shop", "영웅 동작 미리보기·구매"],
-	["여관", "inn", "골드로 능력치 영구 강화"],
+	["여관", "inn", "골드로 경험치 구매·직업 성장"],
 	["퀘스트 게시판", "quest", "임무 확인·보상 받기"],
 	["서바이벌 던전", "battle_start", "골드 획득·보스 장비"],
-	["카드 덱 던전", "card_dungeon", "덱 편성·카드 전투"],
 ]
 
 @onready var status_label: Label = $BottomCenter/Panel/Margin/StatusLabel
@@ -36,7 +34,9 @@ var fast_travel_root: Control
 var auto_move_button: Button
 var route_overlay: Control
 var route_label: Label
+var auto_move_status_label: Label
 var _attention_badges: Dictionary = {}
+var _travel_buttons: Dictionary = {}
 var _travel_attention_badges: Dictionary = {}
 
 func _ready():
@@ -47,7 +47,6 @@ func _ready():
 	_build_route_overlay()
 	_build_bottom_menu()
 	_build_fast_travel_menu()
-	_build_auto_move_button()
 	_build_interaction_prompt()
 	_build_mobile_dpad()
 	_load_screens()
@@ -66,9 +65,11 @@ func _process(_delta: float):
 	var show_route := moving and not get_tree().paused
 	route_overlay.visible = show_route
 	route_label.visible = show_route
+	auto_move_status_label.visible = show_route
 	if show_route:
 		route_overlay.queue_redraw()
 	_refresh_attention_badges()
+	_refresh_npc_attention()
 
 func _hide_legacy_status():
 	if status_label:
@@ -98,6 +99,8 @@ func _build_bottom_menu():
 	row.add_theme_constant_override("separation", 6)
 	margin.add_child(row)
 	for item in [["캐릭터", "character"], ["장비", "equipment"], ["스킬", "skill"], ["퀘스트", "quest"]]:
+		if item[1] == "quest":
+			continue
 		var entry := HBoxContainer.new()
 		entry.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		entry.add_theme_constant_override("separation", 3)
@@ -109,10 +112,7 @@ func _build_bottom_menu():
 		entry.add_child(button)
 		_attention_badges[str(item[1])] = _make_attention_badge()
 		entry.add_child(_attention_badges[str(item[1])])
-	var dungeon := UiStyle.make_button("던전 선택", Vector2(0, 48), true)
-	dungeon.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	dungeon.pressed.connect(_open_battle_prep)
-	row.add_child(dungeon)
+	_build_auto_move_button(row)
 
 func _build_fast_travel_menu():
 	fast_travel_root = Control.new()
@@ -144,8 +144,24 @@ func _build_fast_travel_menu():
 		var button := UiStyle.make_button(destination[0], Vector2(146, 54 if portrait else 48))
 		button.pressed.connect(_auto_move_to.bind(destination[1], destination[0]))
 		row.add_child(button)
-		_travel_attention_badges[destination[1]] = _make_attention_badge()
-		row.add_child(_travel_attention_badges[destination[1]])
+		_travel_buttons[destination[1]] = button
+		var attention := Label.new()
+		attention.text = "!"
+		attention.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		attention.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		attention.add_theme_color_override("font_color", Color("#ff3d3d"))
+		attention.add_theme_color_override("font_outline_color", Color("#250000"))
+		attention.add_theme_constant_override("outline_size", 4)
+		attention.add_theme_font_size_override("font_size", 23)
+		attention.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		attention.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+		attention.offset_left = -30.0
+		attention.offset_top = -18.0
+		attention.offset_right = -8.0
+		attention.offset_bottom = 18.0
+		attention.visible = false
+		button.add_child(attention)
+		_travel_attention_badges[destination[1]] = attention
 		var description := UiStyle.make_label(destination[2], 16, UiStyle.MUTED)
 		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		description.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -163,7 +179,7 @@ func _make_attention_badge() -> PanelContainer:
 	return badge
 
 func _refresh_attention_badges() -> void:
-	if _attention_badges.is_empty():
+	if _attention_badges.is_empty() and _travel_buttons.is_empty():
 		return
 	var attention := {
 		"character": false,
@@ -173,8 +189,11 @@ func _refresh_attention_badges() -> void:
 	}
 	for id in _attention_badges:
 		_attention_badges[id].visible = bool(attention.get(id, false))
-	for id in _travel_attention_badges:
-		_travel_attention_badges[id].visible = _has_destination_attention(str(id))
+	for id in _travel_buttons:
+		var attention_mark := _travel_attention_badges.get(id) as Label
+		if attention_mark == null:
+			continue
+		attention_mark.visible = _has_destination_attention(str(id))
 
 func _has_destination_attention(destination_id: String) -> bool:
 	match destination_id:
@@ -183,19 +202,27 @@ func _has_destination_attention(destination_id: String) -> bool:
 		"shop": return GameData.has_skill_shop_purchase_available()
 	return false
 
-func _build_auto_move_button():
-	auto_move_button = UiStyle.make_button("자동 이동", Vector2(104, 40), true)
-	auto_move_button.anchor_left = 0.0
-	auto_move_button.anchor_top = 0.0
-	auto_move_button.anchor_right = 0.0
-	auto_move_button.anchor_bottom = 0.0
-	auto_move_button.offset_left = 12.0
-	auto_move_button.offset_top = 16.0
-	auto_move_button.offset_right = 116.0
-	auto_move_button.offset_bottom = 56.0
-	auto_move_button.add_theme_font_size_override("font_size", 13)
+func _refresh_npc_attention() -> void:
+	var attention_by_npc := {
+		"npc_merchant": GameData.has_skill_shop_purchase_available(),
+		"npc_innkeeper": GameData.has_permanent_upgrade_available(),
+		"npc_villager": GameData.has_claimable_quest(),
+	}
+	for npc in get_tree().get_nodes_in_group("npcs"):
+		if not is_instance_valid(npc) or not npc.has_method("set_attention_visible"):
+			continue
+		var interaction_id := str(npc.get_meta("interaction_id", ""))
+		npc.call("set_attention_visible", bool(attention_by_npc.get(interaction_id, false)))
+
+func _build_auto_move_button(parent: Control = null):
+	auto_move_button = UiStyle.make_button("자동 이동", Vector2(0, 40), true)
+	auto_move_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	auto_move_button.add_theme_font_size_override("font_size", 14)
 	auto_move_button.pressed.connect(_on_auto_move_button_pressed)
-	add_child(auto_move_button)
+	if parent == null:
+		add_child(auto_move_button)
+	else:
+		parent.add_child(auto_move_button)
 
 func _on_auto_move_button_pressed():
 	var lobby := get_parent()
@@ -230,13 +257,24 @@ func _build_route_overlay() -> void:
 	route_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	route_label.hide()
 	add_child(route_label)
+	auto_move_status_label = UiStyle.make_label("자동이동 중", 32, Color("#f3e2bd"))
+	auto_move_status_label.set_anchors_preset(Control.PRESET_CENTER)
+	auto_move_status_label.offset_left = -170.0
+	auto_move_status_label.offset_top = -32.0
+	auto_move_status_label.offset_right = 170.0
+	auto_move_status_label.offset_bottom = 32.0
+	auto_move_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	auto_move_status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	auto_move_status_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UiStyle.ink_outline(auto_move_status_label, 8)
+	auto_move_status_label.hide()
+	add_child(auto_move_status_label)
 
 func _draw_auto_move_route() -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera == null:
 		return
 	var path: PackedVector3Array = get_parent().get_auto_move_path()
-	var distance_to_arrow := 20.0
 	for i in range(1, path.size()):
 		var from_world := path[i - 1] + Vector3.UP * 0.10
 		var to_world := path[i] + Vector3.UP * 0.10
@@ -247,20 +285,13 @@ func _draw_auto_move_route() -> void:
 		var length := start.distance_to(finish)
 		if length < 1.0:
 			continue
-		route_overlay.draw_line(start, finish, ROUTE_OUTLINE, 6.0, true)
-		route_overlay.draw_line(start, finish, ROUTE_COLOR, 2.5, true)
+		var dot_distance := 8.0
+		var dot_spacing := 16.0
 		var direction := (finish - start) / length
-		if i == path.size() - 1:
-			distance_to_arrow = minf(distance_to_arrow, length)
-		while distance_to_arrow <= length:
-			var tip := start + direction * distance_to_arrow
-			var tail := tip - direction * 10.0
-			var side := direction.orthogonal() * 6.0
-			var arrow := PackedVector2Array([tail + side, tip, tail - side])
-			route_overlay.draw_polyline(arrow, ROUTE_OUTLINE, 7.0, true)
-			route_overlay.draw_polyline(arrow, ROUTE_COLOR, 3.0, true)
-			distance_to_arrow += 42.0
-		distance_to_arrow -= length
+		while dot_distance < length:
+			var dot_position := start + direction * dot_distance
+			route_overlay.draw_circle(dot_position, 3.0, ROUTE_COLOR)
+			dot_distance += dot_spacing
 
 func _build_interaction_prompt():
 	interaction_panel = PanelContainer.new()
@@ -330,9 +361,6 @@ func _on_action_requested(action_id: String):
 		return
 	if action_id == "battle_start":
 		_open_battle_prep()
-		return
-	if action_id == "card_deck":
-		GameManager.go_to_deck_builder()
 		return
 	if action_id in ["equipment", "forge"]:
 		open_screen(action_id)

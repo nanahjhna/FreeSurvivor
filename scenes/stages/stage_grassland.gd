@@ -9,8 +9,11 @@ var _kit_scene_cache: Dictionary = {}
 
 func _ready():
 	if preview_only:
+		set_physics_process(false)
 		_generate_environment()
 		return
+	if OS.has_feature("android"):
+		$DirectionalLight3D.directional_shadow_max_distance = 55.0
 	process_physics_priority = 100
 	GameManager.current_location = GameManager.Location.BATTLE
 	# LevelUpPanel opens the ten-pick starting draft from its _ready().
@@ -37,7 +40,12 @@ func _ready():
 			camera.set("first_person_enabled", false)
 			camera.fov = BATTLE_CAMERA_FOV
 			camera.call("snap_to_target")
-	_generate_environment()
+	if not SceneTransition.is_transitioning:
+		_generate_environment()
+
+func prepare_transition(report_progress: Callable) -> void:
+	await report_progress.call(77.0, "던전 지형 준비 중…")
+	await _generate_environment(report_progress)
 
 func _physics_process(_delta: float) -> void:
 	if preview_only:
@@ -64,38 +72,45 @@ func constrain_spawn_position(world_position: Vector3) -> Vector3:
 	world_position.z = clampf(world_position.z, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE)
 	return world_position
 
-func _generate_environment():
+func _generate_environment(report_progress: Callable = Callable()):
 	var decor_root = Node3D.new()
 	decor_root.name = "Decorations"
 	add_child(decor_root)
 	# Keep the layout repeatable so combat and screenshots remain easy to reproduce.
-	seed(42)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
 	_build_kit_ground_path(decor_root)
 
 	# The player and the first wave need a clear combat circle around the origin.
 	var tree_pool := ["CommonTree_1", "CommonTree_3", "CommonTree_5", "Pine_1", "Pine_3", "DeadTree_2"]
 	for i in range(28):
-		var pos := _get_random_pos(15.0, 74.0)
+		var pos := _get_random_pos(15.0, 74.0, rng)
 		var tree_name: String = tree_pool[i % tree_pool.size()]
-		_spawn_kit(decor_root, tree_name, pos, randf_range(1.22, 1.52), randf() * TAU, "tree")
+		_spawn_kit(decor_root, tree_name, pos, rng.randf_range(1.22, 1.52), rng.randf() * TAU, "tree")
 
+	if report_progress.is_valid():
+		await report_progress.call(84.0, "던전 바위 배치 중…")
 	var rock_pool := ["Rock_Medium_1", "Rock_Medium_2", "Rock_Medium_3"]
 	for i in range(22):
-		var pos := _get_random_pos(11.0, 72.0)
-		_spawn_kit(decor_root, rock_pool[i % rock_pool.size()], pos, randf_range(0.82, 1.18), randf() * TAU, "rock")
+		var pos := _get_random_pos(11.0, 72.0, rng)
+		_spawn_kit(decor_root, rock_pool[i % rock_pool.size()], pos, rng.randf_range(0.82, 1.18), rng.randf() * TAU, "rock")
 
+	if report_progress.is_valid():
+		await report_progress.call(90.0, "던전 식생 배치 중…")
 	# Low foliage uses fewer nodes than the old 180-node flower field while keeping
 	# the warm, saturated look from the kit preview.
 	var foliage_pool := ["Bush_Common", "Bush_Common_Flowers", "Grass_Common_Tall", "Grass_Wispy_Tall", "Flower_3_Group", "Flower_4_Group", "Mushroom_Common"]
 	for i in range(34):
-		var pos := _get_random_pos(8.0, 64.0)
-		_spawn_kit(decor_root, foliage_pool[i % foliage_pool.size()], pos, randf_range(0.62, 0.88), randf() * TAU)
+		var pos := _get_random_pos(8.0, 64.0, rng)
+		_spawn_kit(decor_root, foliage_pool[i % foliage_pool.size()], pos, rng.randf_range(0.62, 0.88), rng.randf() * TAU)
 
+	if report_progress.is_valid():
+		await report_progress.call(96.0, "던전 길 정리 중…")
 	# Small path stones guide the eye toward the north side of the arena.
 	var path_pool := ["RockPath_Round_Wide", "RockPath_Round_Thin", "RockPath_Square_Wide", "RockPath_Square_Thin"]
 	for i in range(12):
 		var path_pos := Vector3(sin(float(i) * 0.45) * 3.5, 0.02, -8.0 - float(i) * 5.5)
-		_spawn_kit(decor_root, path_pool[i % path_pool.size()], path_pos, randf_range(0.9, 1.15), randf_range(-0.18, 0.18))
+		_spawn_kit(decor_root, path_pool[i % path_pool.size()], path_pos, rng.randf_range(0.9, 1.15), rng.randf_range(-0.18, 0.18))
 
 func _build_kit_ground_path(parent: Node3D):
 	var path_material := StandardMaterial3D.new()
@@ -131,7 +146,7 @@ func _spawn_kit(parent: Node3D, asset_name: String, pos: Vector3, scale_factor: 
 	instance.scale = Vector3.ONE * scale_factor
 	parent.add_child(instance)
 
-	if collision_kind != "":
+	if not preview_only and collision_kind != "":
 		var body := StaticBody3D.new()
 		body.name = instance.name + "_Collision"
 		body.collision_layer = 32
@@ -151,9 +166,9 @@ func _spawn_kit(parent: Node3D, asset_name: String, pos: Vector3, scale_factor: 
 		body.add_child(shape_node)
 		parent.add_child(body)
 
-func _get_random_pos(min_r: float, max_r: float) -> Vector3:
-	var angle = randf() * TAU
-	var dist = randf_range(min_r, max_r)
+func _get_random_pos(min_r: float, max_r: float, rng: RandomNumberGenerator = null) -> Vector3:
+	var angle := (rng.randf() if rng != null else randf()) * TAU
+	var dist := rng.randf_range(min_r, max_r) if rng != null else randf_range(min_r, max_r)
 	return Vector3(cos(angle) * dist, 0.0, sin(angle) * dist)
 
 func _create_tree() -> StaticBody3D:

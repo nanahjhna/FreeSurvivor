@@ -13,6 +13,7 @@ signal save_status_changed(status: String)
 const SAVE_FILE_PATH = "user://freesurvivor_save.json"
 const SAVE_TEMP_PATH = "user://freesurvivor_save.tmp"
 const SAVE_BACKUP_PATH = "user://freesurvivor_save.backup.json"
+const SAVE_BACKUP_TEMP_PATH = "user://freesurvivor_save.backup.tmp"
 const SAVE_SCHEMA_VERSION = 3
 const FIGHTER_ID := "char01"
 const CHARACTER_SKILL_DATABASE = preload("res://scripts/character_skill_database.gd")
@@ -47,10 +48,9 @@ const DEFAULT_CHARACTER_STATS := {
 	"char02": {"base_hp": 120.0, "base_atk": 20.0, "base_def": 10.0}
 }
 const DEFAULT_CHARACTER_NAMES := {"fighter": "무도가", "fighter_2d": "화염권객", "char01": "검사", "char02": "마법사"}
-const PERMANENT_STAT_UPGRADE_CONFIG := {
+const EXPERIENCE_PURCHASE_CONFIG := {
 	"base_cost": 800,
-	"growth_rate": 1.18,
-	"round_to": 50
+	"growth_rate": 1.25
 }
 
 # -------------------------------------------------------------
@@ -319,9 +319,15 @@ var active_character_id: String = ""
 var _default_runtime_template: Dictionary = {}
 var _profile_playtime_accumulator: float = 0.0
 var _save_in_progress := false
+var _primary_save_valid := false
 var _direct_growth_migration_pending := false
 
 func _ready():
+	for character in CharacterRegistry.all():
+		if not characters.has(character.id):
+			var definition := character.to_legacy_dictionary()
+			definition["id"] = character.id
+			characters[character.id] = definition
 	_migrate_character_attributes()
 	_migrate_direct_gold_growth()
 	_ensure_character_equipment_entries()
@@ -353,7 +359,9 @@ func _process(delta: float):
 		profile["play_time_seconds"] = int(profile.get("play_time_seconds", 0)) + whole_seconds
 
 func _notification(what: int):
-	if what == NOTIFICATION_WM_CLOSE_REQUEST and not active_character_id.is_empty():
+	if active_character_id.is_empty():
+		return
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or (what == NOTIFICATION_APPLICATION_PAUSED and OS.has_feature("android")):
 		save_to_disk()
 
 func _migrate_character_attributes():
@@ -435,53 +443,71 @@ func _get_inventory_item(item_id: String) -> Dictionary:
 func set_party_member(_slot_idx: int, _char_id: String) -> bool:
 	return false
 
-func get_direct_stat_upgrade_cost(char_id: String, stat_name: String) -> int:
+func get_character_growth_stats(char_id: String) -> Array[String]:
+	var character: Dictionary = characters.get(char_id, {})
+	var role := str(character.get("role", ""))
+	var attack_style := str(character.get("attack_style", ""))
+	if char_id == "char02" or role in ["마법사", "mage"]:
+		return ["INT", "DEX", "VIT", "AGI"]
+	if attack_style == "ranged" or char_id in ["archer", "ranger"]:
+		return ["DEX", "AGI", "LUK", "VIT"]
+	# Melee classes scale primarily with strength, agility and vitality.
+	return ["STR", "AGI", "VIT", "DEX"]
+
+func is_recommended_growth_stat(char_id: String, stat_name: String) -> bool:
+	return stat_name in get_character_growth_stats(char_id)
+
+func get_character_stat_level(char_id: String, stat_name: String) -> int:
 	if not characters.has(char_id) or not StatManager.STAT_KEYS.has(stat_name):
-		return 0
-	var stats := get_character_stat_manager(char_id)
-	if not stats.can_upgrade(stat_name):
-		return 0
+		return 1
 	var defaults := StatManager.get_default_stats(char_id, characters.get(char_id, {}))
-	var upgrade_count := maxi(0, stats.get_stat(stat_name) - int(defaults[stat_name]))
-	var base_cost := int(PERMANENT_STAT_UPGRADE_CONFIG.base_cost)
-	var growth_rate := float(PERMANENT_STAT_UPGRADE_CONFIG.growth_rate)
-	var round_to := int(PERMANENT_STAT_UPGRADE_CONFIG.round_to)
-	var raw_cost := float(base_cost) * pow(growth_rate, upgrade_count)
-	return ceili(raw_cost / float(round_to)) * round_to
+	var stats := get_character_stat_manager(char_id)
+	return maxi(1, stats.get_stat(stat_name) - int(defaults.get(stat_name, 1)) + 1)
+
+func get_character_growth_level(char_id: String) -> int:
+	if not characters.has(char_id):
+		return 0
+	return maxi(0, int(characters[char_id].get("growth_level", 0)))
+
+func get_character_experience_purchase_cost(char_id: String) -> int:
+	if not characters.has(char_id):
+		return 0
+	var base_cost := float(EXPERIENCE_PURCHASE_CONFIG.base_cost)
+	var growth_rate := float(EXPERIENCE_PURCHASE_CONFIG.growth_rate)
+	return maxi(1, ceili(base_cost * pow(growth_rate, float(get_character_growth_level(char_id)))))
 
 func has_permanent_upgrade_available(char_id: String = "") -> bool:
 	var target_id := char_id if not char_id.is_empty() else get_leader_id()
-	for stat_name in StatManager.STAT_KEYS:
-		var cost := get_direct_stat_upgrade_cost(target_id, stat_name)
-		if cost > 0 and player_gold >= cost:
-			return true
-	return false
+	var cost := get_character_experience_purchase_cost(target_id)
+	return cost > 0 and player_gold >= cost
 
-func has_claimable_quest() -> bool:
-	for quest in quests:
-		if not bool(quest.get("claimed", false)) and int(quest.get("current", 0)) >= int(quest.get("target", 1)):
-			return true
-	return false
-
-func upgrade_character_stat_with_gold(char_id: String, stat_name: String) -> bool:
-	if not characters.has(char_id) or not StatManager.STAT_KEYS.has(stat_name):
+func purchase_character_experience(char_id: String) -> bool:
+	if not characters.has(char_id):
 		return false
-	var cost := get_direct_stat_upgrade_cost(char_id, stat_name)
+	var cost := get_character_experience_purchase_cost(char_id)
 	if cost <= 0 or player_gold < cost:
 		return false
 	var character: Dictionary = characters[char_id]
 	var attributes: Dictionary = character.get("attributes", StatManager.get_default_stats(char_id, character)).duplicate(true)
+	for stat_name in get_character_growth_stats(char_id):
+		attributes[stat_name] = int(attributes.get(stat_name, 1)) + 1
 	player_gold -= cost
-	attributes[stat_name] = int(attributes.get(stat_name, 1)) + 1
 	character["attributes"] = attributes
+	character["growth_level"] = get_character_growth_level(char_id) + 1
 	character["stat_points"] = 0
-	character["stat_points_spent"] = int(character.get("stat_points_spent", 0)) + 1
+	character["stat_points_spent"] = int(character.get("stat_points_spent", 0)) + get_character_growth_stats(char_id).size()
 	_update_quest_progress("q_upgrade_char", 1)
 	recalculate_party_stats()
 	currency_changed.emit(player_gold, player_gems)
 	data_updated.emit()
 	save_to_disk()
 	return true
+
+func has_claimable_quest() -> bool:
+	for quest in quests:
+		if not bool(quest.get("claimed", false)) and int(quest.get("current", 0)) >= int(quest.get("target", 1)):
+			return true
+	return false
 
 func create_selected_character(char_id: String, character_name: String) -> bool:
 	var clean_name := character_name.strip_edges()
@@ -1194,7 +1220,7 @@ func _refresh_swordsman_identity(character: Dictionary) -> void:
 	if definition == null:
 		return
 	var current := definition.to_legacy_dictionary()
-	for key in ["name", "title", "role", "icon", "model_scene", "model_scale", "animation_profile",
+	for key in ["title", "role", "icon", "model_scene", "model_scale", "animation_profile",
 		"animation_aliases", "signature_skill", "weapon_name", "weapon_scene", "weapon_bone_name",
 		"weapon_mount_position", "weapon_mount_rotation_degrees", "weapon_mount_scale", "combat_style", "desc"]:
 		character[key] = current[key]
@@ -1227,24 +1253,42 @@ func get_character_name_error(candidate: String, _ignored_character_id: String =
 		return "한글, 영문, 숫자, 공백, -, _ 문자만 사용할 수 있습니다."
 	return ""
 
-func create_character_profile(slot_index: int, class_id: String, character_name: String = "") -> String:
-	if slot_index < 0 or slot_index >= character_slot_manager.get_slot_count():
-		return ""
-	if character_slot_manager.get_slot(slot_index) != null:
-		return ""
+func get_character_class_error(class_id: String) -> String:
 	if not characters.has(class_id) or not bool(characters[class_id].get("unlocked", false)):
-		return ""
+		return "선택할 수 없는 직업입니다."
 	if not PlayerManager.has_model_definition(class_id):
-		push_warning("캐릭터 모델이 등록되지 않았습니다: %s" % class_id)
-		return ""
+		return "캐릭터 모델을 불러올 수 없습니다."
 	if not CHARACTER_SKILL_DATABASE.has_skill_assignment(class_id):
-		push_warning("캐릭터 스킬 배정이 등록되지 않았습니다: %s" % class_id)
+		return "캐릭터 스킬을 불러올 수 없습니다."
+	return ""
+
+
+func get_character_creation_error(slot_index: int, class_id: String) -> String:
+	if slot_index < 0 or slot_index >= character_slot_manager.get_slot_count():
+		return "캐릭터 슬롯을 다시 선택해 주세요."
+	if character_slot_manager.get_slot(slot_index) != null:
+		return "이미 사용 중인 캐릭터 슬롯입니다."
+	return get_character_class_error(class_id)
+
+
+func create_character_profile(slot_index: int, class_id: String, character_name: String = "") -> String:
+	if _save_in_progress:
+		return ""
+	var creation_error := get_character_creation_error(slot_index, class_id)
+	if not creation_error.is_empty():
+		push_warning("캐릭터 생성 실패 (%s): %s" % [class_id, creation_error])
 		return ""
 	var clean_name := character_name.strip_edges()
 	if clean_name.is_empty():
 		var template := get_class_template_data(class_id)
 		clean_name = str(template.get("name", template.get("role", "무도가")))
 	_commit_active_profile()
+	var previous_profile := get_character_profile(active_character_id)
+	var previous_state: Dictionary = _serialize_runtime_state() if previous_profile.is_empty() else previous_profile["state"]
+	var previous_active_id := active_character_id
+	var previous_selected_id := last_selected_character_id
+	var previous_playtime := _profile_playtime_accumulator
+	var previous_hp := player_current_hp
 	_apply_runtime_state(_default_runtime_template.duplicate(true))
 	party_slots.assign([class_id])
 	_set_character_skill_set(class_id)
@@ -1268,19 +1312,31 @@ func create_character_profile(slot_index: int, class_id: String, character_name:
 		"state": _serialize_runtime_state()
 	}
 	character_profiles[character_id] = profile
-	character_slot_manager.set_slot(slot_index, character_id)
 	active_character_id = character_id
 	last_selected_character_id = character_id
 	_profile_playtime_accumulator = 0.0
-	save_to_disk()
+	character_slot_manager.set_slot(slot_index, character_id)
+	if not save_to_disk():
+		character_profiles.erase(character_id)
+		active_character_id = previous_active_id
+		last_selected_character_id = previous_selected_id
+		_profile_playtime_accumulator = previous_playtime
+		_apply_runtime_state(previous_state.duplicate(true))
+		player_current_hp = previous_hp
+		character_slot_manager.clear_slot(slot_index)
+		return ""
 	data_updated.emit()
 	return character_id
 
 func select_character_profile(character_id: String) -> bool:
 	if not character_profiles.has(character_id):
 		return false
+	var previous_selected_id := last_selected_character_id
 	last_selected_character_id = character_id
-	return save_to_disk()
+	if save_to_disk():
+		return true
+	last_selected_character_id = previous_selected_id
+	return false
 
 func activate_character_profile(character_id: String) -> bool:
 	if not character_profiles.has(character_id):
@@ -1357,57 +1413,52 @@ func save_to_disk() -> bool:
 	_save_in_progress = true
 	save_status_changed.emit("saving")
 	_commit_active_profile()
-	var save_dict := _serialize_runtime_state()
+	var profile := get_character_profile(active_character_id)
+	var save_dict: Dictionary = _serialize_runtime_state() if profile.is_empty() else profile["state"].duplicate()
 	save_dict["schema_version"] = SAVE_SCHEMA_VERSION
 	save_dict["character_slots"] = character_slot_manager.to_array()
 	save_dict["character_profiles"] = character_profiles
 	save_dict["last_selected_character_id"] = last_selected_character_id
 	save_dict["skill_shop"] = {"coins": skill_coins, "owned_motions": _owned_skill_motions}
 	save_dict["saved_at"] = Time.get_datetime_string_from_system(false, true)
-	var json_str := JSON.stringify(save_dict, "\t")
-	var file := FileAccess.open(SAVE_TEMP_PATH, FileAccess.WRITE)
-	if not file:
-		# Direct write fallback if temporary path cannot be opened
-		file = FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
-		if not file:
-			push_error("Could not write save file (error %d)." % FileAccess.get_open_error())
-			_save_in_progress = false
-			save_status_changed.emit("failed")
-			return false
-		file.store_string(json_str)
-		file.close()
-		_save_in_progress = false
-		save_status_changed.emit("saved")
-		return true
-	file.store_string(json_str)
-	file.close()
-	var temp_global := ProjectSettings.globalize_path(SAVE_TEMP_PATH)
-	var save_global := ProjectSettings.globalize_path(SAVE_FILE_PATH)
-	var backup_global := ProjectSettings.globalize_path(SAVE_BACKUP_PATH)
-	if FileAccess.file_exists(SAVE_BACKUP_PATH):
-		DirAccess.remove_absolute(backup_global)
-		if FileAccess.file_exists(SAVE_BACKUP_PATH):
-			DirAccess.remove_absolute(SAVE_BACKUP_PATH)
-	if FileAccess.file_exists(SAVE_FILE_PATH):
-		if DirAccess.rename_absolute(save_global, backup_global) != OK:
-			DirAccess.rename_absolute(SAVE_FILE_PATH, SAVE_BACKUP_PATH)
-	if DirAccess.rename_absolute(temp_global, save_global) != OK and DirAccess.rename_absolute(SAVE_TEMP_PATH, SAVE_FILE_PATH) != OK:
-		# Direct write fallback if atomic rename is blocked (common in mobile scoped storage)
-		var direct_file := FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
-		if not direct_file:
-			_save_in_progress = false
-			save_status_changed.emit("failed")
-			return false
-		direct_file.store_string(json_str)
-		direct_file.close()
-		DirAccess.remove_absolute(temp_global)
-		DirAccess.remove_absolute(SAVE_TEMP_PATH)
+	var error := _write_save(JSON.stringify(save_dict))
 	_save_in_progress = false
+	if error != OK:
+		push_error("Could not save game data: %s" % error_string(error))
+		save_status_changed.emit("failed")
+		return false
+	_primary_save_valid = true
 	save_status_changed.emit("saved")
 	return true
 
+
+func _write_save(json_str: String) -> Error:
+	var directory := DirAccess.open("user://")
+	if directory == null:
+		return DirAccess.get_open_error()
+	var file := FileAccess.open(SAVE_TEMP_PATH, FileAccess.WRITE)
+	if file == null:
+		return FileAccess.get_open_error()
+	var written := file.store_string(json_str)
+	file.flush()
+	var error := file.get_error()
+	file.close()
+	if not written and error == OK:
+		error = ERR_FILE_CANT_WRITE
+
+	var primary_name := SAVE_FILE_PATH.get_file()
+	# Keep a recovered backup intact until there is a valid primary again.
+	if error == OK and _primary_save_valid and directory.file_exists(primary_name):
+		error = directory.copy(SAVE_FILE_PATH, SAVE_BACKUP_TEMP_PATH)
+		if error == OK:
+			error = directory.rename(SAVE_BACKUP_TEMP_PATH.get_file(), SAVE_BACKUP_PATH.get_file())
+	if error == OK:
+		error = directory.rename(SAVE_TEMP_PATH.get_file(), primary_name)
+	return error
+
 func load_from_disk() -> bool:
 	var save_data := _read_save_dictionary(SAVE_FILE_PATH) if FileAccess.file_exists(SAVE_FILE_PATH) else {}
+	_primary_save_valid = not save_data.is_empty()
 	if save_data.is_empty() and FileAccess.file_exists(SAVE_BACKUP_PATH):
 		push_warning("Primary save is invalid. Loading the protected backup.")
 		save_data = _read_save_dictionary(SAVE_BACKUP_PATH)
@@ -1556,6 +1607,7 @@ func reset_save():
 		characters[char_id].merge(DEFAULT_CHARACTER_STATS.get(char_id, {}), true)
 		characters[char_id]["name"] = DEFAULT_CHARACTER_NAMES.get(char_id, characters[char_id].get("name", str(char_id)))
 		characters[char_id]["attributes"] = StatManager.get_default_stats(str(char_id), characters[char_id])
+		characters[char_id]["growth_level"] = 0
 		characters[char_id]["stat_points"] = 0
 		characters[char_id]["stat_points_spent"] = 0
 		characters[char_id]["growth_migration_v2"] = true

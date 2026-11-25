@@ -1,5 +1,10 @@
 extends Node3D
 
+const NPC_CASTLE_GUARD: PackedScene = preload("res://assets/npc/castle_guard_01.fbx")
+const NPC_INNKEEPER: PackedScene = preload("res://assets/npc/Medea By M. Arrebola.fbx")
+const NPC_SKILL_MERCHANT: PackedScene = preload("res://assets/npc/Peasant Girl.fbx")
+const NPC_BLACKSMITH: PackedScene = preload("res://assets/npc/Peasant Man.fbx")
+
 @onready var player: PlayerCharacter = $Player
 @onready var battle_portal: Area3D = $BattlePortal
 @onready var battle_prep_ui = $BattlePreparationUI
@@ -38,7 +43,12 @@ func _ready():
 			cam.fov = 60.0
 			cam.call("snap_to_target")
 	
-	_build_village_environment()
+	if not SceneTransition.is_transitioning:
+		_build_village_environment()
+
+func prepare_transition(report_progress: Callable) -> void:
+	await report_progress.call(77.0, "마을 지형 만드는 중…")
+	await _build_village_environment(report_progress)
 
 func _on_battle_requested():
 	if is_auto_moving():
@@ -129,8 +139,6 @@ func _interact(entry: Dictionary):
 	match id:
 		"battle_start":
 			battle_prep_ui.call("open", GameData.current_selected_stage_id)
-		"card_dungeon":
-			GameManager.go_to_deck_builder()
 		"forge":
 			_open_hud_screen("forge")
 		"shop":
@@ -236,7 +244,6 @@ func start_auto_move_to(interaction_id: String) -> bool:
 		"shop", "inn": approach += Vector3(-6, 0, 0)
 		"quest": approach += Vector3(0, 0, 2)
 		"battle_start": approach += Vector3(0, 0, 3)
-		"card_dungeon": approach += Vector3(0, 0, -3)
 	var route := _auto_move_route(approach)
 	if route.is_empty():
 		return false
@@ -324,8 +331,8 @@ func _process_auto_move(delta: float):
 	target_delta.y = 0.0
 	player.set_auto_move_direction(target_delta.normalized())
 
-func _build_village_environment() -> void:
-	environment.build(battle_portal.position)
+func _build_village_environment(report_progress: Callable = Callable()) -> void:
+	await environment.build(battle_portal.position, report_progress)
 	battle_portal.get_node("PortalGate").hide()
 	battle_portal.get_node("SignPost").hide()
 	environment.decorate_portal(battle_portal, "서바이벌 던전", Color(0.23, 0.7, 1.0))
@@ -333,10 +340,11 @@ func _build_village_environment() -> void:
 
 	_register_interactable(environment.destinations["forge"], "forge", "대장간 이용하기", 8.0)
 	_register_interactable(environment.destinations["shop"], "shop", "스킬 상점 열기", 8.0)
-	_register_interactable(environment.destinations["inn"], "inn", "여관에서 영구 강화하기", 8.0)
+	_register_interactable(environment.destinations["inn"], "inn", "여관에서 골드로 경험치 구매", 8.0)
 	_register_interactable(environment.destinations["quest"], "quest", "게시판 보기", 4.5)
-	_create_card_dungeon_portal()
-	_spawn_npcs()
+	if report_progress.is_valid():
+		await report_progress.call(91.0, "마을 주민 준비 중…")
+	await _spawn_npcs(report_progress)
 
 func get_village_landmarks() -> Dictionary:
 	var pins := {}
@@ -346,33 +354,9 @@ func get_village_landmarks() -> Dictionary:
 			pins[id] = entry["node"].global_position
 	return pins
 
-func _create_card_dungeon_portal() -> void:
-	var portal := Area3D.new()
-	portal.name = "CardDungeonPortal"
-	portal.position = environment.CARD_GATE
-	portal.collision_layer = 32
-	portal.collision_mask = 1
-	var collision := CollisionShape3D.new()
-	collision.name = "CollisionShape3D"
-	var shape := BoxShape3D.new()
-	shape.size = Vector3(5.0, 4.0, 1.6)
-	collision.shape = shape
-	collision.position.y = 2.0
-	portal.add_child(collision)
-	portal.body_entered.connect(_on_card_portal_body_entered)
-	add_child(portal)
-	environment.decorate_portal(portal, "카드 덱 던전", Color(0.78, 0.43, 1.0))
-	_register_interactable(portal, "card_dungeon", "카드 덱 던전 입장", 6.0)
-
-func _on_card_portal_body_entered(body: Node3D) -> void:
-	if body.is_in_group("player") and GameManager.current_location == GameManager.Location.LOBBY:
-		if is_auto_moving():
-			cancel_auto_move()
-		GameManager.go_to_deck_builder()
-
 # ----------------- NPCS -----------------
 
-func _spawn_npcs():
+func _spawn_npcs(report_progress: Callable):
 	var npc_scene = load("res://scenes/npc/village_npc.tscn")
 	if not npc_scene:
 		return
@@ -386,33 +370,58 @@ func _spawn_npcs():
 	bs.npc_name = "헤파이스토"
 	bs.npc_role = "대장장이"
 	bs.outfit_color = Color(0.6, 0.35, 0.15)
+	bs.model_scene = NPC_BLACKSMITH
+	bs.idle_source_clip = &"Weight_Shift"
+	bs.model_ground_offset = 0.02
+	bs.model_scale = Vector3.ONE * 1.28
 	bs.position = Vector3(-12.35, 0, -1.5)
 	npc_root.add_child(bs)
 	_register_interactable(bs, "npc_blacksmith", "헤파이스토와 대화하기", 3.8)
+	if report_progress.is_valid():
+		await report_progress.call(92.0, "스킬 상점 준비 중…")
 	
 	# 2. Skill Merchant
 	var shop = npc_scene.instantiate()
 	shop.npc_name = "마커스"
 	shop.npc_role = "스킬 상인"
 	shop.outfit_color = Color(0.25, 0.35, 0.65)
+	shop.model_scene = NPC_SKILL_MERCHANT
+	shop.idle_source_clip = &"Standing_Idle_01"
+	shop.model_ground_offset = 0.05
+	shop.model_scale = Vector3.ONE * 1.5625
+	shop.overhead_offset = 1.25
 	shop.position = Vector3(12.35, 0, -1.5)
 	npc_root.add_child(shop)
 	_register_interactable(shop, "npc_merchant", "스킬 상점 열기", 3.8)
+	if report_progress.is_valid():
+		await report_progress.call(93.0, "여관 준비 중…")
 	
 	# 3. Innkeeper
 	var inn = npc_scene.instantiate()
 	inn.npc_name = "엘레나"
 	inn.npc_role = "여관 주인"
 	inn.outfit_color = Color(0.65, 0.25, 0.45)
+	inn.model_scene = NPC_INNKEEPER
+	inn.model_scale = Vector3.ONE * 17.5
+	inn.idle_source_clip = &"Standing_Idle_02_Looking"
+	inn.model_ground_offset = 0.025
+	inn.overhead_offset = 1.1
 	inn.position = Vector3(12.1, 0, 15.6)
 	npc_root.add_child(inn)
-	_register_interactable(inn, "npc_innkeeper", "엘레나에게 영구 강화하기", 3.8)
+	_register_interactable(inn, "npc_innkeeper", "엘레나에게 골드로 경험치 구매", 3.8)
+	if report_progress.is_valid():
+		await report_progress.call(94.0, "던전 입구 준비 중…")
 	
 	# 4. Gate Guards
 	var guard1 = npc_scene.instantiate()
 	guard1.npc_name = "경비병 카일"
 	guard1.npc_role = "외곽 경비병"
 	guard1.outfit_color = Color(0.5, 0.55, 0.6)
+	guard1.model_scene = NPC_CASTLE_GUARD
+	guard1.idle_source_clip = &"Sword_And_Shield_Idle__c9cc660c-b96c-11e4-a802-0aaa78deedf9"
+	guard1.model_ground_offset = 0.0625
+	guard1.model_scale = Vector3.ONE * 1.5625
+	guard1.overhead_offset = 1.4
 	guard1.position = battle_portal.position + Vector3(-3.1, 0, 4)
 	npc_root.add_child(guard1)
 	_register_interactable(guard1, "npc_guard", "경비병과 대화하기", 3.8)
@@ -421,9 +430,16 @@ func _spawn_npcs():
 	guard2.npc_name = "경비병 레오"
 	guard2.npc_role = "외곽 경비병"
 	guard2.outfit_color = Color(0.5, 0.55, 0.6)
+	guard2.model_scene = NPC_CASTLE_GUARD
+	guard2.idle_source_clip = &"Sword_And_Shield_Idle__c9cc660c-b96c-11e4-a802-0aaa78deedf9"
+	guard2.model_ground_offset = 0.0625
+	guard2.model_scale = Vector3.ONE * 1.5625
+	guard2.overhead_offset = 1.4
 	guard2.position = battle_portal.position + Vector3(3.1, 0, 4)
 	npc_root.add_child(guard2)
 	_register_interactable(guard2, "npc_guard", "경비병과 대화하기", 3.8)
+	if report_progress.is_valid():
+		await report_progress.call(97.0, "마을 주민 배치 중…")
 	
 	# 5. Wandering Villagers (Patrolling)
 	var v1 = npc_scene.instantiate()

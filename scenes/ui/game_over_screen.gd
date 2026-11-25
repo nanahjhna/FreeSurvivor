@@ -94,7 +94,7 @@ func _render_result(result: Dictionary) -> void:
 	body.add_child(UiStyle.plaque("획득 보상", Color("#283a67"), Color("#cfb679"), Color("#fff2cc"), 28))
 	var growth := int(result.get("growth_currency_earned", 0))
 	if growth > 0:
-		_stat_row(body, "성장 재화", "+%d" % growth)
+		_stat_row(body, "경험치", "+%d" % growth)
 	_add_reward_items(result)
 	if not damage.is_empty():
 		var breakdown := VBoxContainer.new()

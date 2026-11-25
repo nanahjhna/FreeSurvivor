@@ -15,6 +15,7 @@ var details: Label
 var rewards: Label
 var start_button: Button
 var stage_preview: SubViewportContainer
+var stage_preview_viewport: SubViewport
 
 
 func _ready() -> void:
@@ -50,7 +51,7 @@ func _ready() -> void:
 		var button := UiStyle.make_button(str(stage.get("name", id)), Vector2(172, 78))
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		var thumbnail := load(str(stage.get("art", ""))) as Texture2D
+		var thumbnail := load(str(stage.get("art", ""))) as Texture2D if GameData.is_stage_unlocked(str(id)) else null
 		if thumbnail:
 			button.icon = thumbnail
 			button.expand_icon = true
@@ -74,12 +75,9 @@ func _ready() -> void:
 	stage_preview.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	stage_preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stage_preview.stretch = true
-	var stage_preview_viewport := SubViewport.new()
-	stage_preview_viewport.name = "StagePreviewViewport"
-	stage_preview_viewport.own_world_3d = true
-	stage_preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	stage_preview_viewport.add_child(STAGE_PREVIEW_SCENE.instantiate())
-	stage_preview.add_child(stage_preview_viewport)
+	if OS.has_feature("android"):
+		stage_preview.stretch_shrink = 2
+		stage_preview.resized.connect(_refresh_stage_preview)
 	stage_preview.visible = false
 	hero.add_child(stage_preview)
 	art = TextureRect.new()
@@ -128,6 +126,12 @@ func _ready() -> void:
 	layout.add_child(start_button)
 
 
+func _refresh_stage_preview() -> void:
+	if stage_preview_viewport != null and visible and stage_preview.is_visible_in_tree():
+		var mode := SubViewport.UPDATE_ONCE if OS.has_feature("android") else SubViewport.UPDATE_WHEN_VISIBLE
+		stage_preview_viewport.render_target_update_mode = mode
+
+
 func _paragraph(parent: Control) -> Label:
 	var label := UiStyle.make_label("", 21)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -144,6 +148,9 @@ func open(stage_id: String = "") -> void:
 
 
 func close() -> void:
+	stage_preview.hide()
+	if stage_preview_viewport != null:
+		stage_preview_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	hide()
 	get_tree().paused = false
 	closed.emit()
@@ -153,35 +160,57 @@ func _select_stage(stage_id: String) -> void:
 	current_stage_id = stage_id
 	var stage: Dictionary = GameData.stages[stage_id]
 	var unlocked := GameData.is_stage_unlocked(stage_id)
-	var art_path := str(stage.get("art", ""))
-	var selected_art := load(art_path) as Texture2D if not art_path.is_empty() else null
-	art.texture = GATE_ART if selected_art == null else selected_art
-	var has_live_preview := not str(stage.get("preview_scene", "")).is_empty()
-	stage_preview.visible = has_live_preview
-	art.visible = not has_live_preview
-	stage_name.text = str(stage.get("name", stage_id))
-	chapter.text = "%s  ·  %s" % [stage.get("chapter", ""), stage.get("difficulty", "")]
-	details.text = "무한 생존  ·  첫 보스 %s\n등장 적  %s\n처치 골드  ·  포탈 귀환 100%% / 사망 50%%" % [
-		UiStyle.format_time(GameManager.FIRST_BOSS_TIME), ", ".join(stage.get("monster_types", []))
-	]
-	rewards.text = "보스 처치 → 장비 획득"
-	var best := GameData.get_stage_best_survival(stage_id)
-	record.text = "%s  ·  던전 최고 기록 %s" % [
-		"클리어" if stage.get("cleared", false) else "미클리어",
-		UiStyle.format_time(best) if best > 0.0 else "—"
-	]
-	start_button.disabled = not unlocked
-	start_button.text = "던전 입장" if unlocked else GameData.get_stage_lock_reason(stage_id)
-	if unlocked:
+	if not unlocked:
+		stage_preview.visible = false
+		art.visible = false
+		chapter.text = ""
+		stage_name.text = "업데이트 예정"
+		details.text = ""
+		rewards.text = ""
+		record.text = ""
+		start_button.disabled = true
+		start_button.text = "업데이트 예정"
+	else:
+		var art_path := str(stage.get("art", ""))
+		var selected_art := load(art_path) as Texture2D if not art_path.is_empty() else null
+		art.texture = GATE_ART if selected_art == null else selected_art
+		var has_live_preview := not str(stage.get("preview_scene", "")).is_empty()
+		if has_live_preview and stage_preview_viewport == null:
+			stage_preview_viewport = SubViewport.new()
+			stage_preview_viewport.name = "StagePreviewViewport"
+			stage_preview_viewport.own_world_3d = true
+			stage_preview_viewport.add_child(STAGE_PREVIEW_SCENE.instantiate())
+			stage_preview.add_child(stage_preview_viewport)
+		stage_preview.visible = has_live_preview
+		if stage_preview_viewport != null:
+			stage_preview_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			_refresh_stage_preview()
+		art.visible = not has_live_preview
+		stage_name.text = str(stage.get("name", stage_id))
+		chapter.text = "%s  ·  %s" % [stage.get("chapter", ""), stage.get("difficulty", "")]
+		details.text = "무한 생존  ·  첫 보스 %s\n등장 적  %s\n처치 골드  ·  포탈 귀환 100%% / 사망 50%%" % [
+			UiStyle.format_time(GameManager.FIRST_BOSS_TIME), ", ".join(stage.get("monster_types", []))
+		]
+		rewards.text = "보스 처치 시 보상 장비 획득"
+		var best := GameData.get_stage_best_survival(stage_id)
+		record.text = "%s  ·  던전 최고 기록 %s" % [
+			"클리어" if stage.get("cleared", false) else "미클리어",
+			UiStyle.format_time(best) if best > 0.0 else "—"
+		]
+		start_button.disabled = false
+		start_button.text = "던전 입장"
 		GameData.current_selected_stage_id = stage_id
 	for id in stage_buttons:
 		var button: Button = stage_buttons[id]
 		var entry: Dictionary = GameData.stages[id]
-		button.text = str(entry.get("name", id))
 		if not GameData.is_stage_unlocked(id):
-			button.text = "잠김  ·  " + button.text
-			button.tooltip_text = GameData.get_stage_lock_reason(id)
+			button.text = "업데이트 예정"
+			button.icon = null
+			button.tooltip_text = "업데이트 예정인 스테이지입니다."
 		else:
+			button.text = str(entry.get("name", id))
+			var thumbnail := load(str(entry.get("art", ""))) as Texture2D
+			button.icon = thumbnail
 			button.tooltip_text = ""
 		var chosen: bool = id == stage_id
 		UiStyle.skin_button(button, Color("#8a5636") if chosen else Color("#3f312e"), UiStyle.AMBER if chosen else Color("#806455"))

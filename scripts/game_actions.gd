@@ -27,11 +27,6 @@ const ACTIONS := {
 		"context": "lobby", "rebindable": true,
 		"desc": "캐릭터의 전투 스킬을 확인하고 강화합니다."
 	},
-	"card_deck": {
-		"label": "카드/덱", "icon": "🃏", "key": KEY_D, "input_action": "menu_card_deck",
-		"context": "lobby", "rebindable": true,
-		"desc": "보유 카드를 확인하고 12장 덱을 편성한 뒤 카드 던전에 입장합니다."
-	},
 	"quest": {
 		"label": "퀘스트", "icon": "📜", "key": KEY_J, "input_action": "menu_quest",
 		"context": "lobby", "rebindable": true,

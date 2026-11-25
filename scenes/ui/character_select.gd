@@ -32,7 +32,6 @@ var detail_progress: Label
 var detail_progress_block: VBoxContainer
 var feedback_label: Label
 var delete_button: Button
-var enter_button: Button
 var new_character_button: Button
 var delete_dialog: ConfirmationDialog
 var create_button: Button
@@ -62,7 +61,7 @@ func _ready():
 func _show_selection(preferred_id: String = ""):
 	screen_mode = ScreenMode.SELECT
 	_clear_screen()
-	var layout := _build_shell("캐릭터 선택", "← 타이틀", GameManager.go_to_title)
+	var layout := _build_shell("", "타이틀", GameManager.go_to_title)
 	var body := _new_body(layout)
 
 	if _is_portrait_layout():
@@ -84,29 +83,11 @@ func _show_selection(preferred_id: String = ""):
 		_build_preview(_make_section(body, 560, "선택한 캐릭터 · 드래그하여 회전"))
 		var info_section := _make_section(body, 430, "캐릭터 정보")
 		_build_detail_panel(info_section)
-		enter_button = UiStyle.make_button("⚔️ 게임 시작", Vector2(0, 50), true)
-		enter_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		enter_button.add_theme_font_size_override("font_size", 18)
-		enter_button.tooltip_text = "선택한 캐릭터로 게임에 입장합니다. [Enter]"
-		enter_button.pressed.connect(_enter_selected_character)
-		info_section.add_child(enter_button)
 		new_character_button = _create_new_character_button()
 		info_section.add_child(new_character_button)
 		delete_button = _create_delete_button()
 		info_section.add_child(delete_button)
 
-	if _is_portrait_layout():
-		var action_bar := HBoxContainer.new()
-		action_bar.add_theme_constant_override("separation", 10)
-		layout.add_child(action_bar)
-		enter_button = UiStyle.make_button("⚔️ 게임 시작", Vector2(0, 56), true)
-		enter_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		enter_button.add_theme_font_size_override("font_size", 20)
-		enter_button.tooltip_text = "선택한 캐릭터로 게임에 입장합니다."
-		enter_button.pressed.connect(_enter_selected_character)
-		action_bar.add_child(enter_button)
-
-	UiStyle.skin_button(enter_button, Color("#68451e"), UiStyle.AMBER)
 	feedback_label = _add_feedback(layout, "")
 
 	delete_dialog = ConfirmationDialog.new()
@@ -132,13 +113,13 @@ func _show_creation(slot_index: int):
 		return
 	screen_mode = ScreenMode.CREATE
 	creation_slot = slot_index
+	selected_class_id = ""
 	for character in CharacterRegistry.all():
-		var id := character.legacy_id if not character.legacy_id.is_empty() else character.id
-		if bool(GameData.get_class_template_data(id).get("unlocked", false)):
-			selected_class_id = id
+		if GameData.get_character_class_error(character.id).is_empty():
+			selected_class_id = character.id
 			break
 	_clear_screen()
-	var layout := _build_shell("캐릭터 생성", "‹ 뒤로", _show_selection)
+	var layout := _build_shell("캐릭터 생성", "뒤로", _show_selection)
 	var body := _new_body(layout)
 
 	if _is_portrait_layout():
@@ -163,7 +144,11 @@ func _show_creation(slot_index: int):
 
 	feedback_label = _add_feedback(layout, "")
 	_populate_classes()
-	_select_class(selected_class_id)
+	if selected_class_id.is_empty():
+		_update_create_button()
+		feedback_label.text = "생성 가능한 직업을 불러올 수 없습니다."
+	else:
+		_select_class(selected_class_id)
 
 func _build_creation_roster(section: VBoxContainer) -> void:
 	if _is_portrait_layout():
@@ -185,13 +170,13 @@ func _clear_screen():
 	preview_visual = null
 	preview_viewport = null
 	preview_container = null
-	enter_button = null
 	new_character_button = null
 	delete_button = null
 	create_button = null
 	_dragging = false
 	if is_instance_valid(screen_root):
-		screen_root.free()
+		remove_child(screen_root)
+		screen_root.queue_free()
 
 
 func _build_shell(title_text: String, back_text: String, back_action: Callable) -> VBoxContainer:
@@ -225,16 +210,18 @@ func _build_shell(title_text: String, back_text: String, back_action: Callable) 
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 12)
 	layout.add_child(header)
-	var title := UiStyle.make_title(title_text, 32)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	header.add_child(title)
+	if not title_text.is_empty():
+		var title := UiStyle.make_title(title_text, 32)
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		header.add_child(title)
 	var back := UiStyle.make_button(back_text, Vector2(96, 52))
 	UiStyle.skin_button(back, Color("#201b23"), Color("#9b7757"))
 	back.tooltip_text = "이전 화면으로 돌아갑니다. [Esc]"
 	back.pressed.connect(back_action)
 	header.add_child(back)
 	header.move_child(back, 0)
-	UiStyle.divider(layout)
+	if not title_text.is_empty():
+		UiStyle.divider(layout)
 	return layout
 
 
@@ -318,6 +305,9 @@ func _build_detail_panel(panel: VBoxContainer):
 	detail_stats_grid.columns = 3
 	var equipment_row := HBoxContainer.new()
 	equipment_row.add_theme_constant_override("separation", 12)
+	# Equipment text is intentionally hidden on the character selection screen;
+	# equipment is managed from the village equipment menu.
+	equipment_row.visible = false
 	panel.add_child(equipment_row)
 	detail_equipment_row = equipment_row
 	var detail_equipment_weapon := UiStyle.make_label("", 14, Color(1.0, 0.84, 0.42))
@@ -344,16 +334,14 @@ func _populate_stat_grid(stats: StatManager, class_id: String) -> void:
 		detail_stats_grid.remove_child(child)
 		child.queue_free()
 	detail_stat_cells.clear()
+	var defaults := StatManager.get_default_stats(class_id, GameData.get_class_template_data(class_id))
 	var stat_cell_texts: Array = [
-		"STR %d" % stats.get_stat("STR"),
-		"AGI %d" % stats.get_stat("AGI"),
-		"VIT %d" % stats.get_stat("VIT"),
-		"INT %d" % stats.get_stat("INT"),
-		"DEX %d" % stats.get_stat("DEX"),
-		"LUK %d" % stats.get_stat("LUK"),
-		"HP %d" % stats.max_hp(),
-		"공격 %.1f" % stats.phys_atk(),
-		"방어 %.1f" % stats.phys_def(),
+		"STR Lv.%d" % maxi(1, stats.get_stat("STR") - int(defaults.get("STR", 1)) + 1),
+		"AGI Lv.%d" % maxi(1, stats.get_stat("AGI") - int(defaults.get("AGI", 1)) + 1),
+		"VIT Lv.%d" % maxi(1, stats.get_stat("VIT") - int(defaults.get("VIT", 1)) + 1),
+		"INT Lv.%d" % maxi(1, stats.get_stat("INT") - int(defaults.get("INT", 1)) + 1),
+		"DEX Lv.%d" % maxi(1, stats.get_stat("DEX") - int(defaults.get("DEX", 1)) + 1),
+		"LUK Lv.%d" % maxi(1, stats.get_stat("LUK") - int(defaults.get("LUK", 1)) + 1),
 	]
 	for text_value in stat_cell_texts:
 		var stat_cell := Label.new()
@@ -387,7 +375,7 @@ func _populate_slots():
 			continue
 		var class_data := GameData.get_profile_class_data(profile)
 		var id := str(profile.get("id", ""))
-		var caption := "%s  %s\n%s" % [class_data.get("icon", "⚔"), profile.get("name", ""), class_data.get("role", "")]
+		var caption := "%s\n%s" % [class_data.get("icon", "⚔"), class_data.get("role", "")]
 		var button := UiStyle.make_button(caption, Vector2(144, 85), id == selected_character_id)
 		button.add_theme_font_size_override("font_size", 18)
 		button.pressed.connect(_on_slot_pressed.bind(index))
@@ -405,8 +393,11 @@ func _on_slot_pressed(index: int):
 	selected_character_id = id
 	if not GameData.select_character_profile(id):
 		feedback_label.text = "캐릭터 선택을 저장하지 못했습니다."
+		return
 	_populate_slots()
 	_update_selected_profile()
+	if feedback_label:
+		feedback_label.text = "선택한 캐릭터를 다시 누르면 마을에 입장합니다."
 
 
 func _update_selected_profile():
@@ -414,12 +405,6 @@ func _update_selected_profile():
 	var exists := not profile.is_empty()
 	if is_instance_valid(delete_button):
 		delete_button.disabled = not exists
-	if is_instance_valid(enter_button):
-		enter_button.disabled = not exists
-		if exists:
-			enter_button.text = "마을 입장"
-		else:
-			enter_button.text = "캐릭터를 선택하세요"
 	if not exists:
 		detail_name.text = "저장된 캐릭터 없음"
 		detail_subtitle.text = "새 캐릭터를 생성하세요."
@@ -442,9 +427,9 @@ func _update_selected_profile():
 	detail_subtitle.text = "Lv.%d" % int(saved.get("level", 1))
 	_populate_stat_grid(stats, class_id)
 	var equipment := _get_profile_equipment(profile)
-	detail_equipment_cells[0].text = "무기  %s" % str(equipment.weapon)
-	detail_equipment_cells[1].text = "방어구  %s" % str(equipment.armor)
-	detail_equipment_cells[2].text = "대표 스킬  %s" % str(class_data.get("signature_skill", ""))
+	detail_equipment_cells[0].text = str(equipment.weapon)
+	detail_equipment_cells[1].text = str(equipment.armor)
+	detail_equipment_cells[2].text = str(class_data.get("signature_skill", ""))
 	if _is_portrait_layout():
 		detail_progress.text = _passive_text(class_id)
 	else:
@@ -553,18 +538,18 @@ func _populate_classes():
 	for child in class_list.get_children():
 		child.queue_free()
 	for data in CharacterRegistry.all():
-		var class_id := data.legacy_id if not data.legacy_id.is_empty() else data.id
+		var class_id := data.id
 		var character := GameData.get_class_template_data(class_id)
-		var unlocked := bool(character.get("unlocked", false))
+		var class_error := GameData.get_character_class_error(class_id)
 		var button := UiStyle.make_button("%s\n%s" % [character.get("icon", "⚔"), character.get("role", class_id)], Vector2(118, 92))
 		button.add_theme_font_size_override("font_size", 22)
-		button.disabled = not unlocked
-		if not unlocked:
+		button.disabled = not class_error.is_empty()
+		if button.disabled:
 			button.text += " · 잠김"
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.toggle_mode = true
 		button.focus_mode = Control.FOCUS_ALL
-		button.tooltip_text = str(character.get("desc", ""))
+		button.tooltip_text = class_error if button.disabled else str(character.get("desc", ""))
 		button.set_meta("class_id", class_id)
 		button.pressed.connect(_select_class.bind(class_id))
 		class_list.add_child(button)
@@ -583,10 +568,10 @@ func _select_class(class_id: String):
 	var weapon_name := str(character.get("weapon_name", CLASS_WEAPONS.get(class_id, "기본 무기")))
 	if registered_character != null and registered_character.weapon_scene != null:
 		weapon_name = registered_character.weapon_name
-	detail_equipment_cells[0].text = "대표 무기  %s" % weapon_name
-	detail_equipment_cells[1].text = "방어구  %s" % "없음"
-	detail_equipment_cells[2].text = "대표 스킬  %s" % str(character.get("signature_skill", ""))
-	detail_progress.text = "%s\n\n전투 스타일: %s" % [str(character.get("desc", "")), str(character.get("combat_style", CLASS_GROWTH.get(class_id, "균형 성장")))]
+	detail_equipment_cells[0].text = weapon_name
+	detail_equipment_cells[1].text = "없음"
+	detail_equipment_cells[2].text = str(character.get("signature_skill", ""))
+	detail_progress.text = str(character.get("desc", ""))
 	for child in class_list.get_children():
 		if child is Button:
 			var is_selected := str(child.get_meta("class_id", "")) == class_id
@@ -599,14 +584,22 @@ func _select_class(class_id: String):
 func _update_create_button():
 	if not is_instance_valid(create_button):
 		return
+	var creation_error := GameData.get_character_creation_error(creation_slot, selected_class_id)
+	create_button.disabled = not creation_error.is_empty()
+	if create_button.disabled:
+		create_button.tooltip_text = creation_error
+		return
 	var character_template := GameData.get_class_template_data(selected_class_id)
 	var job_name := str(character_template.get("name", character_template.get("role", "무도가")))
 	create_button.text = "⚔️ '%s' 캐릭터 생성" % job_name
-	create_button.disabled = false
 	create_button.tooltip_text = "'%s' 캐릭터를 생성합니다." % job_name
 
 
 func _create_character():
+	var creation_error := GameData.get_character_creation_error(creation_slot, selected_class_id)
+	if not creation_error.is_empty():
+		feedback_label.text = creation_error
+		return
 	var character_template := GameData.get_class_template_data(selected_class_id)
 	var job_name := str(character_template.get("name", character_template.get("role", "무도가")))
 	var new_id := GameData.create_character_profile(creation_slot, selected_class_id, job_name)
@@ -623,12 +616,15 @@ func _create_character():
 func _build_preview(parent: VBoxContainer):
 	preview_zoom = 1.0
 	preview_container = SubViewportContainer.new()
-	var preview_height := clampf(get_viewport_rect().size.y * 0.40, 300.0, 650.0) if _is_portrait_layout() else 570.0
-	var preview_width := minf(get_viewport_rect().size.x * 0.53 - 16.0, 352.0) if _is_portrait_layout() else 550.0
+	var portrait_preview_side := clampf(get_viewport_rect().size.x * 0.64, 240.0, 340.0)
+	var preview_height := portrait_preview_side if _is_portrait_layout() else 570.0
+	var preview_width := portrait_preview_side if _is_portrait_layout() else 550.0
 	preview_container.custom_minimum_size = Vector2(preview_width, preview_height)
 	preview_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	preview_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	preview_container.stretch = true
+	if OS.has_feature("android"):
+		preview_container.stretch_shrink = 2
 	preview_container.mouse_filter = Control.MOUSE_FILTER_STOP
 	preview_container.gui_input.connect(_on_preview_input)
 	var preview_frame := PanelContainer.new()
@@ -636,12 +632,22 @@ func _build_preview(parent: VBoxContainer):
 	preview_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	preview_frame.add_theme_stylebox_override("panel", UiStyle.frame(Color("#171823"), Color("#6c523c"), 9, 2))
 	parent.add_child(preview_frame)
-	preview_frame.add_child(preview_container)
+	var preview_stack := Control.new()
+	preview_stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	preview_frame.add_child(preview_stack)
+	preview_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	preview_stack.add_child(preview_container)
+	var zoom_box := PanelContainer.new()
+	zoom_box.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	zoom_box.offset_left = -156.0
+	zoom_box.offset_top = -52.0
+	zoom_box.offset_right = -8.0
+	zoom_box.offset_bottom = -8.0
+	zoom_box.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.04, 0.04, 0.07, 0.86), Color("#8d7354"), 1))
+	preview_stack.add_child(zoom_box)
 	var zoom_row := HBoxContainer.new()
-	zoom_row.alignment = BoxContainer.ALIGNMENT_END
-	zoom_row.add_theme_constant_override("separation", 6)
-	parent.add_child(zoom_row)
-	zoom_row.add_child(UiStyle.make_label("드래그하여 회전", 15, UiStyle.MUTED))
+	zoom_row.add_theme_constant_override("separation", 4)
+	zoom_box.add_child(zoom_row)
 	var zoom_out := UiStyle.make_button("−", Vector2(42, 38))
 	zoom_out.tooltip_text = "캐릭터 미리보기 축소"
 	zoom_out.pressed.connect(_adjust_preview_zoom.bind(1.0 + PREVIEW_ZOOM_STEP))
@@ -657,7 +663,7 @@ func _build_preview(parent: VBoxContainer):
 	preview_viewport = SubViewport.new()
 	preview_viewport.own_world_3d = true
 	preview_viewport.size = Vector2i(int(preview_width), int(preview_height))
-	preview_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	preview_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	preview_container.add_child(preview_viewport)
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR

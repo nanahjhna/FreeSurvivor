@@ -13,7 +13,7 @@ config_version=5
 config/name="FreeSurvivor"
 run/main_scene="res://scenes/ui/title_screen.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
-config/icon="res://icon.svg"
+config/icon="res://assets/ui/app_icon.png"
 
 [autoload]
 
@@ -37,7 +37,10 @@ window/size/window_width_override=450
 window/size/window_height_override=800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/handheld/orientation=1
+# Sensor mode avoids declaring android.hardware.screen.portrait as a required
+# device feature in Google Play. The UI already switches between portrait and
+# landscape layouts based on the viewport aspect ratio.
+window/handheld/orientation=6
 
 [filesystem]
 
@@ -61,3 +64,5 @@ import/blender/enabled=false
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="mobile"
 textures/vram_compression/import_etc2_astc=true
+scaling_3d/scale.android=0.8
+lights_and_shadows/directional_shadow/size.android=1024

@@ -97,8 +97,9 @@ func _can_start_touch(viewport_position: Vector2) -> bool:
 	if not _floating_mode:
 		return _base_contains(viewport_position)
 	if not use_combat_layout:
-		var zone := Rect2(_touch_bounds.position, Vector2(_touch_bounds.size.x * 0.58, _touch_bounds.size.y))
-		return zone.has_point(viewport_position)
+		# In the village the whole safe screen is a movement surface. The stick
+		# follows the initial touch, so it can also be created on the right side.
+		return _touch_bounds.has_point(viewport_position)
 	# Keep movement on the left side, where no combat/action buttons are placed.
 	var top := _touch_bounds.size.y * 0.34
 	var left_control_area := Rect2(
@@ -141,7 +142,7 @@ func _update_visual() -> void:
 	_knob.add_theme_stylebox_override("panel", _knob_active_style if _move_vector.length_squared() > 0.0 else _knob_idle_style)
 
 
-func _input(event: InputEvent) -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
@@ -185,7 +186,9 @@ func _process(_delta: float) -> void:
 		_mouse_pressed = false
 		_move_vector = Vector2.ZERO
 		_reset_visual()
-	_base.visible = not get_tree().paused and (use_combat_layout or not _floating_mode or _active_touch_id >= 0)
+	# Keep the mobile stick visible as a visual affordance even before the first
+	# touch. On touch, floating mode still moves it to the finger position.
+	_base.visible = not get_tree().paused
 	if not is_instance_valid(_player):
 		_player = get_tree().get_first_node_in_group("player") as PlayerCharacter
 		if _player == null:

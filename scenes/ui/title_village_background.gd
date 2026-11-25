@@ -5,14 +5,18 @@ const VILLAGE_ENVIRONMENT_SCRIPT := preload("res://scenes/stages/village_environ
 const GROUND_SHADER := preload("res://scenes/stages/village_ground.gdshader")
 
 var _viewport: SubViewport
+var _village_map: Node3D
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stretch = true
+	var android := OS.has_feature("android")
+	if android:
+		stretch_shrink = 2
 	_viewport = SubViewport.new()
 	_viewport.name = "VillageTitleViewport"
 	_viewport.own_world_3d = true
-	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	_viewport.transparent_bg = false
 	add_child(_viewport)
 
@@ -24,6 +28,14 @@ func _ready() -> void:
 	_create_village_map(world)
 	_create_lighting(world)
 	_create_camera(world)
+	if android:
+		resized.connect(_refresh_background)
+		visibility_changed.connect(_refresh_background)
+		_refresh_background()
+
+func _refresh_background() -> void:
+	if is_visible_in_tree():
+		_viewport.set_deferred("render_target_update_mode", SubViewport.UPDATE_ONCE)
 
 func _create_environment(parent: Node3D) -> void:
 	var sky_material := ProceduralSkyMaterial.new()
@@ -74,8 +86,16 @@ func _create_camera(parent: Node3D) -> void:
 	camera.look_at(Vector3(0, 1.25, 1.0), Vector3.UP)
 
 func _create_village_map(parent: Node3D) -> void:
-	var environment := Node3D.new()
-	environment.name = "VillageEnvironment"
-	environment.set_script(VILLAGE_ENVIRONMENT_SCRIPT)
-	parent.add_child(environment)
-	environment.call("build", Vector3(0, 0, -38))
+	_village_map = Node3D.new()
+	_village_map.name = "VillageEnvironment"
+	_village_map.set_script(VILLAGE_ENVIRONMENT_SCRIPT)
+	_village_map.set("preview_only", true)
+	parent.add_child(_village_map)
+	if not SceneTransition.is_transitioning:
+		_village_map.call("build", Vector3(0, 0, -38))
+
+func prepare_transition(report_progress: Callable) -> void:
+	await report_progress.call(77.0, "타이틀 배경 준비 중…")
+	await _village_map.call("build", Vector3(0, 0, -38), report_progress)
+	if OS.has_feature("android"):
+		_refresh_background()

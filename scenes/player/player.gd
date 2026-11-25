@@ -113,7 +113,6 @@ func _ready():
 	GameData.player_current_hp = current_hp
 	
 	emit_signal("hp_changed", current_hp, max_hp)
-	_update_head_hp_bar(current_hp, max_hp)
 	emit_signal("exp_changed", current_xp, xp_to_next_level)
 	if slash_effect:
 		slash_effect.visible = false
@@ -136,11 +135,6 @@ func _physics_process(delta: float):
 	
 	if is_combat_enabled:
 		_handle_auto_attack(delta)
-
-func _process(_delta: float) -> void:
-	# Keep the world-space indicator in lockstep even if a system updates HP
-	# without emitting the usual signal.
-	_update_head_hp_bar(current_hp, max_hp)
 
 func set_touch_move(value: Vector2):
 	touch_move_vector = value.limit_length(1.0)
@@ -454,9 +448,6 @@ func set_first_person_mode(enabled: bool) -> void:
 func set_head_hp_bar_visible(enabled: bool) -> void:
 	_head_hp_bar_enabled = enabled
 	_update_head_hp_bar(current_hp, max_hp)
-
-func sync_head_hp_bar(current: float, maximum: float) -> void:
-	_update_head_hp_bar(current, maximum)
 
 func _create_head_hp_bar() -> void:
 	var bar_root := Node3D.new()
