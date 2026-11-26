@@ -16,6 +16,7 @@ var rewards: Label
 var start_button: Button
 var stage_preview: SubViewportContainer
 var stage_preview_viewport: SubViewport
+var hero_container: Control
 
 
 func _ready() -> void:
@@ -62,13 +63,17 @@ func _ready() -> void:
 		tabs.add_child(button)
 		stage_buttons[id] = button
 
-	var body := UiStyle.scroll_column(layout)
+	var body := VBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 8)
+	layout.add_child(body)
 	var reward_plate := UiStyle.plaque("", Color("#493020"), Color("#a37846"), UiStyle.AMBER, 20)
 	body.add_child(reward_plate)
 	rewards = reward_plate.get_child(0) as Label
 	rewards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var hero := Control.new()
-	hero.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.49, 300, 730)
+	hero_container = hero
+	hero.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.28, 210, 460)
 	hero.clip_contents = true
 	body.add_child(hero)
 	stage_preview = SubViewportContainer.new()
@@ -118,12 +123,14 @@ func _ready() -> void:
 	details = _paragraph(body)
 	UiStyle.divider(body)
 	record = _paragraph(body)
-	start_button = UiStyle.make_button("던전 입장", Vector2(280, 74), true)
+	start_button = UiStyle.make_button("던전 입장", Vector2(280, 58), true)
 	start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	UiStyle.skin_button(start_button, Color("#913c33"), Color("#edaf70"))
-	start_button.add_theme_font_size_override("font_size", 25)
+	start_button.add_theme_font_size_override("font_size", 21)
 	start_button.pressed.connect(_on_start_battle_pressed)
 	layout.add_child(start_button)
+	get_viewport().size_changed.connect(_fit_layout)
+	_fit_layout()
 
 
 func _refresh_stage_preview() -> void:
@@ -133,11 +140,22 @@ func _refresh_stage_preview() -> void:
 
 
 func _paragraph(parent: Control) -> Label:
-	var label := UiStyle.make_label("", 21)
+	var compact := get_viewport().get_visible_rect().size.x < 600.0
+	var label := UiStyle.make_label("", 16 if compact else 19)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.add_theme_constant_override("line_spacing", 6)
+	label.add_theme_constant_override("line_spacing", 3 if compact else 5)
 	parent.add_child(label)
 	return label
+
+
+func _fit_layout() -> void:
+	if hero_container == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var compact := viewport_size.x < 600.0
+	hero_container.custom_minimum_size.y = clampf(viewport_size.y * (0.24 if compact else 0.28), 190.0, 460.0)
+	if stage_name:
+		stage_name.add_theme_font_size_override("font_size", 27 if compact else 32)
 
 
 func open(stage_id: String = "") -> void:

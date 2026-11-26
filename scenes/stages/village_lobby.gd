@@ -34,12 +34,22 @@ func _ready():
 			player.call("set_first_person_mode", false)
 		var cam := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 		if cam:
-			cam.set("quarter_view_enabled", true)
+			# The village uses a close over-the-shoulder view. Combat scenes
+			# explicitly restore the existing quarter-view camera.
+			cam.set("quarter_view_enabled", false)
 			cam.set("quarter_distance", GameData.camera_distance)
 			cam.set("quarter_elevation_degrees", GameData.camera_elevation_degrees)
 			cam.set("quarter_azimuth_degrees", GameData.camera_azimuth_degrees)
-			cam.set("back_view_enabled", false)
+			cam.set("back_view_enabled", true)
+			cam.set("back_distance", 4.6)
+			cam.set("back_elevation_degrees", 28.0)
+			cam.set("back_yaw_offset_degrees", 0.0)
+			cam.set("back_look_height", 1.55)
+			cam.set("back_look_ahead", 0.28)
 			cam.set("first_person_enabled", false)
+			cam.set("first_person_eye_height", 2.15)
+			cam.set("first_person_forward_offset", 0.32)
+			cam.set("first_person_fov", 72.0)
 			cam.fov = 60.0
 			cam.call("snap_to_target")
 	

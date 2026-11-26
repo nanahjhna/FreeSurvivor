@@ -287,6 +287,8 @@ func _on_viewport_resized() -> void:
 
 func _layout_battle_hud() -> void:
 	var safe := UiStyle.safe_insets(get_viewport())
+	var screen := get_viewport().get_visible_rect().size
+	var compact := screen.x < 600.0
 	top_status_panel.offset_left = 22 + safe.x
 	top_status_panel.offset_right = -22 - safe.z
 	top_status_panel.offset_top = 14 + safe.y
@@ -295,10 +297,24 @@ func _layout_battle_hud() -> void:
 	bottom_stats_panel.offset_right = -22 - safe.z
 	bottom_stats_panel.offset_top = 36 + safe.y
 	bottom_stats_panel.offset_bottom = 91 + safe.y
-	action_dock.offset_left = -228
-	action_dock.offset_right = 228
-	action_dock.offset_top = -179 - safe.w
-	action_dock.offset_bottom = -24 - safe.w
+	var visible_skill_count := 0
+	for skill_panel in _skill_panels.values():
+		if (skill_panel as Control).visible:
+			visible_skill_count += 1
+	var dock_width := clampf(screen.x - safe.x - safe.z - 24.0, 260.0, 520.0)
+	var skill_gap := 4.0 if compact else 8.0
+	var slot_width := clampf((dock_width - maxf(0.0, float(visible_skill_count - 1)) * skill_gap) / maxf(1.0, float(visible_skill_count)), 54.0, 87.0)
+	var slot_height := 66.0 if compact else 83.0
+	var skill_list := action_dock.get_node_or_null("Controls/SkillList") as HBoxContainer
+	if skill_list:
+		skill_list.add_theme_constant_override("separation", int(skill_gap))
+	for skill_panel in _skill_panels.values():
+		(skill_panel as Control).custom_minimum_size = Vector2(slot_width, slot_height)
+	var dock_height := slot_height + (48.0 if not compact else 44.0) + 12.0
+	action_dock.offset_left = -dock_width * 0.5
+	action_dock.offset_right = dock_width * 0.5
+	action_dock.offset_top = -dock_height - safe.w
+	action_dock.offset_bottom = -20 - safe.w
 	encounter_strip.offset_top = 30 + safe.y
 	encounter_strip.offset_bottom = 114 + safe.y
 	$MinimapContainer.offset_top = 112 + safe.y
@@ -488,6 +504,7 @@ func _build_battle_action_bar():
 	action_dock.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(action_dock)
 	var controls := VBoxContainer.new()
+	controls.name = "Controls"
 	controls.add_theme_constant_override("separation", 12)
 	controls.alignment = BoxContainer.ALIGNMENT_END
 	controls.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -830,6 +847,8 @@ func _update_skill_availability():
 		var unlocked := GameData.is_survival_skill_unlocked(skill_id)
 		panel.visible = not skill_id.is_empty() and (slot in ["q", "w", "e", "r"] or unlocked)
 		panel.modulate = Color.WHITE if unlocked else Color(0.58, 0.59, 0.67)
+	if action_dock != null:
+		_layout_battle_hud()
 
 # ------------------------------------------------------------
 # SIGNALS / INPUT

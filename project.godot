@@ -37,10 +37,8 @@ window/size/window_width_override=450
 window/size/window_height_override=800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-# Sensor mode avoids declaring android.hardware.screen.portrait as a required
-# device feature in Google Play. The UI already switches between portrait and
-# landscape layouts based on the viewport aspect ratio.
-window/handheld/orientation=6
+# Portrait-first layout. The UI keeps safe-area margins for notches and gesture bars.
+window/handheld/orientation=1
 
 [filesystem]
 

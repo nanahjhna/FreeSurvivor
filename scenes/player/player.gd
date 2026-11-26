@@ -442,7 +442,10 @@ func _attach_character_weapon(character_id: String) -> void:
 func set_first_person_mode(enabled: bool) -> void:
 	first_person_mode = enabled
 	if character_model:
-		character_model.visible = not enabled
+		# Keep the registered character model rendered in the village so the
+		# camera can catch the forearms and equipped weapon at the bottom of the
+		# view. Combat explicitly restores the regular third-person presentation.
+		character_model.visible = true
 	_update_head_hp_bar(current_hp, max_hp)
 
 func set_head_hp_bar_visible(enabled: bool) -> void:

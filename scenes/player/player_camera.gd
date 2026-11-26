@@ -29,10 +29,11 @@ extends Camera3D
 @export_range(4.0, 12.0, 0.1) var max_back_distance: float = 8.0
 @export_range(50.0, 80.0, 1.0) var back_view_fov: float = 60.0
 
-# Temporary first-person mode, used in both town and battle.
+# First-person mode remains available for future scenes. The village uses the
+# close back/over-the-shoulder rig and combat uses the quarter-view rig.
 @export var first_person_enabled: bool = false
-@export_range(1.2, 2.0, 0.05) var first_person_eye_height: float = 1.6
-@export_range(0.0, 0.5, 0.025) var first_person_forward_offset: float = 0.12
+@export_range(1.2, 2.6, 0.05) var first_person_eye_height: float = 2.15
+@export_range(0.0, 0.8, 0.025) var first_person_forward_offset: float = 0.32
 @export_range(60.0, 90.0, 1.0) var first_person_fov: float = 72.0
 
 @export_flags_3d_physics var camera_collision_mask: int = 32
@@ -167,6 +168,10 @@ func get_movement_right() -> Vector3:
 
 func is_movement_input_locked() -> bool:
 	if not back_view_enabled:
+		return false
+	# In the village, arrow/joystick movement must not pause while the camera
+	# recenters behind the player. The camera can smoothly follow the movement.
+	if GameManager.current_location == GameManager.Location.LOBBY:
 		return false
 	return _movement_input_locked or _orbit_mouse_active or _orbit_touch_id >= 0
 

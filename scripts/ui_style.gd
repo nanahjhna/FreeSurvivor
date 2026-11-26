@@ -113,16 +113,20 @@ static func dialog_layout(layer: CanvasLayer, title: String, max_width: float = 
 	var panel := make_panel()
 	inset.add_child(panel)
 	var refresh := func():
-		var side := maxi(24, int((layer.get_viewport().get_visible_rect().size.x - max_width) / 2.0))
+		var viewport_size := layer.get_viewport().get_visible_rect().size
+		var compact := viewport_size.y >= viewport_size.x and viewport_size.x < 600.0
+		var side := maxi(14 if compact else 24, int((viewport_size.x - max_width) / 2.0))
 		apply_safe_margins(inset, side)
 		var safe := safe_insets(layer.get_viewport())
-		inset.add_theme_constant_override("margin_top", 24 + ceili(safe.y))
-		inset.add_theme_constant_override("margin_bottom", 24 + ceili(safe.w))
+		var vertical_margin := 14 if compact else 24
+		inset.add_theme_constant_override("margin_top", vertical_margin + ceili(safe.y))
+		inset.add_theme_constant_override("margin_bottom", vertical_margin + ceili(safe.w))
 	layer.get_viewport().size_changed.connect(refresh)
 	refresh.call()
 	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 14)
-	make_margin(panel, 20).add_child(content)
+	var compact := layer.get_viewport().get_visible_rect().size.y >= layer.get_viewport().get_visible_rect().size.x and layer.get_viewport().get_visible_rect().size.x < 600.0
+	content.add_theme_constant_override("separation", 8 if compact else 14)
+	make_margin(panel, 12 if compact else 20).add_child(content)
 	if not title.is_empty():
 		content.add_child(make_title(title, 31))
 		divider(content)
@@ -132,10 +136,16 @@ static func scroll_column(parent: Control) -> VBoxContainer:
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.follow_focus = true
+	scroll.scroll_deadzone = 12
 	parent.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	column.add_theme_constant_override("separation", 12)
+	column.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var viewport_size := parent.get_viewport().get_visible_rect().size
+	var compact := viewport_size.y >= viewport_size.x and viewport_size.x < 600.0
+	column.add_theme_constant_override("separation", 8 if compact else 12)
 	scroll.add_child(column)
 	return column
 
@@ -232,11 +242,20 @@ static func make_panel(bg: Color = INK) -> PanelContainer:
 
 static func make_margin(panel: Control, amount: int = 24) -> MarginContainer:
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", amount)
-	margin.add_theme_constant_override("margin_top", amount)
-	margin.add_theme_constant_override("margin_right", amount)
-	margin.add_theme_constant_override("margin_bottom", amount)
+	var update_margins := func() -> void:
+		var compact_amount := amount
+		if panel.is_inside_tree():
+			var viewport_size := panel.get_viewport().get_visible_rect().size
+			if viewport_size.y >= viewport_size.x and viewport_size.x < 600.0:
+				compact_amount = mini(amount, 14)
+		margin.add_theme_constant_override("margin_left", compact_amount)
+		margin.add_theme_constant_override("margin_top", compact_amount)
+		margin.add_theme_constant_override("margin_right", compact_amount)
+		margin.add_theme_constant_override("margin_bottom", compact_amount)
 	panel.add_child(margin)
+	if panel.is_inside_tree():
+		panel.get_viewport().size_changed.connect(update_margins)
+	update_margins.call()
 	return margin
 
 static func fit_modal(panel: Control, maximum_size: Vector2, padding: Vector2 = Vector2(16, 24)) -> bool:

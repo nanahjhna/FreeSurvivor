@@ -18,19 +18,20 @@ func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	var content := $CenterContainer/VBoxContainer as VBoxContainer
-	content.add_theme_constant_override("separation", 18)
+	content.add_theme_constant_override("separation", 10)
 	var title_band := UiStyle.make_panel()
-	title_band.custom_minimum_size.y = 76
+	title_band.custom_minimum_size.y = 60
 	title_band.add_theme_stylebox_override("panel", UiStyle.frame(Color("#e9aa39"), Color("#fff0bd"), 15, 5))
 	content.add_child(title_band)
 	content.move_child(title_band, 0)
 	title_label.reparent(title_band, false)
-	title_label.add_theme_font_size_override("font_size", 39)
+	title_label.add_theme_font_size_override("font_size", 32)
 	title_label.add_theme_color_override("font_color", Color("#4d2b1b"))
 	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	subtitle.add_theme_font_size_override("font_size", 20)
+	subtitle.add_theme_font_size_override("font_size", 16)
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cards_scroll = ScrollContainer.new()
+	cards_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cards_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	content.add_child(cards_scroll)
 	cards_container.reparent(cards_scroll, false)
@@ -126,13 +127,14 @@ func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	column.add_theme_constant_override("separation", 8)
 	margin.add_child(column)
 	_add_card_plaque(column, UiStyle.plaque(grade, tint, tint.lightened(0.35), face.darkened(0.24), 16))
-	var name := _card_label(column, str(upgrade_data.get("name", "강화")), 23, Color.WHITE)
+	var compact := get_viewport().get_visible_rect().size.x < 600.0
+	var name := _card_label(column, str(upgrade_data.get("name", "강화")), 18 if compact else 22, Color.WHITE)
 	name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	UiStyle.ink_outline(name, 3, face.darkened(0.40))
 	var icon := UiStyle.plaque(_card_icon(str(upgrade_data.get("stat", ""))), Color("#fff1cf"), tint, face, 66)
-	icon.custom_minimum_size.y = 105
+	icon.custom_minimum_size.y = 72 if compact else 92
 	_add_card_plaque(column, icon)
-	var description := _card_label(column, str(upgrade_data.get("description", "")), 18, Color("#fff7e8"))
+	var description := _card_label(column, str(upgrade_data.get("description", "")), 14 if compact else 17, Color("#fff7e8"))
 	description.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	if int(recommendation.get("score", 0)) >= 4:
 		_card_label(column, "✦ 추천", 15, UiStyle.GOLD_BRIGHT)
@@ -172,12 +174,15 @@ func _apply_layout():
 	center.offset_top = safe.y + 18
 	center.offset_bottom = -safe.w - 18
 	var target_width := minf(708, viewport_size.x - safe.x - safe.z - 36)
-	cards_container.columns = 3 if target_width >= 510 else 2
+	var compact := viewport_size.x < 600.0
+	cards_container.columns = 3 if target_width >= 620 else 2
 	var columns := cards_container.columns
 	var width := floorf((target_width - 13 - (columns - 1) * 10) / columns)
-	card_size = Vector2(width, 382 if columns == 2 else 360)
+	var preferred_height := viewport_size.y * (0.245 if compact else 0.29)
+	card_size = Vector2(width, clampf(preferred_height, 218.0, 310.0) if compact else clampf(preferred_height, 250.0, 330.0))
 	var rows := ceilf(float(maxi(current_upgrades.size(), 1)) / columns)
-	cards_scroll.custom_minimum_size = Vector2(target_width, minf(rows * (card_size.y + 10), viewport_size.y * 0.53))
+	var available_height := maxf(220.0, viewport_size.y - (150.0 if compact else 190.0))
+	cards_scroll.custom_minimum_size = Vector2(target_width, minf(rows * (card_size.y + 10), available_height))
 	for child in cards_container.get_children():
 		child.custom_minimum_size = card_size
 

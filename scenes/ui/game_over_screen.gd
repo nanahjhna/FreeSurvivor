@@ -56,7 +56,7 @@ func _render_result(result: Dictionary) -> void:
 		heading = "생존 귀환" if result.get("returned", false) else "생존 성공"
 	var crest := RESULT_CREST.new()
 	crest.successful = won
-	crest.custom_minimum_size.y = 346
+	crest.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.22, 190.0, 300.0)
 	body.add_child(crest)
 	var hero := VBoxContainer.new()
 	hero.alignment = BoxContainer.ALIGNMENT_CENTER

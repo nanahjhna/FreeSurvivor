@@ -272,7 +272,9 @@ func _refresh_camera_controls():
 	var player := _get_camera_player()
 	if _camera_box == null:
 		return
-	_camera_box.visible = player != null
+	# The village intentionally stays first-person. Camera tuning is only
+	# exposed in combat, where the existing quarter-view camera is used.
+	_camera_box.visible = player != null and GameManager.current_location != GameManager.Location.LOBBY
 	if player == null:
 		return
 	# 캐릭터 추적뷰는 임시 비활성화 상태다.
@@ -305,6 +307,13 @@ func _apply_camera_settings():
 		return
 	var camera := player.get_node_or_null("CameraPivot/SpringArm3D/Camera3D") as Camera3D
 	if camera == null:
+		return
+	if GameManager.current_location == GameManager.Location.LOBBY:
+		camera.set("quarter_view_enabled", false)
+		camera.set("back_view_enabled", false)
+		camera.set("first_person_enabled", true)
+		camera.set("first_person_fov", 72.0)
+		camera.call("snap_to_target")
 		return
 	# 캐릭터 추적뷰는 다시 활성화하기 전까지 설정할 수 없게 한다.
 	GameData.camera_view_mode = "quarter"

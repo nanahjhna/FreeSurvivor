@@ -327,6 +327,9 @@ func _build_mobile_dpad():
 	if not GameActions.is_mobile():
 		return
 	dpad = VIRTUAL_DPAD.instantiate()
+	# Village movement uses the floating virtual stick across the safe screen;
+	# combat keeps its left-side joystick layout in hud.gd.
+	dpad.set("use_combat_layout", false)
 	add_child(dpad)
 
 func _load_screens():

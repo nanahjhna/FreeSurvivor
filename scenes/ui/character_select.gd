@@ -227,15 +227,12 @@ func _build_shell(title_text: String, back_text: String, back_action: Callable) 
 
 func _new_body(layout: VBoxContainer) -> Control:
 	if _is_portrait_layout():
-		var scroll := ScrollContainer.new()
-		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		scroll.scroll_deadzone = 24
-		layout.add_child(scroll)
+		# Keep the screen itself fixed. Only data-heavy lists may scroll.
 		var body := VBoxContainer.new()
 		body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		body.add_theme_constant_override("separation", 14)
-		scroll.add_child(body)
+		body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		body.add_theme_constant_override("separation", 8)
+		layout.add_child(body)
 		return body
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -616,7 +613,8 @@ func _create_character():
 func _build_preview(parent: VBoxContainer):
 	preview_zoom = 1.0
 	preview_container = SubViewportContainer.new()
-	var portrait_preview_side := clampf(get_viewport_rect().size.x * 0.64, 240.0, 340.0)
+	var viewport_size := get_viewport_rect().size
+	var portrait_preview_side := clampf(minf(viewport_size.x * 0.52, viewport_size.y * 0.24), 180.0, 280.0)
 	var preview_height := portrait_preview_side if _is_portrait_layout() else 570.0
 	var preview_width := portrait_preview_side if _is_portrait_layout() else 550.0
 	preview_container.custom_minimum_size = Vector2(preview_width, preview_height)

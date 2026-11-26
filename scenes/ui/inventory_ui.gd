@@ -21,6 +21,7 @@ var forge_mode := false
 var equipment_identity: Label
 var portrait_holder: CenterContainer
 var portrait: CHARACTER_PORTRAIT
+var equipment_slots: HBoxContainer
 var mode_buttons: Dictionary = {}
 var filter_buttons: Dictionary = {}
 var slot_buttons: Dictionary = {}
@@ -77,7 +78,8 @@ func _ready() -> void:
 	stage_light.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	platform.add_child(stage_light)
 	var slots := HBoxContainer.new()
-	slots.custom_minimum_size.y = 342
+	equipment_slots = slots
+	slots.custom_minimum_size.y = 270
 	slots.add_theme_constant_override("separation", 2)
 	platform.add_child(slots)
 	var left := VBoxContainer.new()
@@ -121,8 +123,10 @@ func _ready() -> void:
 	item_detail.action_requested.connect(_on_item_action)
 	add_child(item_detail)
 	get_viewport().size_changed.connect(_layout_grid)
+	get_viewport().size_changed.connect(_layout_equipment)
 	GameData.data_updated.connect(_refresh)
 	_layout_grid()
+	_layout_equipment()
 
 
 func _tab(parent: Control, caption: String) -> Button:
@@ -136,6 +140,21 @@ func _layout_grid() -> void:
 	var width := get_viewport().get_visible_rect().size.x
 	var safe := UiStyle.safe_insets(get_viewport())
 	grid.columns = clampi(int((minf(width, 700.0) - safe.x - safe.z - 88.0) / 106.0), 2, 5)
+
+
+func _layout_equipment() -> void:
+	if equipment_slots == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var compact := viewport_size.y >= viewport_size.x and viewport_size.x < 600.0
+	var slot_side := clampf(viewport_size.x * (0.20 if compact else 0.15), 76.0, 108.0)
+	equipment_slots.custom_minimum_size.y = clampf(viewport_size.y * (0.23 if compact else 0.27), 220.0, 330.0)
+	equipment_slots.add_theme_constant_override("separation", 4 if compact else 8)
+	for slot in slot_buttons.values():
+		(slot as Button).custom_minimum_size = Vector2(slot_side, slot_side * 1.03)
+	if portrait:
+		var portrait_side := clampf(minf(viewport_size.x * 0.38, viewport_size.y * 0.21), 150.0, 230.0)
+		portrait.custom_minimum_size = Vector2(portrait_side, portrait_side * 1.28)
 
 
 func open(show_equipment: bool = false, at_forge: bool = false) -> void:
@@ -223,6 +242,7 @@ func _refresh_portrait() -> void:
 		portrait.custom_minimum_size = Vector2(240, 326)
 		portrait_holder.add_child(portrait)
 	if portrait:
+		_layout_equipment()
 		portrait.set_portrait_active(equipment_mode)
 		if equipment_mode:
 			portrait.show_character(GameData.get_leader_id())
