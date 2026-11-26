@@ -66,14 +66,28 @@ func preview_clip(source: AnimationLibrary, clip_name: StringName) -> bool:
 		return false
 	return ANIMATION_SOURCE.play_preview(actor.character_model, actor.model_animation_player, source, clip_name)
 
+func preview_skill(skill_id: String, slot_key: String = "") -> bool:
+	if actor == null or not is_instance_valid(actor.model_animation_player):
+		return false
+	var animation_key := PlayerManager.get_skill_animation_key(skill_id, slot_key)
+	var clip_name := str(actor.model_clips.get(animation_key, ""))
+	if clip_name.is_empty() or not actor.model_animation_player.has_animation(clip_name):
+		return false
+	var clip := actor.model_animation_player.get_animation(clip_name)
+	if clip == null:
+		return false
+	clip.loop_mode = Animation.LOOP_LINEAR
+	actor.model_animation_player.play(clip_name, 0.12)
+	return true
+
 
 func clear_clip_preview() -> void:
 	if actor == null or not is_instance_valid(actor.model_animation_player):
 		return
 	var player := actor.model_animation_player
+	player.stop()
 	if player.has_animation_library(&"shop_preview"):
-		player.stop()
 		player.remove_animation_library(&"shop_preview")
-		var idle := StringName(actor.model_clips.get("Idle", &""))
-		if player.has_animation(idle):
-			player.play(idle)
+	var idle := StringName(actor.model_clips.get("Idle", &""))
+	if player.has_animation(idle):
+		player.play(idle)

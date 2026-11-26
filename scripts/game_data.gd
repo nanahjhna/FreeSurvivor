@@ -35,13 +35,18 @@ const DEFAULT_INVENTORY: Array[Dictionary] = [
 		"desc": "가볍고 질긴 기본 가죽 갑옷."
 	},
 	{
+		"id": "boots_leather", "type": "boots", "name": "가죽 장화", "grade": "N",
+		"atk": 0, "def": 1, "hp": 8, "spd": 0.35, "icon": "🥾",
+		"desc": "발걸음을 가볍게 해 주는 기본 가죽 장화."
+	},
+	{
 		"id": "mat_stone", "type": "material", "name": "장비 강화석", "count": 15,
 		"icon": "💎", "desc": "캐릭터 및 장비를 성장시킬 때 쓰이는 마법 원석."
 	}
 ]
 const DEFAULT_EQUIPPED_GEAR := {
-	"char01": {"weapon": null, "armor": null, "accessory": null},
-	"char02": {"weapon": "wpn_iron_sword", "armor": "arm_leather", "accessory": null}
+	"char01": {"weapon": null, "armor": null, "accessory": null, "boots": "boots_leather"},
+	"char02": {"weapon": "wpn_iron_sword", "armor": "arm_leather", "accessory": null, "boots": "boots_leather"}
 }
 const DEFAULT_CHARACTER_STATS := {
 	"char01": {"base_hp": 105.0, "base_atk": 18.0, "base_def": 7.0},
@@ -50,7 +55,10 @@ const DEFAULT_CHARACTER_STATS := {
 const DEFAULT_CHARACTER_NAMES := {"fighter": "무도가", "fighter_2d": "화염권객", "char01": "검사", "char02": "마법사"}
 const EXPERIENCE_PURCHASE_CONFIG := {
 	"base_cost": 800,
-	"growth_rate": 1.25
+	"growth_rate": 1.25,
+	"xp_per_purchase": 25,
+	"base_xp_to_next": 100,
+	"xp_growth_rate": 1.2
 }
 
 # -------------------------------------------------------------
@@ -78,6 +86,10 @@ const BOSS_EQUIPMENT_CATALOG: Dictionary = {
 	"acc_ring_speed": {
 		"id": "acc_ring_speed", "type": "accessory", "name": "바람의 반지", "grade": "R",
 		"atk": 4, "def": 2, "hp": 10, "spd": 0.6, "icon": "💍", "desc": "착용자의 발걸음을 가볍게 합니다."
+	},
+	"boots_windstep": {
+		"id": "boots_windstep", "type": "boots", "name": "질풍의 장화", "grade": "R",
+		"atk": 0, "def": 3, "hp": 20, "spd": 0.9, "icon": "🥾", "desc": "바람의 힘이 깃들어 이동 속도를 높이는 장화."
 	}
 }
 
@@ -187,7 +199,7 @@ var leader_index: int = 0
 # --- Inventory & Equipment ---
 var inventory: Array[Dictionary] = DEFAULT_INVENTORY.duplicate(true)
 
-# Character equipped slots: { char_id: { "weapon": null, "armor": null, "accessory": null } }
+	# Character equipped slots: { char_id: { "weapon": null, "armor": null, "accessory": null, "boots": null } }
 var equipped_gear: Dictionary = DEFAULT_EQUIPPED_GEAR.duplicate(true)
 
 # --- Stage Database ---
@@ -330,7 +342,9 @@ func _ready():
 			characters[character.id] = definition
 	_migrate_character_attributes()
 	_migrate_direct_gold_growth()
+	_migrate_character_progress()
 	_ensure_character_equipment_entries()
+	_ensure_default_boots_item()
 	_set_character_skill_set(get_leader_id())
 	_default_runtime_template = _serialize_runtime_state()
 	add_child(character_slot_manager)
@@ -338,8 +352,10 @@ func _ready():
 	var loaded_existing_save := load_from_disk()
 	_migrate_character_attributes()
 	_migrate_direct_gold_growth()
+	_migrate_character_progress()
 	_migrate_skill_loadout(skill_loadout)
 	_ensure_character_equipment_entries()
+	_ensure_default_boots_item()
 	recalculate_party_stats()
 	if loaded_existing_save and _direct_growth_migration_pending:
 		call_deferred("save_to_disk")
@@ -379,7 +395,7 @@ func _migrate_character_attributes():
 		if not bool(character.get("growth_migration_v2", false)):
 			character["stat_points"] += max(0, int(character.get("level", 1)) - 1)
 			character["growth_migration_v2"] = true
-		character["level"] = 1
+		character["level"] = maxi(1, int(character.get("level", 1)))
 
 func _migrate_direct_gold_growth():
 	for char_id in characters:
@@ -400,6 +416,31 @@ func _migrate_direct_gold_growth():
 		character["stat_points_spent"] = total_upgrades
 		character["direct_gold_growth_migration_v3"] = true
 		_direct_growth_migration_pending = true
+
+func _migrate_character_progress() -> void:
+	var base_xp := maxi(1, int(EXPERIENCE_PURCHASE_CONFIG.base_xp_to_next))
+	for char_id in characters:
+		var character: Dictionary = characters[char_id]
+		if bool(character.get("character_progress_v1", false)):
+			character["level"] = maxi(1, int(character.get("level", 1)))
+			character["character_xp"] = clampi(int(character.get("character_xp", 0)), 0, maxi(0, int(character.get("character_xp_to_next", base_xp)) - 1))
+			character["character_xp_to_next"] = maxi(1, int(character.get("character_xp_to_next", base_xp)))
+			character["growth_level"] = maxi(0, int(character.get("level", 1)) - 1)
+			continue
+		# Keep existing stat growth and purchases intact. Older saves used either
+		# `level` or `growth_level`, so use the greatest known progression value.
+		var stat_count := maxi(1, get_character_growth_stats(str(char_id)).size())
+		var legacy_levels := [
+			maxi(0, int(character.get("level", 1)) - 1),
+			maxi(0, int(character.get("growth_level", 0))),
+			floori(float(character.get("stat_points_spent", 0)) / float(stat_count))
+		]
+		var legacy_growth := maxi(legacy_levels[0], maxi(legacy_levels[1], legacy_levels[2]))
+		character["level"] = legacy_growth + 1
+		character["growth_level"] = legacy_growth
+		character["character_xp"] = 0
+		character["character_xp_to_next"] = base_xp
+		character["character_progress_v1"] = true
 
 # -------------------------------------------------------------
 # ACTIVE CHARACTER STATS
@@ -467,7 +508,28 @@ func get_character_stat_level(char_id: String, stat_name: String) -> int:
 func get_character_growth_level(char_id: String) -> int:
 	if not characters.has(char_id):
 		return 0
-	return maxi(0, int(characters[char_id].get("growth_level", 0)))
+	return maxi(0, int(characters[char_id].get("level", characters[char_id].get("growth_level", 0) + 1)) - 1)
+
+func get_character_total_level(char_id: String = "") -> int:
+	var target_id := char_id if not char_id.is_empty() else get_leader_id()
+	if not characters.has(target_id):
+		return 1
+	return maxi(1, int(characters[target_id].get("level", 1)))
+
+func get_character_current_xp(char_id: String = "") -> int:
+	var target_id := char_id if not char_id.is_empty() else get_leader_id()
+	if not characters.has(target_id):
+		return 0
+	return maxi(0, int(characters[target_id].get("character_xp", 0)))
+
+func get_character_xp_to_next(char_id: String = "") -> int:
+	var target_id := char_id if not char_id.is_empty() else get_leader_id()
+	if not characters.has(target_id):
+		return maxi(1, int(EXPERIENCE_PURCHASE_CONFIG.base_xp_to_next))
+	return maxi(1, int(characters[target_id].get("character_xp_to_next", EXPERIENCE_PURCHASE_CONFIG.base_xp_to_next)))
+
+func get_character_xp_per_purchase() -> int:
+	return maxi(1, int(EXPERIENCE_PURCHASE_CONFIG.xp_per_purchase))
 
 func get_character_experience_purchase_cost(char_id: String) -> int:
 	if not characters.has(char_id):
@@ -488,20 +550,37 @@ func purchase_character_experience(char_id: String) -> bool:
 	if cost <= 0 or player_gold < cost:
 		return false
 	var character: Dictionary = characters[char_id]
-	var attributes: Dictionary = character.get("attributes", StatManager.get_default_stats(char_id, character)).duplicate(true)
-	for stat_name in get_character_growth_stats(char_id):
-		attributes[stat_name] = int(attributes.get(stat_name, 1)) + 1
 	player_gold -= cost
-	character["attributes"] = attributes
-	character["growth_level"] = get_character_growth_level(char_id) + 1
-	character["stat_points"] = 0
-	character["stat_points_spent"] = int(character.get("stat_points_spent", 0)) + get_character_growth_stats(char_id).size()
-	_update_quest_progress("q_upgrade_char", 1)
+	var current_xp := get_character_current_xp(char_id) + get_character_xp_per_purchase()
+	var xp_to_next := get_character_xp_to_next(char_id)
+	var total_level := get_character_total_level(char_id)
+	var level_ups := 0
+	while current_xp >= xp_to_next:
+		current_xp -= xp_to_next
+		total_level += 1
+		level_ups += 1
+		xp_to_next = maxi(1, ceili(float(xp_to_next) * float(EXPERIENCE_PURCHASE_CONFIG.xp_growth_rate)))
+		_apply_character_level_growth(char_id, character)
+	character["level"] = total_level
+	character["growth_level"] = total_level - 1
+	character["character_xp"] = current_xp
+	character["character_xp_to_next"] = xp_to_next
+	character["character_progress_v1"] = true
+	if level_ups > 0:
+		_update_quest_progress("q_upgrade_char", level_ups)
 	recalculate_party_stats()
 	currency_changed.emit(player_gold, player_gems)
 	data_updated.emit()
 	save_to_disk()
 	return true
+
+func _apply_character_level_growth(char_id: String, character: Dictionary) -> void:
+	var attributes: Dictionary = character.get("attributes", StatManager.get_default_stats(char_id, character)).duplicate(true)
+	for stat_name in get_character_growth_stats(char_id):
+		attributes[stat_name] = int(attributes.get(stat_name, 1)) + 1
+	character["attributes"] = attributes
+	character["stat_points"] = 0
+	character["stat_points_spent"] = int(character.get("stat_points_spent", 0)) + get_character_growth_stats(char_id).size()
 
 func has_claimable_quest() -> bool:
 	for quest in quests:
@@ -538,13 +617,23 @@ func get_character_stat_manager(char_id: String) -> StatManager:
 
 func _ensure_character_equipment_entries() -> void:
 	for character_id in characters:
-		if equipped_gear.has(character_id):
-			continue
-		var default_gear: Dictionary = {"weapon": null, "armor": null, "accessory": null}
+		var default_gear: Dictionary = {"weapon": null, "armor": null, "accessory": null, "boots": null}
+		var has_saved_gear := equipped_gear.has(character_id) and equipped_gear[character_id] is Dictionary
+		if has_saved_gear:
+			default_gear.merge(equipped_gear[character_id], true)
 		var starting_gear: Variant = characters[character_id].get("starting_gear", {})
-		if starting_gear is Dictionary:
+		if not has_saved_gear and starting_gear is Dictionary:
 			default_gear.merge(starting_gear, true)
 		equipped_gear[character_id] = default_gear
+
+func _ensure_default_boots_item() -> void:
+	for item in inventory:
+		if str(item.get("id", "")) == "boots_leather":
+			return
+	for item in DEFAULT_INVENTORY:
+		if str(item.get("id", "")) == "boots_leather":
+			inventory.append(item.duplicate(true))
+			return
 
 func _set_character_skill_set(character_class_id: String):
 	skill_meta = CHARACTER_SKILL_DATABASE.get_skill_set(character_class_id)
@@ -614,7 +703,7 @@ func is_survival_skill_unlocked(skill_id: String) -> bool:
 	return is_combat_skill_owned(skill_id) and player_level >= int(skill_meta[skill_id].unlock_level)
 
 func equip_skill(slot: String, skill_id: String) -> bool:
-	var slots: Array[String] = ["q", "w", "e", "r", "a", "s"]
+	var slots: Array[String] = ["q", "w", "e", "r"]
 	if not slots.has(slot) or not is_combat_skill_owned(skill_id):
 		return false
 	if str(skill_meta[skill_id].get("cast_type", "passive")) == "passive":
@@ -636,7 +725,7 @@ func equip_skill(slot: String, skill_id: String) -> bool:
 	return true
 
 func _migrate_skill_loadout(saved_loadout: Dictionary):
-	var slots: Array[String] = ["q", "w", "e", "r", "a", "s"]
+	var slots: Array[String] = ["q", "w", "e", "r"]
 	var defaults := CHARACTER_SKILL_DATABASE.get_default_loadout(get_leader_id())
 	var migrated: Dictionary = {}
 	var assigned: Dictionary = {}
@@ -1120,6 +1209,8 @@ func _apply_runtime_state(data: Dictionary):
 					characters[character_id].erase("growth_migration_v2")
 				if not data["characters"][character_id].has("direct_gold_growth_migration_v3"):
 					characters[character_id].erase("direct_gold_growth_migration_v3")
+				if not data["characters"][character_id].has("character_progress_v1"):
+					characters[character_id].erase("character_progress_v1")
 				characters[character_id].merge(data["characters"][character_id], true)
 				if str(character_id) == "char01":
 					_refresh_swordsman_identity(characters[character_id])
@@ -1131,6 +1222,7 @@ func _apply_runtime_state(data: Dictionary):
 			if data["equipped_gear"][character_id] is Dictionary:
 				equipped_gear[character_id] = data["equipped_gear"][character_id].duplicate(true)
 	_ensure_character_equipment_entries()
+	_ensure_default_boots_item()
 
 	if data.has("quests") and data["quests"] is Array:
 		var loaded_quests: Array = data["quests"]
@@ -1159,6 +1251,7 @@ func _apply_runtime_state(data: Dictionary):
 	_apply_auxiliary_profile_state(data)
 	_migrate_character_attributes()
 	_migrate_direct_gold_growth()
+	_migrate_character_progress()
 	_migrate_skill_loadout(skill_loadout)
 	recalculate_party_stats()
 
@@ -1608,6 +1701,9 @@ func reset_save():
 		characters[char_id]["name"] = DEFAULT_CHARACTER_NAMES.get(char_id, characters[char_id].get("name", str(char_id)))
 		characters[char_id]["attributes"] = StatManager.get_default_stats(str(char_id), characters[char_id])
 		characters[char_id]["growth_level"] = 0
+		characters[char_id]["character_xp"] = 0
+		characters[char_id]["character_xp_to_next"] = maxi(1, int(EXPERIENCE_PURCHASE_CONFIG.base_xp_to_next))
+		characters[char_id]["character_progress_v1"] = true
 		characters[char_id]["stat_points"] = 0
 		characters[char_id]["stat_points_spent"] = 0
 		characters[char_id]["growth_migration_v2"] = true

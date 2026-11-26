@@ -405,13 +405,11 @@ func _style_action_panels():
 		"q": $BottomCenter/SkillContainer/SkillQ,
 		"w": $BottomCenter/SkillContainer/SkillW,
 		"e": $BottomCenter/SkillContainer/SkillE,
-		"r": $BottomCenter/SkillContainer/SkillR,
-		"a": _create_runtime_skill_panel("a"),
-		"s": _create_runtime_skill_panel("s")
+		"r": $BottomCenter/SkillContainer/SkillR
 	}
 	for key in _skill_panels:
 		var skill_panel := _skill_panels[key] as Control
-		skill_panel.custom_minimum_size = Vector2(58, 70) if str(key) in ["a", "s"] else Vector2(87, 83)
+		skill_panel.custom_minimum_size = Vector2(87, 83)
 		if skill_panel is Panel:
 			skill_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.07, 0.13, 0.25, 0.93), Color("#80b8ef"), 3, 13))
 		var action_id: String = "skill_" + str(key)

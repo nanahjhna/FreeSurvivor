@@ -30,6 +30,9 @@ var feedback_label: Label
 var portrait: CHARACTER_PORTRAIT
 var stat_rows: Dictionary = {}
 var experience_purchase_button: Button
+var total_level_label: Label
+var character_exp_bar: ProgressBar
+var character_exp_label: Label
 
 
 func _ready() -> void:
@@ -63,7 +66,7 @@ func _fit_screen() -> void:
 
 func open(show_growth: bool = false) -> void:
 	growth_enabled = show_growth
-	$Panel/Margin/VBox/Header/Title.text = "직업 능력치 레벨" if show_growth else "캐릭터 능력치"
+	$Panel/Margin/VBox/Header/Title.text = "캐릭터 성장" if show_growth else "캐릭터 정보"
 	feedback_label.hide()
 	show()
 	if not show_growth and portrait == null:
@@ -87,6 +90,28 @@ func close() -> void:
 
 
 func _build_stats() -> void:
+	var level_panel := UiStyle.make_panel(Color("#16243a"))
+	level_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var level_margin := UiStyle.make_margin(level_panel, 12)
+	var level_box := VBoxContainer.new()
+	level_box.add_theme_constant_override("separation", 4)
+	level_margin.add_child(level_box)
+	var level_row := HBoxContainer.new()
+	level_row.add_theme_constant_override("separation", 10)
+	level_box.add_child(level_row)
+	total_level_label = UiStyle.make_title("캐릭터 Lv.1", 24)
+	total_level_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	level_row.add_child(total_level_label)
+	character_exp_label = UiStyle.make_label("0 / 100 EXP", 15, UiStyle.MUTED)
+	character_exp_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	level_row.add_child(character_exp_label)
+	character_exp_bar = ProgressBar.new()
+	character_exp_bar.custom_minimum_size = Vector2(0, 10)
+	character_exp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	character_exp_bar.show_percentage = false
+	level_box.add_child(character_exp_bar)
+	detail_content.add_child(level_panel)
+
 	var table := GridContainer.new()
 	table.columns = 2
 	table.add_theme_constant_override("h_separation", 12)
@@ -130,10 +155,17 @@ func _refresh_ui() -> void:
 	var character: Dictionary = GameData.characters[selected_char_id]
 	var stats := GameData.get_character_stat_manager(selected_char_id)
 	name_label.text = character.get("name", "")
-	title_label.text = "%s  ·  능력치 레벨" % str(character.get("role", ""))
+	title_label.text = "%s  ·  캐릭터 Lv.%d" % [str(character.get("role", "")), GameData.get_character_total_level(selected_char_id)]
 	icon_label.text = character.get("icon", "⚔️")
 	gold_label.text = "%s G" % String.num_int64(GameData.player_gold)
 	gold_label.visible = growth_enabled
+	var total_level := GameData.get_character_total_level(selected_char_id)
+	var current_xp := GameData.get_character_current_xp(selected_char_id)
+	var xp_to_next := GameData.get_character_xp_to_next(selected_char_id)
+	total_level_label.text = "캐릭터 Lv.%d" % total_level
+	character_exp_label.text = "%d / %d EXP" % [current_xp, xp_to_next]
+	character_exp_bar.max_value = xp_to_next
+	character_exp_bar.value = current_xp
 
 	for stat_name in StatManager.STAT_KEYS:
 		var row: Dictionary = stat_rows[stat_name]
@@ -149,7 +181,8 @@ func _refresh_ui() -> void:
 	var purchase_cost := GameData.get_character_experience_purchase_cost(selected_char_id)
 	experience_purchase_button.visible = growth_enabled
 	experience_purchase_button.disabled = not growth_enabled or purchase_cost <= 0 or GameData.player_gold < purchase_cost
-	experience_purchase_button.text = "경험치 구매  ·  %d G" % purchase_cost if purchase_cost > 0 else "최대 성장"
+	var xp_gain := GameData.get_character_xp_per_purchase()
+	experience_purchase_button.text = "경험치 +%d  ·  %d G" % [xp_gain, purchase_cost] if purchase_cost > 0 else "최대 성장"
 
 func _linked_value_text(stats: StatManager, stat_name: String) -> String:
 	var value: float
@@ -165,13 +198,16 @@ func _linked_value_text(stats: StatManager, stat_name: String) -> String:
 
 func _on_purchase_experience() -> void:
 	var class_id := selected_char_id
-	var growth_stats := GameData.get_character_growth_stats(class_id)
+	var before_level := GameData.get_character_total_level(class_id)
 	if not GameData.purchase_character_experience(class_id):
 		return
-	var stat_names: Array[String] = []
-	for stat_name in growth_stats:
-		stat_names.append(ATTRIBUTE_NAMES.get(stat_name, stat_name))
-	feedback_label.text = "경험치 구매 완료  ·  %s 레벨 +1  ·  남은 골드 %d G" % [", ".join(stat_names), GameData.player_gold]
+	var after_level := GameData.get_character_total_level(class_id)
+	var current_xp := GameData.get_character_current_xp(class_id)
+	var xp_to_next := GameData.get_character_xp_to_next(class_id)
+	if after_level > before_level:
+		feedback_label.text = "캐릭터 레벨업!  Lv.%d  ·  다음 레벨까지 %d / %d EXP" % [after_level, current_xp, xp_to_next]
+	else:
+		feedback_label.text = "경험치 +%d  ·  현재 %d / %d EXP  ·  남은 골드 %d G" % [GameData.get_character_xp_per_purchase(), current_xp, xp_to_next, GameData.player_gold]
 	feedback_label.show()
 
 

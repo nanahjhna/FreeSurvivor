@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://h0y3u6b6m584"
-path="res://.godot/imported/Peasant Man_0.png-4eda637a4604bbce332e59e126fb327d.ctex"
+path.s3tc="res://.godot/imported/Peasant Man_0.png-4eda637a4604bbce332e59e126fb327d.s3tc.ctex"
+path.etc2="res://.godot/imported/Peasant Man_0.png-4eda637a4604bbce332e59e126fb327d.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "b8fc1fb80ff67875ff94037f72b2ce54"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/npc/Peasant Man_0.png"
-dest_files=["res://.godot/imported/Peasant Man_0.png-4eda637a4604bbce332e59e126fb327d.ctex"]
+dest_files=["res://.godot/imported/Peasant Man_0.png-4eda637a4604bbce332e59e126fb327d.s3tc.ctex", "res://.godot/imported/Peasant Man_0.png-4eda637a4604bbce332e59e126fb327d.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

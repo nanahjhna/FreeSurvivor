@@ -4,9 +4,9 @@ signal closed()
 
 const ITEM_DETAIL := preload("res://scenes/ui/item_detail.gd")
 const CHARACTER_PORTRAIT := preload("res://scenes/ui/character_portrait.gd")
-const EQUIPMENT_TYPES := ["weapon", "armor", "accessory"]
-const SLOT_TITLES := {"weapon": "무기", "armor": "방어구", "accessory": "장신구"}
-const SLOT_ICONS := {"weapon": "⚔", "armor": "🛡", "accessory": "✦"}
+const EQUIPMENT_TYPES := ["weapon", "armor", "accessory", "boots"]
+const SLOT_TITLES := {"weapon": "무기", "armor": "방어구", "accessory": "장신구", "boots": "신발"}
+const SLOT_ICONS := {"weapon": "⚔", "armor": "🛡", "accessory": "✦", "boots": "🥾"}
 
 var heading: Label
 var count_label: Label
@@ -97,7 +97,7 @@ func _ready() -> void:
 		slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		slot.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		slot.pressed.connect(_open_equipped.bind(type))
-		(right if type == "armor" else left).add_child(slot)
+		(right if type in ["armor", "boots"] else left).add_child(slot)
 		slot_buttons[type] = slot
 	var auto_equip := UiStyle.make_button("추천 장비 장착", Vector2(0, 52))
 	UiStyle.skin_button(auto_equip, Color("#a26a36"), Color("#ffe3a0"))
@@ -188,7 +188,7 @@ func _refresh() -> void:
 	heading.text = ("대장간" if forge_mode else "장비 관리") if equipment_mode else "가방"
 	equipment.visible = equipment_mode
 	var leader: Dictionary = GameData.characters.get(GameData.get_leader_id(), {})
-	equipment_identity.text = "%s  %s" % [leader.get("icon", "⚔"), leader.get("name", "")]
+	equipment_identity.text = "%s  %s  ·  캐릭터 Lv.%d" % [leader.get("icon", "⚔"), leader.get("name", ""), GameData.get_character_total_level(GameData.get_leader_id())]
 	filters.visible = not equipment_mode
 	for mode in mode_buttons:
 		_skin_tab(mode_buttons[mode], mode == equipment_mode)

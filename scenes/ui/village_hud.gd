@@ -38,10 +38,21 @@ var auto_move_status_label: Label
 var _attention_badges: Dictionary = {}
 var _travel_buttons: Dictionary = {}
 var _travel_attention_badges: Dictionary = {}
+var village_character_label: Label
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	$TopLeft.visible = false
+	$TopLeft.visible = true
+	$TopLeft.offset_left = 16.0
+	$TopLeft.offset_top = 16.0
+	$TopLeft.offset_right = 330.0
+	$TopLeft.offset_bottom = 82.0
+	$TopLeft/PortraitPanel.custom_minimum_size = Vector2(56, 56)
+	$TopLeft/Bars/HPBar.visible = false
+	village_character_label = UiStyle.make_label("", 17, UiStyle.IVORY)
+	village_character_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	village_character_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	$TopLeft/Bars.add_child(village_character_label)
 	$TopRight.offset_top = 16.0
 	$TopRight.offset_bottom = 196.0
 	_build_route_overlay()
@@ -57,6 +68,17 @@ func _ready():
 	GameActions.action_requested.connect(_on_action_requested)
 	GameActions.bindings_changed.connect(_on_bindings_changed)
 	GameActions.input_mode_changed.connect(_on_input_mode_changed)
+	GameData.data_updated.connect(_refresh_village_character)
+	_refresh_village_character()
+
+func _refresh_village_character() -> void:
+	if village_character_label == null:
+		return
+	var leader_id := GameData.get_leader_id()
+	var character: Dictionary = GameData.characters.get(leader_id, {})
+	$TopLeft/PortraitPanel/IconLabel.text = str(character.get("icon", "⚔️"))
+	$TopLeft/PortraitPanel/LevelLabel.text = "Lv.%d" % GameData.get_character_total_level(leader_id)
+	village_character_label.text = "%s  ·  %s" % [str(character.get("name", "캐릭터")), str(character.get("role", ""))]
 
 func _process(_delta: float):
 	var lobby := get_parent()

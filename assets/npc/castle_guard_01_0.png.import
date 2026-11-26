@@ -3,9 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dr2rbnhisep78"
-path="res://.godot/imported/castle_guard_01_0.png-03dc3f46958384700d74c3ceb128b86c.ctex"
+path.s3tc="res://.godot/imported/castle_guard_01_0.png-03dc3f46958384700d74c3ceb128b86c.s3tc.ctex"
+path.etc2="res://.godot/imported/castle_guard_01_0.png-03dc3f46958384700d74c3ceb128b86c.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "a1dc5c32f83d0182b6af19d596014cce"
@@ -14,11 +16,11 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/npc/castle_guard_01_0.png"
-dest_files=["res://.godot/imported/castle_guard_01_0.png-03dc3f46958384700d74c3ceb128b86c.ctex"]
+dest_files=["res://.godot/imported/castle_guard_01_0.png-03dc3f46958384700d74c3ceb128b86c.s3tc.ctex", "res://.godot/imported/castle_guard_01_0.png-03dc3f46958384700d74c3ceb128b86c.etc2.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -40,4 +42,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

@@ -421,7 +421,8 @@ func _update_selected_profile():
 	detail_name.text = "%s  %s" % [str(class_data.get("icon", "⚔️")), str(profile.get("name", ""))]
 	var state: Dictionary = profile.get("state", {})
 	var saved: Dictionary = state.get("characters", {}).get(class_id, {})
-	detail_subtitle.text = "Lv.%d" % int(saved.get("level", 1))
+	var saved_level := int(saved.get("level", int(saved.get("growth_level", 0)) + 1))
+	detail_subtitle.text = "캐릭터 Lv.%d" % maxi(1, saved_level)
 	_populate_stat_grid(stats, class_id)
 	var equipment := _get_profile_equipment(profile)
 	detail_equipment_cells[0].text = str(equipment.weapon)
@@ -559,7 +560,7 @@ func _select_class(class_id: String):
 	selected_class_id = class_id
 	var stats := GameData.get_class_template_stat_manager(class_id)
 	detail_name.text = "%s  %s" % [str(character.get("icon", "⚔️")), str(character.get("name", character.get("role", class_id)))]
-	detail_subtitle.text = "Lv.%d" % int(character.get("level", 1))
+	detail_subtitle.text = "캐릭터 Lv.%d" % maxi(1, int(character.get("level", 1)))
 	_populate_stat_grid(stats, class_id)
 	var registered_character := CharacterRegistry.get_by_id(class_id)
 	var weapon_name := str(character.get("weapon_name", CLASS_WEAPONS.get(class_id, "기본 무기")))
