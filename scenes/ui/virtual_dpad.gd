@@ -25,13 +25,9 @@ var _player: PlayerCharacter
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 20
-	_base_style = _make_round_style(Color(0.025, 0.028, 0.035, 0.56), Color(0.77, 0.60, 0.38, 0.68), 2)
-	_knob_idle_style = _make_round_style(Color(0.24, 0.19, 0.15, 0.82), Color(0.95, 0.77, 0.51, 0.88), 2)
-	_knob_active_style = _make_round_style(Color(0.54, 0.27, 0.12, 0.94), Color(1.0, 0.84, 0.55, 1.0), 3)
-	if use_combat_layout:
-		_base_style = _make_round_style(Color(0.03, 0.10, 0.22, 0.48), Color("#638cc5"), 3)
-		_knob_idle_style = _make_round_style(Color(0.12, 0.35, 0.69, 0.74), Color("#83c6ff"), 4)
-		_knob_active_style = _make_round_style(Color("#246cc8"), Color("#a3e1ff"), 5)
+	_base_style = _make_round_style(Color(UiStyle.ASPHALT, 0.54), Color(UiStyle.STEEL, 0.82), 2)
+	_knob_idle_style = _make_round_style(Color(UiStyle.INK_SOFT, 0.82), UiStyle.STEEL, 2)
+	_knob_active_style = _make_round_style(Color(UiStyle.SELECTED, 0.94), UiStyle.AMBER, 3)
 	_build()
 	get_viewport().size_changed.connect(_relayout)
 	_floating_mode = GameActions.is_mobile()

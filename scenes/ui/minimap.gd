@@ -12,12 +12,23 @@ var player: Node3D = null
 var portal: Node3D = null
 var _village_pins: Dictionary = {}
 var _redraw_timer: float = 0.0
+var compact_display := false
 @onready var zoom_label: Label = $ZoomLabel
 @onready var portal_distance_label: Label = $PortalDistance
 
 func _ready():
 	custom_minimum_size = Vector2(160, 184)
 	_update_zoom_label()
+	resized.connect(queue_redraw)
+
+func set_compact_display() -> void:
+	compact_display = true
+	custom_minimum_size = Vector2.ZERO
+	$ZoomIn.hide()
+	$ZoomOut.hide()
+	zoom_label.hide()
+	portal_distance_label.hide()
+	queue_redraw()
 
 func _process(delta: float):
 	_redraw_timer += delta
@@ -36,7 +47,7 @@ func _process(delta: float):
 		portal = stage.find_child("ReturnPortal", true, false)
 		if portal == null:
 			portal = stage.find_child("BattlePortal", true, false)
-	if portal_distance_label:
+	if portal_distance_label and not compact_display:
 		if portal and is_instance_valid(portal) and player and is_instance_valid(player):
 			portal_distance_label.text = "포털 %.0fm" % player.global_position.distance_to(portal.global_position)
 			portal_distance_label.visible = true
@@ -46,20 +57,22 @@ func _process(delta: float):
 	queue_redraw()
 
 func _draw():
+	if compact_display:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * (minf(size.x, size.y) / MAP_SIZE.x))
 	var center := MAP_SIZE * 0.5
 	var radius := 72.0
 	
 	# Square map background and border.
-	draw_rect(Rect2(Vector2(3, 3), MAP_SIZE - Vector2(6, 6)), Color(0.035, 0.055, 0.09, 0.82), true)
-	draw_rect(Rect2(Vector2(3, 3), MAP_SIZE - Vector2(6, 6)), Color(0.28, 0.45, 0.64, 0.82), false, 1.0)
+	draw_rect(Rect2(Vector2(3, 3), MAP_SIZE - Vector2(6, 6)), Color(UiStyle.ASPHALT, 0.82), true)
+	draw_rect(Rect2(Vector2(3, 3), MAP_SIZE - Vector2(6, 6)), Color(UiStyle.STEEL, 0.82), false, 1.0)
 	
 	# Crosshairs (subtle)
-	draw_line(Vector2(center.x, center.y - radius), Vector2(center.x, center.y + radius), Color(0.25, 0.35, 0.45, 0.25), 1.0)
-	draw_line(Vector2(center.x - radius, center.y), Vector2(center.x + radius, center.y), Color(0.25, 0.35, 0.45, 0.25), 1.0)
+	draw_line(Vector2(center.x, center.y - radius), Vector2(center.x, center.y + radius), Color(UiStyle.STEEL, 0.25), 1.0)
+	draw_line(Vector2(center.x - radius, center.y), Vector2(center.x + radius, center.y), Color(UiStyle.STEEL, 0.25), 1.0)
 	
 	# North "N" Indicator at top
 	var font = ThemeDB.fallback_font
-	if font:
+	if font and not compact_display:
 		draw_string(font, Vector2(center.x - 5, 19), "N", HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color(0.9, 0.3, 0.3, 0.95))
 	
 	if player == null or not is_instance_valid(player):
@@ -77,6 +90,14 @@ func _draw():
 	_draw_player_arrow(center)
 
 func _draw_village_elements(center: Vector2, radius: float, p_pos: Vector3):
+	var scene := get_tree().current_scene
+	if scene and scene.has_method("get_auto_move_path"):
+		var route: PackedVector3Array = scene.call("get_auto_move_path")
+		for index in range(1, route.size()):
+			var first := _world_to_map(route[index - 1], p_pos, center, radius)
+			var last := _world_to_map(route[index], p_pos, center, radius)
+			if _inside_map(first) and _inside_map(last):
+				draw_line(first, last, UiStyle.AMBER, 2.0, true)
 	var colors := {
 		"fountain": Color(0.28, 0.72, 0.78),
 		"forge": Color(0.88, 0.52, 0.24),
@@ -105,8 +126,8 @@ func _draw_village_elements(center: Vector2, radius: float, p_pos: Vector3):
 	
 	if portal and is_instance_valid(portal):
 		var portal_map_pos := _world_to_map_clamped_square(portal.global_position, p_pos, center, radius - 6.0)
-		_draw_diamond(portal_map_pos, 7.0, Color(0.23, 0.7, 1.0))
-		_draw_diamond(portal_map_pos, 4.0, Color(0.83, 0.95, 1.0))
+		_draw_diamond(portal_map_pos, 7.0, UiStyle.AMBER)
+		_draw_diamond(portal_map_pos, 4.0, UiStyle.GOLD_BRIGHT)
 
 func _draw_battle_elements(center: Vector2, radius: float, p_pos: Vector3):
 	# XP Gems (small yellow-green dots)

@@ -24,8 +24,14 @@ extends Resource
 @export var animation_key: String = "AttackAlt"
 ## Positive values protect the skill animation and cap playback at this many seconds.
 @export var animation_duration: float = 0.0
+## Optional ordered animation aliases for a combo skill.
+@export var animation_sequence: PackedStringArray = PackedStringArray()
 ## Delay from animation start until the hit effect is created.
 @export var impact_delay: float = 0.0
+## Optional effect timings for a combo skill, measured from cast start.
+@export var effect_sequence_delays: PackedFloat32Array = PackedFloat32Array()
+## Optional per-effect damage ratios for a combo skill.
+@export var effect_sequence_damage_ratios: PackedFloat32Array = PackedFloat32Array()
 @export var bonus_type: String = "physical"
 @export var effect_scene: PackedScene
 @export var effect_color: Color = Color.WHITE
@@ -34,6 +40,11 @@ extends Resource
 @export var projectile_count: int = 1
 @export var spread_radians: float = 0.0
 @export var projectile_pierce: int = 1
+@export_range(0.25, 3.0, 0.05) var wave_width_multiplier: float = 1.0
+## Minimum nearby enemies required before auto battle considers an area skill.
+@export var auto_min_targets: int = 2
+## Optional weight used by the auto-battle utility score. Slot defaults are used when zero.
+@export var auto_priority: float = 0.0
 @export var heal_ratio: float = 0.0
 @export var passive_handler: String = ""
 @export var regen_delay: float = 0.0
@@ -57,7 +68,10 @@ func to_game_dictionary() -> Dictionary:
 		"cast_type": cast_type,
 		"animation_key": animation_key,
 		"animation_duration": animation_duration,
+		"animation_sequence": animation_sequence,
 		"impact_delay": impact_delay,
+		"effect_sequence_delays": effect_sequence_delays,
+		"effect_sequence_damage_ratios": effect_sequence_damage_ratios,
 		"bonus_type": bonus_type,
 		"effect_scene": effect_scene.resource_path if effect_scene != null else "",
 		"visual_color": effect_color.to_html(false),
@@ -66,6 +80,9 @@ func to_game_dictionary() -> Dictionary:
 		"projectile_count": projectile_count,
 		"spread_radians": spread_radians,
 		"projectile_pierce": projectile_pierce,
+		"wave_width_multiplier": wave_width_multiplier,
+		"auto_min_targets": auto_min_targets,
+		"auto_priority": auto_priority,
 		"heal_ratio": heal_ratio,
 		"passive_handler": passive_handler,
 		"regen_delay": regen_delay,

@@ -5,19 +5,19 @@
 
 [resource]
 script = ExtResource("1_skill")
-id = "Sword_Attack_Air_Vertical"
-display_name = "공중 수직 베기"
-description = "공중에서 세로로 검을 내려쳐 전방의 적을 관통합니다."
-icon = "⚡"
-cooldown = 6.0
-damage_ratio = 1.9
-range = 8.0
+id = "Great_Sword_Slash"
+legacy_id = "Great_Sword_Kick"
+display_name = "대검 횡베기"
+description = "대검으로 크게 횡베기해 전방의 여러 적을 베어냅니다."
+icon = "🌙"
+cooldown = 2.8
+damage_ratio = 1.45
+range = 5.8
 cast_type = "wave"
-animation_key = "Sword_Attack_Air_Vertical"
-animation_duration = 1.9
-impact_delay = 0.72
-bonus_type = "physical"
+animation_key = "Great_Sword_Slash"
+impact_delay = 0.88
+bonus_type = "area"
 effect_scene = ExtResource("2_effect")
-projectile_pierce = 3
+wave_width_multiplier = 1.7
 implemented = true
 support_status = "animation_skill"

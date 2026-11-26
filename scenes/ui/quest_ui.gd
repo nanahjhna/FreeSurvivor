@@ -1,9 +1,14 @@
 extends CanvasLayer
 
+const REFERENCE_SCREEN := preload("res://scripts/reference_screen.gd")
+
 signal closed()
 
 var _list: VBoxContainer
 var _summary: Label
+var _approved: REFERENCE_SCREEN
+var _legacy_root: Control
+var _approved_quests: Control
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -14,12 +19,13 @@ func _ready():
 
 func _build_ui():
 	var root := Control.new()
+	_legacy_root = root
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0, 0, 0, 0.72)
+	backdrop.color = UiStyle.SCRIM
 	root.add_child(backdrop)
 
 	var center := CenterContainer.new()
@@ -28,7 +34,11 @@ func _build_ui():
 
 	var panel := UiStyle.make_panel()
 	center.add_child(panel)
-	var portrait := UiStyle.fit_modal(panel, Vector2(880, 1120))
+	var portrait := UiStyle.fit_modal(panel, Vector2(700, 1050))
+	get_viewport().size_changed.connect(func():
+		var safe := UiStyle.safe_insets(get_viewport())
+		UiStyle.fit_modal(panel, Vector2(700, 1050), Vector2(16 + maxf(safe.x, safe.z), 24 + maxf(safe.y, safe.w)))
+	)
 
 	var margin := UiStyle.make_margin(panel, 16 if portrait else 24)
 	var vbox := VBoxContainer.new()
@@ -37,14 +47,15 @@ func _build_ui():
 
 	var header := HBoxContainer.new()
 	vbox.add_child(header)
-	var title := UiStyle.make_title("📜 퀘스트", 28)
+	header.add_child(UiStyle.icon_view("quest", 28))
+	var title := UiStyle.make_title("퀘스트", 29)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	var close := UiStyle.make_button("✕", Vector2(52, 48))
 	close.pressed.connect(close_screen)
 	header.add_child(close)
 
-	_summary = UiStyle.make_label("", 14, Color(0.72, 0.82, 0.95))
+	_summary = UiStyle.make_label("", 16, UiStyle.MUTED)
 	vbox.add_child(_summary)
 	vbox.add_child(HSeparator.new())
 
@@ -60,6 +71,8 @@ func _build_ui():
 
 func open():
 	visible = true
+	if _approved == null:
+		_build_approved_quest_screen()
 	_refresh()
 
 func close_screen():
@@ -75,11 +88,14 @@ func _refresh():
 	if not visible:
 		return
 	for child in _list.get_children():
+		_list.remove_child(child)
 		child.queue_free()
 
 	var claimable := 0
 	var completed := 0
-	for quest in GameData.quests:
+	var display_quests := GameData.quests.filter(_can_claim)
+	display_quests.append_array(GameData.quests.filter(func(quest: Dictionary): return not _can_claim(quest)))
+	for quest in display_quests:
 		if bool(quest.get("claimed", false)):
 			completed += 1
 		if not quest.get("claimed", false) and int(quest.get("current", 0)) >= int(quest.get("target", 1)):
@@ -88,10 +104,98 @@ func _refresh():
 	_summary.text = "완료 %d / 전체 %d   ·   수령 가능 %d개" % [
 		completed, GameData.quests.size(), claimable
 	]
+	_refresh_approved_quests(display_quests)
+
+
+func _build_approved_quest_screen() -> void:
+	_approved = REFERENCE_SCREEN.new()
+	_approved.build(self, "quest")
+	_approved.smithy(Rect2(0, 103, 552, 831), Rect2(20, 231, 518, 597))
+	_approved.solid(Rect2(9, 218, 534, 650), Color("#14110ed1"))
+	_approved.hit(Rect2(487, 31, 57, 62), "닫기", close_screen)
+	_approved.live_text(Rect2(30, 158, 492, 40), func(): return _summary.text, 24, HORIZONTAL_ALIGNMENT_CENTER)
+	_legacy_root.hide()
+
+
+func _refresh_approved_quests(quests: Array) -> void:
+	if not _approved:
+		return
+	if _approved_quests:
+		_approved.page.remove_child(_approved_quests)
+		_approved_quests.queue_free()
+	_approved_quests = Control.new()
+	_approved_quests.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_approved.page.add_child(_approved_quests)
+	_approved.place(_approved_quests, Rect2(23, 223, 508, 637))
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_approved_quests.add_child(scroll)
+	var rows := VBoxContainer.new()
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rows.add_theme_constant_override("separation", 13)
+	scroll.add_child(rows)
+	for quest in quests:
+		var claimable := _can_claim(quest)
+		var claimed := bool(quest.get("claimed", false))
+		var target := maxi(1, int(quest.get("target", 1)))
+		var current := clampi(int(quest.get("current", 0)), 0, target)
+		var card := Panel.new()
+		card.custom_minimum_size.y = 144
+		rows.add_child(card)
+		var band := Rect2(22, 241, 508, 248) if claimable else Rect2(22, 515, 508, 140)
+		card.add_theme_stylebox_override("panel", _approved.trim(band, 13, false))
+		var inside := ColorRect.new()
+		inside.color = Color("#29231d")
+		inside.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		inside.offset_left = 16
+		inside.offset_right = -16
+		inside.offset_top = 13
+		inside.offset_bottom = -13
+		inside.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		card.add_child(inside)
+		var stack := VBoxContainer.new()
+		stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		stack.offset_left = 21
+		stack.offset_right = -21
+		stack.offset_top = 15
+		stack.add_theme_constant_override("separation", 2)
+		card.add_child(stack)
+		var row := HBoxContainer.new()
+		stack.add_child(row)
+		var icon_name := "skill" if str(quest.get("id")) in ["q_slay_50", "q_first_battle"] else "quest"
+		row.add_child(UiStyle.icon_view(icon_name, 32))
+		var heading := UiStyle.make_label(str(quest.get("title", "")), 29)
+		heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(heading)
+		row.add_child(UiStyle.make_label("수령 완료" if claimed else "%d / %d" % [current, target], 22, UiStyle.GOLD_BRIGHT))
+		var description := UiStyle.make_label(str(quest.get("desc", "")), 17, UiStyle.MUTED)
+		description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		stack.add_child(description)
+		var progress := ProgressBar.new()
+		progress.custom_minimum_size.y = 11
+		progress.show_percentage = false
+		progress.max_value = target
+		progress.value = current
+		progress.add_theme_stylebox_override("background", UiStyle.frame(UiStyle.ASPHALT, UiStyle.RUST))
+		progress.add_theme_stylebox_override("fill", UiStyle.frame(UiStyle.RECOVERY if current >= target else UiStyle.AMBER, Color.TRANSPARENT))
+		stack.add_child(progress)
+		var reward := HBoxContainer.new()
+		stack.add_child(reward)
+		var coins := UiStyle.make_label("%d G  ·  젬 %d" % [int(quest.get("reward_gold", 0)), int(quest.get("reward_gems", 0))], 20)
+		coins.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		reward.add_child(coins)
+		if claimable:
+			var claim := UiStyle.make_button("보상 받기", Vector2(135, 41), true)
+			claim.pressed.connect(_claim_quest.bind(str(quest.get("id", ""))))
+			reward.add_child(claim)
+
+func _can_claim(quest: Dictionary) -> bool:
+	return not bool(quest.get("claimed", false)) and int(quest.get("current", 0)) >= int(quest.get("target", 1))
 
 func _make_quest_card(quest: Dictionary) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
+	panel.add_theme_stylebox_override("panel", UiStyle.art_panel(UiStyle.AMBER if _can_claim(quest) else UiStyle.STEEL))
 
 	var margin := UiStyle.make_margin(panel, 14)
 	var vbox := VBoxContainer.new()
@@ -100,7 +204,9 @@ func _make_quest_card(quest: Dictionary) -> PanelContainer:
 
 	var top := HBoxContainer.new()
 	vbox.add_child(top)
-	var title := UiStyle.make_label(str(quest.get("title", "퀘스트")), 18, Color(1.0, 0.9, 0.55))
+	top.add_child(UiStyle.icon_view("quest", 25))
+	var title := UiStyle.make_title(str(quest.get("title", "퀘스트")), 22)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(title)
 
@@ -109,44 +215,41 @@ func _make_quest_card(quest: Dictionary) -> PanelContainer:
 	var target: int = int(quest.get("target", 1))
 	var complete := current >= target
 	var status := UiStyle.make_label(
-		"수령 완료" if claimed else ("✅ 완료" if complete else "진행 중"),
+		"수령 완료" if claimed else ("%d / %d" % [min(current, target), target]),
 		13,
 		Color(0.5, 1.0, 0.6) if complete and not claimed else (Color(0.6, 0.62, 0.7) if claimed else Color(0.65, 0.78, 0.95))
 	)
 	top.add_child(status)
 
-	vbox.add_child(UiStyle.make_label(str(quest.get("desc", "")), 13, Color(0.86, 0.9, 0.98)))
+	var description := UiStyle.make_label(str(quest.get("desc", "")), 16, UiStyle.MUTED)
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(description)
 
 	var progress := ProgressBar.new()
 	progress.custom_minimum_size = Vector2(0, 18)
 	progress.max_value = target
 	progress.value = min(current, target)
 	progress.show_percentage = false
+	progress.add_theme_stylebox_override("background", UiStyle.panel_style(UiStyle.ASPHALT, UiStyle.STEEL_DARK, 1))
+	progress.add_theme_stylebox_override("fill", UiStyle.panel_style(UiStyle.RECOVERY if complete else UiStyle.AMBER, UiStyle.STEEL, 1))
 	vbox.add_child(progress)
 
 	var bottom := HBoxContainer.new()
 	bottom.add_theme_constant_override("separation", 12)
 	vbox.add_child(bottom)
 
-	var progress_label := UiStyle.make_label("%d / %d" % [min(current, target), target], 12, Color(0.7, 0.82, 0.95))
-	progress_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	bottom.add_child(progress_label)
-
+	bottom.add_child(UiStyle.icon_view("coin", 23, UiStyle.GOLD_BRIGHT))
 	var reward := UiStyle.make_label(
-		"보상: 💰 %d  💎 %d" % [int(quest.get("reward_gold", 0)), int(quest.get("reward_gems", 0))],
-		13,
-		Color(1.0, 0.85, 0.4)
+		"%d G · 💎 %d" % [int(quest.get("reward_gold", 0)), int(quest.get("reward_gems", 0))],
+		16, UiStyle.GOLD_BRIGHT
 	)
+	reward.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	bottom.add_child(reward)
-
-	var claim := UiStyle.make_button("보상 받기", Vector2(120, 38), true)
-	claim.disabled = claimed or not complete
-	if claimed:
-		claim.text = "수령 완료"
-	elif not complete:
-		claim.text = "진행 중"
-	claim.pressed.connect(func(): _claim_quest(str(quest.get("id", ""))))
-	bottom.add_child(claim)
+	if _can_claim(quest):
+		var claim := UiStyle.make_button("보상 받기", Vector2(110, 48), true)
+		claim.pressed.connect(func(): _claim_quest(str(quest.get("id", ""))))
+		bottom.add_child(claim)
 	return panel
 
 func _claim_quest(quest_id: String):

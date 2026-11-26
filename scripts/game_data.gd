@@ -15,6 +15,7 @@ const SAVE_TEMP_PATH = "user://freesurvivor_save.tmp"
 const SAVE_BACKUP_PATH = "user://freesurvivor_save.backup.json"
 const SAVE_BACKUP_TEMP_PATH = "user://freesurvivor_save.backup.tmp"
 const SAVE_SCHEMA_VERSION = 3
+const SKILL_LOADOUT_VERSION = 2
 const FIGHTER_ID := "char01"
 const CHARACTER_SKILL_DATABASE = preload("res://scripts/character_skill_database.gd")
 const CHARACTER_NAME_MAX_LENGTH = 20
@@ -262,8 +263,8 @@ var all_upgrades: Array[Dictionary] = [
 	},
 	{
 		"id": "aspd_up",
-		"name": "공격속도 증가",
-		"description": "기본 공격 속도가 20% 빨라집니다.",
+		"name": "스킬 시전 가속",
+		"description": "스킬 시전 애니메이션과 타격 시점이 20% 가속됩니다.",
 		"type": "stat",
 		"stat": "attack_speed_mult",
 		"value": 0.2
@@ -644,16 +645,11 @@ func _set_character_skill_set(character_class_id: String):
 	_shop_combat_skills.clear()
 	var character := CharacterRegistry.get_by_id(character_class_id)
 	if character != null:
-		for action in character.basic_attack_animation_keys:
-			var clip := CHARACTER_SKILL_DATABASE.get_source_clip(character, action)
-			if not clip.is_empty():
-				_built_in_motions[clip] = true
 		var starting_ids := skill_loadout.values()
-		var basic_clips := _built_in_motions.duplicate()
 		for skill_id in skill_meta:
 			var meta: Dictionary = skill_meta[skill_id]
 			var clip := CHARACTER_SKILL_DATABASE.get_source_clip(character, str(meta.get("animation_key", "")))
-			if basic_clips.has(clip) or str(meta.get("cast_type", "")) == "unassigned":
+			if str(meta.get("cast_type", "")) == "unassigned":
 				continue
 			if starting_ids.has(skill_id) or str(meta.get("cast_type", "")) == "passive":
 				_starting_combat_skills[skill_id] = true
@@ -946,9 +942,10 @@ func get_leader_id() -> String:
 	var idx = clampi(leader_index, 0, party_slots.size() - 1)
 	return party_slots[idx]
 
-func get_max_player_hp() -> float:
-	var stats := get_character_stat_manager(get_leader_id())
-	return stats.max_hp() + max_hp_bonus
+func get_max_player_hp(stats: StatManager = null) -> float:
+	if stats == null:
+		stats = get_character_stat_manager(get_leader_id())
+	return (stats.max_hp() + max_hp_bonus) * (1.0 + get_survival_bonus("max_hp_percent"))
 
 func get_active_character_equipment_hp() -> float:
 	var class_id := get_leader_id()
@@ -1150,6 +1147,7 @@ func _serialize_runtime_state() -> Dictionary:
 		"player_gems": player_gems,
 		"player_growth_currency": player_growth_currency,
 		"growth_system_version": 2,
+		"skill_loadout_version": SKILL_LOADOUT_VERSION,
 		"class_id": get_leader_id(),
 		"skill_loadout": skill_loadout,
 		"characters": characters,
@@ -1199,7 +1197,7 @@ func _apply_runtime_state(data: Dictionary):
 	leader_index = 0
 	_set_character_skill_set(get_leader_id())
 
-	if data.has("skill_loadout") and data["skill_loadout"] is Dictionary:
+	if int(data.get("skill_loadout_version", 1)) >= SKILL_LOADOUT_VERSION and data.has("skill_loadout") and data["skill_loadout"] is Dictionary:
 		skill_loadout = data["skill_loadout"].duplicate(true)
 
 	if data.has("characters") and data["characters"] is Dictionary:

@@ -5,18 +5,20 @@
 
 [resource]
 script = ExtResource("1_skill")
-id = "Great_Sword_Kick"
-display_name = "대검 선풍각"
-description = "몸을 회전시켜 주변의 적을 강하게 걷어찹니다."
-icon = "🦵"
-cooldown = 2.8
-damage_ratio = 1.45
-range = 4.2
+id = "Great_Sword_Jump_Attack"
+legacy_id = "Sword_Attack_Air_Vertical"
+display_name = "대검 도약 참격"
+description = "도약하며 대검을 휘둘러 착지 지점 주변의 적을 공격합니다."
+icon = "⚡"
+cooldown = 6.0
+damage_ratio = 1.9
+range = 4.8
 cast_type = "spin"
-animation_key = "Great_Sword_Kick"
-animation_duration = 1.74
-impact_delay = 0.52
+animation_key = "Great_Sword_Jump_Attack"
+impact_delay = 0.96
 bonus_type = "area"
 effect_scene = ExtResource("2_effect")
+cast_pattern = "ground_impact"
+auto_min_targets = 1
 implemented = true
 support_status = "animation_skill"

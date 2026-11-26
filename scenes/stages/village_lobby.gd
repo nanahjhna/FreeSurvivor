@@ -28,6 +28,14 @@ func _ready():
 	battle_portal.battle_requested.connect(_on_battle_requested)
 	
 	if player:
+		# Start the village character facing the opposite gate/portal. Keep this
+		# on the visual root so movement axes and the player collision body stay
+		# unchanged.
+		var gate_direction := (battle_portal.global_position - player.global_position).slide(Vector3.UP)
+		var visual_root := player.get_node_or_null("VisualRoot") as Node3D
+		if visual_root != null and not gate_direction.is_zero_approx():
+			gate_direction = gate_direction.normalized()
+			visual_root.rotation.y = atan2(gate_direction.x, gate_direction.z)
 		if player.has_method("set_head_hp_bar_visible"):
 			player.call("set_head_hp_bar_visible", false)
 		if player.has_method("set_first_person_mode"):

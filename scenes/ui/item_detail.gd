@@ -18,7 +18,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var scrim := ColorRect.new()
 	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	scrim.color = Color(0.018, 0.014, 0.02, 0.82)
+	scrim.color = UiStyle.SCRIM
 	add_child(scrim)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -29,20 +29,18 @@ func _ready() -> void:
 	content.add_theme_constant_override("separation", 14)
 	UiStyle.make_margin(card, 24).add_child(content)
 
-	banner = UiStyle.make_panel()
+	banner = UiStyle.notice_board()
 	content.add_child(banner)
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 8)
 	banner.add_child(header)
-	title = UiStyle.make_label("", 33, Color.WHITE)
-	UiStyle.ink_outline(title, 7, Color("#45225d"))
+	title = UiStyle.make_title("", 33)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	var close_button := UiStyle.make_button("×", Vector2(58, 54))
 	close_button.tooltip_text = "닫기"
-	UiStyle.skin_button(close_button, Color("#926448"), Color("#ffdc99"))
 	close_button.add_theme_font_size_override("font_size", 26)
 	close_button.pressed.connect(hide)
 	header.add_child(close_button)
@@ -62,27 +60,26 @@ func _ready() -> void:
 	item_text.add_theme_constant_override("separation", 9)
 	item_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	item_header.add_child(item_text)
-	var identity_box := UiStyle.plaque("", Color("#59402f"), Color("#9c714a"), Color("#fff0ce"), 20)
+	var identity_box := UiStyle.plaque("", UiStyle.INK_SOFT, UiStyle.RUST, UiStyle.IVORY, 20)
 	item_text.add_child(identity_box)
 	identity = identity_box.get_child(0) as Label
 	identity.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	identity.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	description = UiStyle.make_label("", 21, UiStyle.PAPER_INK)
+	description = UiStyle.make_label("", 21, UiStyle.MUTED)
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	item_text.add_child(description)
 	stat_section = VBoxContainer.new()
 	stat_section.add_theme_constant_override("separation", 6)
 	content.add_child(stat_section)
-	stat_section.add_child(UiStyle.plaque("능력치", Color("#614631"), Color("#a8754b"), Color("#fff0cc"), 24))
+	stat_section.add_child(UiStyle.plaque("능력치", UiStyle.INK_SOFT, UiStyle.STEEL, UiStyle.IVORY, 24))
 	var stat_plate := UiStyle.make_panel()
-	stat_plate.add_theme_stylebox_override("panel", UiStyle.frame(Color("#ead4a4"), Color("#d5ad77"), 9, 2))
+	stat_plate.add_theme_stylebox_override("panel", UiStyle.art_panel())
 	stat_section.add_child(stat_plate)
-	stats = UiStyle.make_label("", 22, UiStyle.PAPER_INK)
+	stats = UiStyle.make_label("", 22)
 	stats.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stat_plate.add_child(stats)
 	action = UiStyle.make_button("", Vector2(0, 60), true)
-	UiStyle.skin_button(action, UiStyle.BLUE, UiStyle.BLUE_EDGE)
 	action.add_theme_font_size_override("font_size", 23)
 	action.pressed.connect(func(): action_requested.emit())
 	content.add_child(action)
@@ -99,11 +96,7 @@ func _fit() -> void:
 func show_item(item: Dictionary, action_text: String = "", comparison: String = "") -> void:
 	var grade := str(item.get("grade", ""))
 	var trim := UiStyle.grade_color(grade)
-	var faces := {"SSR": Color("#ab572b"), "SR": Color("#813caa"), "R": Color("#395fc1")}
-	var tone: Color = faces.get(grade, Color("#775486"))
-	card.add_theme_stylebox_override("panel", UiStyle.frame(UiStyle.PAPER, Color("#c59058"), 22, 7))
-	banner.add_theme_stylebox_override("panel", UiStyle.frame(tone, trim.lightened(0.12), 13, 4))
-	emblem.add_theme_stylebox_override("panel", UiStyle.frame(tone.darkened(0.23), trim, 20, 5))
+	emblem.add_theme_stylebox_override("panel", UiStyle.art_panel(trim))
 	title.text = str(item.get("name", "아이템"))
 	icon.text = str(item.get("icon", "◆"))
 	var type := str(item.get("type", ""))

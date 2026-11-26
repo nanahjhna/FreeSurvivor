@@ -1,5 +1,8 @@
 extends CanvasLayer
 
+const REFERENCE_SCREEN := preload("res://scripts/reference_screen.gd")
+var approved: REFERENCE_SCREEN
+
 @onready var settings_ui = $SettingsUI
 @onready var resume_button: Button = $CenterContainer/VBoxContainer/ResumeButton
 @onready var restart_button: Button = $CenterContainer/VBoxContainer/RestartButton
@@ -13,28 +16,32 @@ func _ready():
 	GameManager.state_changed.connect(_on_state_changed)
 	_style_buttons()
 	_build_pause_panel()
+	$CenterContainer.hide()
 
 func _style_buttons():
 	for button in [resume_button, restart_button, settings_button, lobby_button]:
 		UiStyle.apply_button(button, button == resume_button)
-		UiStyle.skin_button(button, UiStyle.BLUE if button == resume_button else Color("#bd8b53"), UiStyle.BLUE_EDGE if button == resume_button else Color("#ffe5a5"))
 		button.custom_minimum_size.y = 60
 		button.add_theme_font_size_override("font_size", 21)
 	resume_button.text = "전투 계속"
 	restart_button.text = "다시 시작"
 	settings_button.text = "환경 설정"
 	lobby_button.text = "마을 복귀"
+	UiStyle.button_icon(resume_button, "play", 27)
+	UiStyle.button_icon(restart_button, "restart", 27)
+	UiStyle.button_icon(settings_button, "settings", 27)
+	UiStyle.button_icon(lobby_button, "home", 27)
 
 func _build_pause_panel() -> void:
-	$ColorRect.color = Color(0.028, 0.019, 0.034, 0.72)
+	$ColorRect.color = UiStyle.SCRIM
 	var center := $CenterContainer as CenterContainer
 	var content := $CenterContainer/VBoxContainer as VBoxContainer
 	pause_content = content
 	var title := content.get_node("Title") as Label
-	title.add_theme_color_override("font_color", Color.WHITE)
-	UiStyle.ink_outline(title, 7, Color("#25436d"))
-	var band := UiStyle.make_panel()
-	band.add_theme_stylebox_override("panel", UiStyle.frame(Color("#317db3"), Color("#a0d8ff"), 12, 4))
+	title.add_theme_color_override("font_color", UiStyle.IVORY)
+	title.add_theme_font_size_override("font_size", 34)
+	UiStyle.ink_outline(title, 2)
+	var band := UiStyle.notice_board()
 	content.add_child(band)
 	content.move_child(band, 0)
 	title.reparent(band, false)
@@ -42,7 +49,6 @@ func _build_pause_panel() -> void:
 	UiStyle.divider(content)
 	content.move_child(content.get_child(-1), 1)
 	var card := UiStyle.make_panel()
-	card.add_theme_stylebox_override("panel", UiStyle.frame(UiStyle.PAPER, Color("#bc884e"), 25, 7))
 	center.add_child(card)
 	content.reparent(UiStyle.make_margin(card, 24), false)
 	var fit := func():
@@ -64,6 +70,14 @@ func _input(event: InputEvent):
 func _on_state_changed(new_state):
 	if new_state == GameManager.GameState.PAUSED:
 		visible = true
+		if approved == null:
+			approved = REFERENCE_SCREEN.new()
+			approved.build(self, "pause", false)
+			approved.image(Rect2(75, 219, 419, 519), Rect2(75, 219, 419, 519))
+			approved.relay(Rect2(103, 333, 366, 85), resume_button)
+			approved.relay(Rect2(103, 430, 366, 80), restart_button)
+			approved.relay(Rect2(103, 526, 366, 79), settings_button)
+			approved.relay(Rect2(103, 622, 366, 80), lobby_button)
 	else:
 		visible = false
 

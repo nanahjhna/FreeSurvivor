@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_skill"]
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="2_effect"]
+
+[resource]
+script = ExtResource("1_skill")
+id = "Great_Sword_Attack"
+legacy_id = "One_Hand_Club_Combo"
+display_name = "대검 베기"
+description = "대검을 빠르게 휘둘러 전방으로 검기를 날립니다."
+icon = "⚔️"
+cooldown = 3.2
+damage_ratio = 1.4
+range = 6.5
+cast_type = "wave"
+animation_key = "Great_Sword_Attack"
+impact_delay = 0.43
+bonus_type = "physical"
+effect_scene = ExtResource("2_effect")
+projectile_pierce = 2
+implemented = true
+support_status = "animation_skill"

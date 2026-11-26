@@ -1,48 +1,179 @@
 class_name UiStyle
 extends RefCounted
-## Shared visual system for the game's dark gothic fantasy screens.
+## Shared visual system for the game's post-apocalyptic interface.
 
-const INK := Color(0.035, 0.027, 0.03, 0.96)
-const INK_SOFT := Color(0.075, 0.052, 0.047, 0.94)
-const WINE := Color(0.27, 0.035, 0.03, 0.98)
-const WINE_HOVER := Color(0.42, 0.065, 0.04, 1.0)
-const GOLD := Color(0.86, 0.62, 0.29, 0.95)
-const GOLD_BRIGHT := Color(1.0, 0.82, 0.43, 1.0)
-const IVORY := Color(0.96, 0.91, 0.81, 1.0)
-const MUTED := Color(0.70, 0.64, 0.56, 1.0)
-const PAPER := Color("#f7e5b8")
-const PAPER_INK := Color("#392519")
-const AMBER := Color("#ffd275")
-const BLUE := Color("#2456a2")
-const BLUE_EDGE := Color("#8dd2ff")
+const ART := preload("res://scripts/ui_artwork.gd")
+const ASPHALT := Color("#1a1917")
+const INK := Color("#23211f")
+const INK_SOFT := Color("#302c27")
+const STEEL := Color("#8e7762")
+const STEEL_DARK := Color("#51453b")
+const RUST := Color("#bd9169")
+const SELECTED := Color("#40362a")
+const WOOD := Color("#2c2824")
+const PAPER := Color("#e1c9a0")
+const PAPER_EDGE := Color("#b9946c")
+const PAPER_INK := Color("#34261c")
+const CTA := Color("#ac482b")
+const CTA_EDGE := Color("#ed9568")
+const DANGER := Color("#52302a")
+const DANGER_EDGE := Color("#d47a67")
+const SCRIM := Color(0.055, 0.050, 0.044, 0.75)
+const GOLD := Color("#bf9154")
+const GOLD_BRIGHT := Color("#fac574")
+const IVORY := Color("#f5ebd9")
+const MUTED := Color("#cbbca9")
+const AMBER := Color("#eeb45f")
+const ATTACK := Color("#fa9467")
+const DEFENSE := Color("#8bc6fc")
+const RECOVERY := Color("#a2df99")
 
-static func frame(face: Color, edge: Color, radius: int = 12, thickness: int = 3) -> StyleBoxFlat:
+const ICON_PATHS := {
+	"person": "M12 11a4 4 0 1 0 0-8a4 4 0 0 0 0 8m0 2c-5 0-9 3-9 7v1h18v-1c0-4-4-7-9-7",
+	"sword": "M21 2l-2 6L9 18l-3-3L16 5zM3 12l9 9l-2 2l-3-3l-3 3l-3-3l3-3l-3-3z",
+	"armor": "M8 3l-5 2l-2 6l5 2l1-3v11h10V10l1 3l5-2l-2-6l-5-2c-1 4-7 4-8 0",
+	"shield": "M12 2l9 4v6c0 5-5 9-9 11c-4-2-9-6-9-11V6zm0 3L6 7v5c0 3 3 6 6 8c3-2 6-5 6-8V7z",
+	"ring": "M7 3h10l3 4l-4 4h-8L4 7zm5 8a6.5 6.5 0 1 1 0 13a6.5 6.5 0 0 1 0-13m0 3a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7",
+	"boots": "M10 2h9v12l2 2v5H3v-4l7-4zm2 2v2h5V4z",
+	"skill": "M12 0l3 8l8 4l-8 3l-3 9l-3-9l-8-3l8-4z",
+	"speed": "M13 1L3 14h7l-1 9l12-13h-8z",
+	"heal": "M8 2h8v6h6v8h-6v6H8v-6H2V8h6z",
+	"compass": "M12 1a11 11 0 1 0 0 22a11 11 0 0 0 0-22m0 2a9 9 0 1 1 0 18a9 9 0 0 1 0-18m5 4l-3 7l-7 3l3-7z",
+	"gate": "M1 6l4-4l4 4H7v6l5-4l5 4V6h-2l4-4l4 4h-2v15h-7v-5a2 2 0 0 0-4 0v5H3V6z",
+	"forge": "M2 5h20v3l-4 4h-4v4l5 2v3H5v-3l5-2v-4H7L2 8z",
+	"bed": "M2 4h2v8h2V8h5a3 3 0 0 1 3 3v1h1V9h4a3 3 0 0 1 3 3v8h-2v-3H4v3H2z",
+	"quest": "M5 2h14v16h-8l-4 4v-4H5zm3 4v2h8V6zm0 4v2h8v-2zm0 4v2h5v-2z",
+	"play": "M5 3l16 9L5 21z",
+	"restart": "M20 2v7h-7l2.6-2.6A7 7 0 1 0 19 14h3a10 10 0 1 1-4.2-9.8z",
+	"home": "M12 2l11 9h-3v10h-6v-6h-4v6H4V11H1z",
+	"settings": "M10 1h4l1 4l3-1l3 3l-2 3l4 1v4l-4 1l1 3l-3 3l-3-2l-1 3h-4l-1-4l-3 1l-3-3l2-3l-3-1v-4l4-1l-1-3l3-3l3 2zm2 7a4 4 0 1 0 0 8a4 4 0 0 0 0-8",
+	"coin": "M12 1a11 11 0 1 0 0 22a11 11 0 0 0 0-22m0 2a9 9 0 1 1 0 18a9 9 0 0 1 0-18m-2 3h4l3 6l-5 6l-5-6z",
+}
+
+static var _icon_cache: Dictionary = {}
+
+static func icon(kind: String) -> Texture2D:
+	if not _icon_cache.has(kind):
+		if ART.ICON_REGIONS.has(kind):
+			_icon_cache[kind] = ART.icon(kind)
+			return _icon_cache[kind]
+		var shape: String = ICON_PATHS.get(kind, ICON_PATHS["skill"])
+		var source := '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"><path fill="#ffffff" fill-rule="evenodd" d="%s"/></svg>' % shape
+		var image := Image.new()
+		if image.load_svg_from_string(source) != OK:
+			return null
+		_icon_cache[kind] = ImageTexture.create_from_image(image)
+	return _icon_cache[kind]
+
+static func icon_view(kind: String, pixels: int, tint: Color = IVORY) -> TextureRect:
+	var view := TextureRect.new()
+	view.texture = icon(kind)
+	view.modulate = Color.WHITE if tint == IVORY and ART.ICON_REGIONS.has(kind) else tint
+	view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	view.custom_minimum_size = Vector2(pixels, pixels)
+	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return view
+
+static func button_icon(button: Button, kind: String, pixels: int = 24, above: bool = false) -> void:
+	button.icon = icon(kind)
+	button.expand_icon = true
+	button.add_theme_constant_override("icon_max_width", pixels)
+	button.add_theme_constant_override("h_separation", 8)
+	var ink := Color.WHITE if ART.ICON_REGIONS.has(kind) else IVORY
+	button.add_theme_color_override("icon_normal_color", ink)
+	button.add_theme_color_override("icon_hover_color", ink)
+	button.add_theme_color_override("icon_pressed_color", ink)
+	button.add_theme_color_override("icon_disabled_color", MUTED)
+	if above:
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+
+static func category_tint(category: String) -> Color:
+	match category:
+		"attack": return ATTACK
+		"defense": return DEFENSE
+		"recovery": return RECOVERY
+	return GOLD_BRIGHT
+
+static func category_icon(category: String) -> String:
+	match category:
+		"attack": return "sword"
+		"defense": return "shield"
+		"recovery": return "heal"
+	return "skill"
+
+static func frame(face: Color, edge: Color, radius: int = 10, thickness: int = 2) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = face
 	style.border_color = edge
 	style.set_border_width_all(thickness)
-	style.border_width_bottom = thickness + 2
+	style.border_width_bottom = thickness + 1
 	style.set_corner_radius_all(radius)
-	style.shadow_color = Color(0.033, 0.018, 0.027, 0.58)
-	style.shadow_offset = Vector2(0, 5)
-	style.shadow_size = 5
+	style.corner_detail = 1
+	style.shadow_color = Color(0, 0, 0, 0.38)
+	style.shadow_offset = Vector2(0, 3)
+	style.shadow_size = 3
 	style.content_margin_left = 13
 	style.content_margin_right = 13
 	style.content_margin_top = 8
 	style.content_margin_bottom = 8
 	return style
 
+static func art_panel(edge: Color = RUST, padding: Vector2 = Vector2(13, 8), opacity: float = 1.0) -> StyleBoxTexture:
+	var variant := "selected" if edge == AMBER else "panel"
+	return ART.surface(variant, padding, Color(1, 1, 1, opacity))
+
+static func notice_board() -> PanelContainer:
+	var board := PanelContainer.new()
+	board.add_theme_stylebox_override("panel", art_panel())
+	return board
+
+static func paper_style(edge: Color = PAPER_EDGE) -> StyleBoxFlat:
+	return frame(PAPER, edge, 4)
+
+static func metric(parent: Control, caption: String, value: String, on_paper: bool = false) -> void:
+	var column := VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation", 3)
+	parent.add_child(column)
+	var label := make_label(caption, 15, PAPER_INK if on_paper else MUTED)
+	var number := make_label(value, 20, PAPER_INK if on_paper else IVORY)
+	for text in [label, number]:
+		text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		column.add_child(text)
+
 static func skin_button(button: Button, face: Color, edge: Color, ink: Color = Color.WHITE) -> void:
-	button.add_theme_stylebox_override("normal", frame(face, edge))
-	button.add_theme_stylebox_override("hover", frame(face.lightened(0.16), edge.lightened(0.18)))
-	button.add_theme_stylebox_override("pressed", frame(face.darkened(0.22), edge))
-	button.add_theme_stylebox_override("focus", frame(Color.TRANSPARENT, edge.lightened(0.45)))
-	button.add_theme_stylebox_override("disabled", frame(face.darkened(0.42), edge.darkened(0.34)))
+	var art_kind := ""
+	if face == CTA:
+		art_kind = "primary"
+	elif face == SELECTED:
+		art_kind = "selected"
+	elif face in [INK_SOFT, INK, ASPHALT, WOOD]:
+		art_kind = "neutral"
+	if art_kind.is_empty():
+		button.add_theme_stylebox_override("normal", frame(face, edge))
+		button.add_theme_stylebox_override("hover", frame(face.lightened(0.16), edge.lightened(0.18)))
+		button.add_theme_stylebox_override("pressed", frame(face.darkened(0.22), edge))
+		button.add_theme_stylebox_override("disabled", frame(face.darkened(0.42), edge.darkened(0.34)))
+	else:
+		var tint := Color.WHITE
+		if art_kind == "neutral" and edge in [grade_color("R"), grade_color("SR"), grade_color("SSR")]:
+			tint = tint.lerp(edge, 0.20)
+		var padding := Vector2(13, 8)
+		button.add_theme_stylebox_override("normal", ART.surface(art_kind, padding, tint))
+		button.add_theme_stylebox_override("hover", ART.surface(art_kind, padding, tint * Color(1.10, 1.10, 1.10)))
+		button.add_theme_stylebox_override("pressed", ART.surface(art_kind, padding, tint.darkened(0.18)))
+		button.add_theme_stylebox_override("disabled", ART.surface(art_kind, padding, tint.darkened(0.42)))
+	var focus := frame(Color.TRANSPARENT, edge.lightened(0.45))
+	focus.shadow_size = 0
+	button.add_theme_stylebox_override("focus", focus)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		button.add_theme_color_override(state, ink)
 	button.add_theme_color_override("font_disabled_color", ink.lerp(face, 0.43))
 
-static func ink_outline(label: Label, width: int = 6, tint: Color = Color("#151122")) -> void:
+static func ink_outline(label: Label, width: int = 6, tint: Color = ASPHALT) -> void:
 	label.add_theme_color_override("font_outline_color", tint)
 	label.add_theme_constant_override("outline_size", width)
 
@@ -58,7 +189,7 @@ static func tint_gradient(top: Color, bottom: Color) -> GradientTexture2D:
 
 static func plaque(text: String, face: Color, trim: Color, ink: Color, font_size: int = 30) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", frame(face, trim, 9, 3))
+	panel.add_theme_stylebox_override("panel", frame(face, trim))
 	var label := make_label(text, font_size, ink)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -90,7 +221,7 @@ static func apply_safe_margins(margin: MarginContainer, base: int = 24) -> void:
 
 static func divider(parent: Control) -> void:
 	var line := ColorRect.new()
-	line.color = Color(GOLD, 0.45)
+	line.color = Color(STEEL, 0.72)
 	line.custom_minimum_size.y = 1
 	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(line)
@@ -154,7 +285,7 @@ static func color_panel() -> Color:
 
 static func panel_style(
 	bg: Color = INK,
-	border: Color = GOLD,
+	border: Color = STEEL,
 	border_width: int = 2
 ) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -165,52 +296,18 @@ static func panel_style(
 	style.border_width_top = trim
 	style.border_width_right = trim
 	style.border_width_bottom = trim
-	style.corner_radius_top_left = 5
-	style.corner_radius_top_right = 5
-	style.corner_radius_bottom_right = 5
-	style.corner_radius_bottom_left = 5
+	style.set_corner_radius_all(10)
+	style.corner_detail = 4
 	style.shadow_color = Color(0.0, 0.0, 0.0, 0.38)
 	style.shadow_size = 5
 	return style
 
 static func sub_panel_style() -> StyleBoxFlat:
-	return panel_style(INK_SOFT, Color(0.48, 0.32, 0.18, 0.72), 1)
-
-static func button_style(bg: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = bg
-	style.border_color = border
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
-	style.corner_radius_top_left = 5
-	style.corner_radius_top_right = 5
-	style.corner_radius_bottom_right = 5
-	style.corner_radius_bottom_left = 5
-	style.content_margin_left = 12
-	style.content_margin_right = 12
-	style.content_margin_top = 8
-	style.content_margin_bottom = 8
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.26)
-	style.shadow_size = 3
-	return style
+	return panel_style(INK_SOFT, STEEL_DARK, 1)
 
 static func apply_button(button: Button, accent: bool = false):
-	var normal_bg := INK_SOFT
-	var normal_border := Color(0.62, 0.43, 0.23, 0.86)
-	if accent:
-		normal_bg = WINE
-		normal_border = GOLD_BRIGHT
-	button.add_theme_stylebox_override("normal", button_style(normal_bg, normal_border))
-	button.add_theme_stylebox_override("hover", button_style(WINE_HOVER if accent else Color(0.16, 0.09, 0.065, 1.0), GOLD_BRIGHT))
-	button.add_theme_stylebox_override("pressed", button_style(Color(0.16, 0.025, 0.025, 1.0), GOLD))
-	button.add_theme_stylebox_override("disabled", button_style(Color(0.09, 0.075, 0.07, 0.86), Color(0.32, 0.27, 0.21, 0.62)))
-	button.add_theme_stylebox_override("focus", button_style(Color(0, 0, 0, 0), GOLD_BRIGHT))
-	button.add_theme_color_override("font_color", IVORY)
-	button.add_theme_color_override("font_hover_color", GOLD_BRIGHT)
-	button.add_theme_color_override("font_pressed_color", IVORY)
-	button.add_theme_color_override("font_disabled_color", Color(0.55, 0.51, 0.46, 0.8))
+	skin_button(button, CTA if accent else INK_SOFT, CTA_EDGE if accent else STEEL, IVORY)
+	button.add_theme_color_override("font_disabled_color", MUTED.darkened(0.22))
 	button.add_theme_font_size_override("font_size", 15)
 	button.focus_mode = Control.FOCUS_ALL
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -223,8 +320,8 @@ static func make_label(text: String, size: int = 14, color: Color = IVORY) -> La
 	return label
 
 static func make_title(text: String, size: int = 26) -> Label:
-	var label := make_label(text, size, GOLD_BRIGHT)
-	label.add_theme_color_override("font_outline_color", Color(0.06, 0.025, 0.015, 0.9))
+	var label := make_label(text, size, IVORY)
+	label.add_theme_color_override("font_outline_color", ASPHALT)
 	label.add_theme_constant_override("outline_size", 2)
 	return label
 
@@ -237,7 +334,10 @@ static func make_button(text: String, min_size: Vector2 = Vector2(140, 44), acce
 
 static func make_panel(bg: Color = INK) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", panel_style(bg))
+	if bg in [INK, INK_SOFT, ASPHALT, WOOD]:
+		panel.add_theme_stylebox_override("panel", art_panel(RUST, Vector2(2, 2)))
+	else:
+		panel.add_theme_stylebox_override("panel", panel_style(bg))
 	return panel
 
 static func make_margin(panel: Control, amount: int = 24) -> MarginContainer:

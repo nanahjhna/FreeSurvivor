@@ -28,7 +28,7 @@ func _build_ui():
 	var portrait := viewport_size.y >= viewport_size.x
 	var bg := ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.025, 0.04, 0.07)
+	bg.color = UiStyle.ASPHALT
 	add_child(bg)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

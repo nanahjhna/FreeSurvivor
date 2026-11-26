@@ -81,6 +81,12 @@ func attack_speed() -> float:
 	return maxf(0.25, 1.0 + (get_stat("DEX") - base_stats.DEX) * 0.02)
 
 
+## DEX-derived speed for the active-skill system.
+## `attack_speed()` remains as a compatibility alias for old saves and cards.
+func cast_speed() -> float:
+	return attack_speed()
+
+
 func move_speed_multiplier() -> float:
 	return max(0.5, 1.0 + (get_stat("AGI") - base_stats.AGI) * 0.01)
 

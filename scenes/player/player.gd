@@ -24,7 +24,7 @@ var level: int = 1
 
 var is_dead: bool = false
 var auto_attack_timer: float = 0.0
-var auto_attack_enabled: bool = true
+var auto_attack_enabled: bool = false
 var touch_move_vector: Vector2 = Vector2.ZERO
 var current_move_input: Vector2 = Vector2.ZERO
 var _moving_by_input: bool = false
@@ -66,6 +66,17 @@ const DEFAULT_BASIC_ATTACK_ANIMATION_KEYS := ["Attack", "AttackAlt"]
 var _basic_attack_animation_keys := PackedStringArray(DEFAULT_BASIC_ATTACK_ANIMATION_KEYS)
 var _basic_attack_index := 0
 var _skill_animation_busy := false
+var _skill_animation_sequence := PackedStringArray()
+var _skill_animation_sequence_index: int = -1
+var _skill_clip_start_time := 0.0
+var _skill_clip_duration := 0.0
+var _skill_impact_times := PackedFloat32Array()
+var _next_skill_impact := 0
+var _skill_impact_callback := Callable()
+var _skill_playback_rate := 1.0
+var _skill_facing_direction := Vector3.ZERO
+var _skill_gait_phase := 0.0
+var _hit_flash_tween: Tween
 var _ranged_attack_busy: bool = false
 var _attack_animation_recovery_remaining: float = 0.0
 @export_range(0.0, 0.6, 0.01) var rifle_attack_recovery_time: float = 0.18
@@ -76,6 +87,11 @@ const WEAPON_IDLE_ANIMATION := "akidle"
 const WEAPON_FIRE_ANIMATION := ""
 const LOCOMOTION_BLEND_TIME := 0.22
 const ATTACK_BLEND_TIME := 0.14
+const SKILL_BLEND_TIME := 0.08
+const ACTION_RETURN_BLEND_TIME := 0.18
+const HIT_BLEND_TIME := 0.05
+const DEATH_BLEND_TIME := 0.10
+const SKILL_TURN_SPEED := TAU * 2.5
 const HIT_REACTION_TIME := 0.28
 const RANGED_ACTIONS := ["Attack", "AttackAlt", "AttackBase", "Cast", "Kick"]
 const RANGED_AIM_TURN_SPEED := 17.0
@@ -108,7 +124,6 @@ func _ready():
 	level = GameData.player_level
 	current_xp = GameData.player_current_xp
 	xp_to_next_level = GameData.player_xp_to_next
-	max_hp = (stat_manager.max_hp() + GameData.max_hp_bonus) * (1.0 + GameData.get_survival_bonus("max_hp_percent"))
 	current_hp = max_hp
 	GameData.player_current_hp = current_hp
 	
@@ -129,12 +144,13 @@ func _physics_process(delta: float):
 		manual_attack_cooldown = max(0.0, manual_attack_cooldown - delta)
 	
 	_handle_movement(delta)
+	if _skill_animation_busy and is_instance_valid(model_animation_player):
+		_dispatch_skill_impacts(model_animation_player.current_animation_position)
 	_release_aimed_shots()
 	_update_hp_regeneration(delta)
 	_update_survival_shield(delta)
 	
-	if is_combat_enabled:
-		_handle_auto_attack(delta)
+	# 전투 피해는 액티브 스킬을 통해서만 발생합니다. 기존 기본공격 자동 경로는 비활성화합니다.
 
 func set_touch_move(value: Vector2):
 	touch_move_vector = value.limit_length(1.0)
@@ -224,11 +240,15 @@ func _handle_movement(delta: float):
 			_ranged_aim_direction = to_target.normalized()
 	if _ranged_aim_direction != Vector3.ZERO and (aiming or _ranged_attack_busy or _ranged_aim_hold > 0.0):
 		facing = _ranged_aim_direction
+	elif _skill_animation_busy and _skill_facing_direction != Vector3.ZERO:
+		facing = _skill_facing_direction
 	if facing.length_squared() > 0.0001:
 		var local_facing := global_basis.transposed() * facing
 		var heading := atan2(local_facing.x, local_facing.z)
 		if aiming:
 			visual_root.rotation.y = rotate_toward(visual_root.rotation.y, heading, RANGED_AIM_TURN_SPEED * delta)
+		elif _skill_animation_busy and _skill_facing_direction != Vector3.ZERO:
+			visual_root.rotation.y = rotate_toward(visual_root.rotation.y, heading, SKILL_TURN_SPEED * delta)
 		else:
 			visual_root.rotation.y = lerp_angle(visual_root.rotation.y, heading, 1.0 - exp(-9.0 * delta))
 	visual_root.rotation.z = lerpf(visual_root.rotation.z, -input_vec.x * 0.075, 1.0 - exp(-10.0 * delta))
@@ -253,6 +273,8 @@ func _animate_character(delta: float, horizontal_speed: float) -> void:
 	var gait_reference := _walk_reference_speed if _gait == "Walk" else _run_reference_speed
 	var target_rate := 1.0 if _gait == "Idle" else clampf(horizontal_speed / gait_reference, 0.25, 1.85)
 	_gait_rate = lerpf(_gait_rate, target_rate, 1.0 - exp(-14.0 * delta))
+	if _gait == "Idle":
+		_skill_gait_phase = 0.0
 	var in_action := not active_action_clip.is_empty()
 	var moving_attack := _ranged_attack_busy and in_action and _gait != "Idle"
 	if is_instance_valid(_attack_legs) and (moving_attack or _attack_legs.active):
@@ -273,6 +295,9 @@ func set_character_appearance(character_id: String):
 	current_appearance = character_id
 	var character_data := CharacterRegistry.get_by_id(character_id)
 	_has_ranged_weapon = character_data.attack_style == "ranged" if character_data != null else character_id == "archer"
+	if is_instance_valid(model_animation_player) and model_animation_player.animation_finished.is_connected(_on_model_animation_finished):
+		model_animation_player.animation_finished.disconnect(_on_model_animation_finished)
+	_clear_skill_animation()
 	model_animation_player = null
 	model_clips.clear()
 	active_action_clip = ""
@@ -280,7 +305,7 @@ func set_character_appearance(character_id: String):
 	if character_data != null and not character_data.basic_attack_animation_keys.is_empty():
 		_basic_attack_animation_keys = character_data.basic_attack_animation_keys
 	_basic_attack_index = 0
-	_skill_animation_busy = false
+	_skill_gait_phase = 0.0
 	_ranged_attack_busy = false
 	_gait = "Idle"
 	_gait_rate = 1.0
@@ -482,8 +507,10 @@ func _update_head_hp_bar(current: float, maximum: float) -> void:
 	if _head_hp_fill == null or _head_hp_background == null:
 		return
 	var ratio := clampf(current / maximum, 0.0, 1.0) if maximum > 0.0 else 0.0
-	_head_hp_fill.scale.x = ratio
-	_head_hp_fill.position.x = -(HEAD_HP_BAR_WIDTH * (1.0 - ratio) * 0.5)
+	var gauge := _head_hp_fill.mesh as QuadMesh
+	var width := HEAD_HP_BAR_WIDTH * ratio
+	gauge.size.x = maxf(0.001, width)
+	gauge.center_offset.x = (width - HEAD_HP_BAR_WIDTH) * 0.5
 	if _head_hp_fill_material != null:
 		if ratio <= 0.3:
 			_head_hp_fill_material.albedo_color = Color(0.9, 0.12, 0.12, 1.0)
@@ -519,25 +546,12 @@ func _handle_auto_attack(delta: float):
 			auto_attack_timer = 0.0
 
 func try_manual_attack() -> bool:
-	if is_dead or not is_combat_enabled:
-		UiFeedback.show_info("지금은 공격할 수 없습니다.")
-		return false
-	if _ranged_attack_busy or not _pending_ranged_shots.is_empty():
-		return false
-	if manual_attack_cooldown > 0.0:
-		return false
-	var target = _find_closest_enemy(attack_range * (1.0 + GameData.get_survival_bonus("attack_range")))
-	if target == null:
-		UiFeedback.show_info("공격 범위에 적이 없습니다. 조금 더 가까이 이동하세요.")
-		return false
-	if not _perform_auto_attack(target):
-		return false
-	manual_attack_cooldown = 0.25
-	return true
+	# 기본공격은 제거되었으며 모든 공격은 스킬 슬롯으로 사용합니다.
+	return false
 
 func set_auto_attack(enabled: bool):
-	auto_attack_enabled = enabled
-	UiFeedback.show_info("자동 공격을 %s했습니다." % ("켜" if enabled else "꺼"))
+	# 저장 데이터와 기존 호출 호환용입니다. 기본공격 자동 시전은 항상 비활성화합니다.
+	auto_attack_enabled = false
 
 func _find_closest_enemy(max_dist: float) -> Node3D:
 	var enemies = get_tree().get_nodes_in_group("enemies")
@@ -692,11 +706,12 @@ func refresh_persistent_stats():
 	stat_manager.setup_from_class(char_id, character)
 	base_move_speed = stat_manager.base_spd * stat_manager.move_speed_multiplier()
 	base_attack_damage = stat_manager.phys_atk()
-	base_attack_speed = 1.2 * stat_manager.attack_speed()
-	var old_max_hp = max_hp
-	max_hp = stat_manager.max_hp() + GameData.max_hp_bonus
+	# Legacy basic-attack compatibility value; active skills use cast_speed().
+	base_attack_speed = 1.2 * stat_manager.cast_speed()
+	var old_max_hp := max_hp
+	max_hp = GameData.get_max_player_hp(stat_manager)
 	if old_max_hp > 0.0:
-		current_hp = min(max_hp, current_hp + max_hp - old_max_hp)
+		current_hp = clampf(current_hp + max_hp - old_max_hp, 0.0, max_hp)
 	else:
 		current_hp = max_hp
 	GameData.player_current_hp = current_hp
@@ -770,17 +785,18 @@ func _apply_incoming_damage(amount: float, defense: float, is_magic: bool = fals
 	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
 	_show_damage_popup(reduced_damage, false, false)
-	_flash_red()
-	if current_hp > 0.0:
-		_play_model_animation("Hit", true)
-	
 	if current_hp <= 0.0:
 		die()
+	elif reduced_damage > 0.0:
+		_flash_red()
+		_play_model_animation("Hit", true)
 
 func _flash_red():
-	var tween = create_tween()
-	tween.tween_property(visual_root, "scale", Vector3(1.15, 0.85, 1.15), 0.08)
-	tween.tween_property(visual_root, "scale", Vector3.ONE, 0.12)
+	if _hit_flash_tween != null and _hit_flash_tween.is_running():
+		return
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_property(visual_root, "scale", Vector3(1.15, 0.85, 1.15), 0.08)
+	_hit_flash_tween.tween_property(visual_root, "scale", Vector3.ONE, 0.12)
 
 func _show_damage_popup(amount: float, is_crit: bool = false, is_heal: bool = false, custom_text: String = ""):
 	var popup_scene = load("res://scenes/effects/damage_number.tscn")
@@ -804,6 +820,10 @@ func die():
 	_moving_by_input = false
 	_pending_ranged_shots.clear()
 	_ranged_aim_target = null
+	_clear_skill_animation()
+	if _hit_flash_tween != null and _hit_flash_tween.is_running():
+		_hit_flash_tween.kill()
+		visual_root.scale = Vector3.ONE
 	emit_signal("died")
 	if not _play_model_animation("Death", true):
 		var tween = create_tween()
@@ -847,12 +867,14 @@ func _setup_model_animations():
 				clip.loop_mode = Animation.LOOP_LINEAR
 	var action_keys := ["Attack", "AttackAlt", "AttackBase", "Cast", "Kick", "Hit", "Death"]
 	action_keys.append_array(_basic_attack_animation_keys)
-	if character_data != null:
-		for skill in character_data.skills:
-			if skill != null and skill.implemented:
-				action_keys.append(skill.animation_key)
+	if is_combat_enabled:
+		for skill: Dictionary in CharacterSkillDatabase.get_skill_set(current_appearance).values():
+			action_keys.append(str(skill.get("animation_key", "")))
+			for sequence_key in skill.get("animation_sequence", PackedStringArray()):
+				action_keys.append(str(sequence_key))
+	var gait_clips := [model_clips.get("Idle"), model_clips.get("Walk"), model_clips.get("Run")]
 	for clip_key in action_keys:
-		if model_clips.has(clip_key):
+		if model_clips.has(clip_key) and model_clips[clip_key] not in gait_clips:
 			var action_clip := model_animation_player.get_animation(model_clips[clip_key])
 			if action_clip:
 				action_clip.loop_mode = Animation.LOOP_NONE
@@ -870,16 +892,25 @@ func _map_animation_alias(alias: String, candidates: Variant):
 
 
 func _on_model_animation_finished(animation_name: StringName):
-	if str(animation_name) == active_action_clip:
-		active_action_clip = ""
-		_skill_animation_busy = false
-		if is_dead and animation_name == model_clips.get("Death", &""):
-			GameManager.game_over()
-			return
-		if _ranged_attack_busy:
-			_character_attack_animation_finished = true
-			if not _weapon_fire_animation_busy:
-				_begin_attack_animation_recovery()
+	if str(animation_name) != active_action_clip:
+		return
+	if _skill_animation_busy:
+		var has_next_clip := _skill_animation_sequence_index + 1 < _skill_animation_sequence.size()
+		_dispatch_skill_impacts(_skill_clip_duration, not has_next_clip)
+		if has_next_clip:
+			_skill_clip_start_time += _skill_clip_duration
+			_skill_animation_sequence_index += 1
+			if _play_skill_animation_sequence_clip():
+				return
+		_clear_skill_animation()
+	active_action_clip = ""
+	if is_dead and str(animation_name) == str(model_clips.get("Death", "")):
+		GameManager.game_over()
+		return
+	if _ranged_attack_busy:
+		_character_attack_animation_finished = true
+		if not _weapon_fire_animation_busy:
+			_begin_attack_animation_recovery()
 
 
 func _on_equipped_weapon_animation_finished(animation_name: StringName) -> void:
@@ -905,11 +936,9 @@ func _play_model_animation(clip_key: String, action: bool = false, animation_dur
 		return false
 	var clip_name := str(model_clips[clip_key])
 	if action:
-		if _ranged_attack_busy and clip_key != "Death":
-			return true
-		if clip_key == "Hit" and not active_action_clip.is_empty():
-			return true
-		var firing := _has_ranged_weapon and clip_key in RANGED_ACTIONS
+		if clip_key == "Hit" and (not active_action_clip.is_empty() or _ranged_attack_busy):
+			return false
+		var firing := not is_dead and _has_ranged_weapon and clip_key in RANGED_ACTIONS
 		if is_instance_valid(_attack_legs):
 			if firing:
 				_attack_legs.sync_phase(model_animation_player.current_animation, model_animation_player.current_animation_position)
@@ -917,33 +946,41 @@ func _play_model_animation(clip_key: String, action: bool = false, animation_dur
 				_attack_legs.active = false
 				_attack_legs.influence = 0.0
 		active_action_clip = clip_name
-		_skill_animation_busy = animation_duration > 0.0
 		_ranged_attack_busy = firing
 		_attack_animation_recovery_remaining = 0.0
 		if _ranged_attack_busy:
 			_character_attack_animation_finished = false
 			_weapon_fire_animation_busy = _play_equipped_weapon_fire_animation()
-		model_animation_player.speed_scale = 1.0
+		model_animation_player.speed_scale = _skill_playback_rate if _skill_animation_busy else 1.0
 		var clip := model_animation_player.get_animation(clip_name)
+		var blend_time := SKILL_BLEND_TIME if _skill_animation_busy else ATTACK_BLEND_TIME
+		if clip_key == "Hit":
+			blend_time = HIT_BLEND_TIME
+		elif clip_key == "Death":
+			blend_time = DEATH_BLEND_TIME
 		if clip_key == "Hit" and clip.length > HIT_REACTION_TIME:
-			model_animation_player.play_section(clip_name, 0.0, HIT_REACTION_TIME, 0.08)
+			model_animation_player.play_section(clip_name, 0.0, HIT_REACTION_TIME, blend_time)
 		elif animation_duration > 0.0 and animation_duration < clip.length:
-			model_animation_player.play_section(clip_name, 0.0, animation_duration, ATTACK_BLEND_TIME)
+			model_animation_player.play_section(clip_name, 0.0, animation_duration, blend_time)
 		else:
-			model_animation_player.play(clip_name, ATTACK_BLEND_TIME)
+			model_animation_player.play(clip_name, blend_time)
 		return true
 	if not active_action_clip.is_empty() and model_animation_player.is_playing():
 		return true
 	if str(model_animation_player.current_animation) != clip_name or not model_animation_player.is_playing():
 		var phase := 0.0
+		var previous := model_animation_player.assigned_animation
+		var returning_from_action := not previous.is_empty() and previous not in [model_clips.get("Idle", ""), model_clips.get("Walk", ""), model_clips.get("Run", "")]
 		if clip_key != "Idle":
-			var previous := model_animation_player.current_animation
 			if previous == model_clips.get("Walk", "") or previous == model_clips.get("Run", ""):
-				if not previous.is_empty() and model_animation_player.current_animation_length > 0.0:
+				if model_animation_player.is_playing() and model_animation_player.current_animation_length > 0.0:
 					phase = model_animation_player.current_animation_position / model_animation_player.current_animation_length
 			elif is_instance_valid(_attack_legs) and _attack_legs.active:
 				phase = _attack_legs.gait_phase()
-		model_animation_player.play(clip_name, LOCOMOTION_BLEND_TIME)
+			elif returning_from_action:
+				phase = _skill_gait_phase
+		_skill_gait_phase = 0.0
+		model_animation_player.play(clip_name, ACTION_RETURN_BLEND_TIME if returning_from_action else LOCOMOTION_BLEND_TIME)
 		if phase > 0.0:
 			model_animation_player.seek(fposmod(phase, 1.0) * model_animation_player.get_animation(clip_name).length)
 	return true
@@ -961,12 +998,85 @@ func _play_equipped_weapon_fire_animation() -> bool:
 
 
 func is_skill_animation_busy() -> bool:
-	return _skill_animation_busy
+	return _skill_animation_busy or _ranged_attack_busy
 
 
-func play_skill_animation(skill_key: String, skill_id: String = ""):
-	if skill_id.is_empty():
-		skill_id = GameData.get_equipped_skill(skill_key)
-	var animation_key := PlayerManager.get_skill_animation_key(skill_id, skill_key) if not skill_id.is_empty() else ("Kick" if skill_key == "w" else "AttackAlt")
-	var animation_duration := float(GameData.skill_meta.get(skill_id, {}).get("animation_duration", 0.0))
-	_play_model_animation(animation_key, true, animation_duration)
+func _clear_skill_animation() -> void:
+	_skill_animation_busy = false
+	_skill_animation_sequence = PackedStringArray()
+	_skill_animation_sequence_index = -1
+	_skill_clip_start_time = 0.0
+	_skill_clip_duration = 0.0
+	_skill_impact_times = PackedFloat32Array()
+	_next_skill_impact = 0
+	_skill_impact_callback = Callable()
+	_skill_playback_rate = 1.0
+	_skill_facing_direction = Vector3.ZERO
+
+
+func _dispatch_skill_impacts(clip_position: float, final_frame: bool = false) -> void:
+	var elapsed := _skill_clip_start_time + clip_position
+	while _next_skill_impact < _skill_impact_times.size():
+		var index := _next_skill_impact
+		if not final_frame and _skill_impact_times[index] > elapsed:
+			break
+		_next_skill_impact += 1
+		if _skill_impact_callback.is_valid():
+			_skill_impact_callback.call(index)
+
+
+func _play_skill_animation_sequence_clip(duration: float = 0.0) -> bool:
+	var clip_key := _skill_animation_sequence[_skill_animation_sequence_index]
+	var clip := model_animation_player.get_animation(model_clips[clip_key])
+	if clip == null:
+		return false
+	_skill_clip_duration = minf(duration, clip.length) if duration > 0.0 else clip.length
+	return _play_model_animation(clip_key, true, _skill_clip_duration)
+
+
+func get_skill_playback_rate() -> float:
+	var bonus := GameData.get_survival_bonus("attack_speed") + GameData.get_survival_bonus("kill_attack_speed_rate")
+	return clampf(stat_manager.cast_speed() * GameData.attack_speed_mult * (1.0 + bonus), 0.5, 2.5)
+
+
+func set_skill_facing_direction(direction: Vector3) -> void:
+	_skill_facing_direction = direction.slide(Vector3.UP).normalized()
+
+
+func play_skill_animation(
+	skill_key: String, skill_id: String, impact_times: PackedFloat32Array,
+	on_impact: Callable, playback_rate: float, facing_direction: Vector3
+) -> bool:
+	if is_dead or is_skill_animation_busy() or not is_instance_valid(model_animation_player):
+		return false
+	var meta: Dictionary = GameData.skill_meta.get(skill_id, {})
+	var sequence_value: Variant = meta.get("animation_sequence", PackedStringArray())
+	var sequence := PackedStringArray()
+	if sequence_value is PackedStringArray or sequence_value is Array:
+		for clip in sequence_value:
+			if not str(clip).is_empty():
+				sequence.append(str(clip))
+	if sequence.is_empty():
+		sequence.append(PlayerManager.get_skill_animation_key(skill_id, skill_key))
+	for clip_key in sequence:
+		if not model_clips.has(clip_key):
+			return false
+		var clip := model_animation_player.get_animation(model_clips[clip_key])
+		if clip == null or clip.loop_mode != Animation.LOOP_NONE:
+			return false
+	var previous := model_animation_player.current_animation
+	if previous == model_clips.get("Walk", "") or previous == model_clips.get("Run", ""):
+		if model_animation_player.is_playing() and model_animation_player.current_animation_length > 0.0:
+			_skill_gait_phase = model_animation_player.current_animation_position / model_animation_player.current_animation_length
+	_skill_animation_sequence = sequence
+	_skill_animation_sequence_index = 0
+	_skill_impact_times = impact_times
+	_skill_impact_callback = on_impact
+	_skill_playback_rate = playback_rate
+	set_skill_facing_direction(facing_direction)
+	_skill_animation_busy = true
+	var duration := float(meta.get("animation_duration", 0.0)) if sequence.size() == 1 else 0.0
+	if _play_skill_animation_sequence_clip(duration):
+		return true
+	_clear_skill_animation()
+	return false

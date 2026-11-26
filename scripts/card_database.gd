@@ -28,7 +28,7 @@ const STARTER_DECK: Array[String] = ["strike", "strike", "strike", "guard", "gua
 const SURVIVAL_EFFECTS := {
 	"strike": {"type":"stat", "stat":"attack_damage_mult", "value":0.15, "description":"기본·스킬 공격력 +15%"},
 	"heavy_strike": {"type":"stat", "stat":"attack_damage_mult", "value":0.25, "description":"기본·스킬 공격력 +25%"},
-	"double_strike": {"type":"stat", "stat":"attack_speed_mult", "value":0.2, "description":"자동 기본 공격 속도 +20%"},
+	"double_strike": {"type":"stat", "stat":"attack_speed_mult", "value":0.2, "description":"스킬 시전 속도 +20%"},
 	"guard": {"type":"hp", "value":18, "description":"최대 HP +18, HP 18 회복"},
 	"fortress": {"type":"hp", "value":32, "description":"최대 HP +32, HP 32 회복"},
 	"bleed": {"type":"on_hit", "value":2, "description":"기본 공격 적중 시 3초간 매초 출혈 피해 2. 재적중하면 지속시간 갱신"},
@@ -39,7 +39,7 @@ const SURVIVAL_EFFECTS := {
 	"finisher": {"type":"on_hit", "value":0.3, "description":"HP가 40% 이하인 적에게 기본 공격 피해 +30%"},
 	"focus": {"type":"stat", "stat":"move_speed_mult", "value":0.15, "description":"전투 중 이동 속도 +15%"},
 	"quick_think": {"type":"all_cd", "value":0.1, "description":"모든 스킬의 재사용 대기시간 10% 단축"},
-	"adrenaline": {"type":"stat", "stat":"attack_speed_mult", "value":0.1, "description":"기본 공격 속도 +10%"}
+	"adrenaline": {"type":"stat", "stat":"attack_speed_mult", "value":0.1, "description":"스킬 시전 속도 +10%"}
 }
 
 static func get_survival_upgrade(card_id: String) -> Dictionary:

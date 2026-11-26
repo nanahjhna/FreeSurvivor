@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const REFERENCE_SCREEN := preload("res://scripts/reference_screen.gd")
+
 signal closed()
 
 @onready var master_slider: HSlider = $CenterContainer/Panel/Margin/VBox/Content/VolumeBox/MasterRow/MasterSlider
@@ -26,12 +28,13 @@ var _camera_angle_value: Label
 var _camera_direction_value: Label
 var _camera_distance_value: Label
 var _camera_settings_changed := false
+var _approved_settings: REFERENCE_SCREEN
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
-	panel.add_theme_stylebox_override("panel", UiStyle.frame(UiStyle.PAPER, Color("#bd8b58"), 24, 6))
-	$Backdrop.color = Color(0.025, 0.02, 0.028, 0.75)
+	panel.add_theme_stylebox_override("panel", UiStyle.art_panel(UiStyle.RUST, Vector2(2, 2)))
+	$Backdrop.color = UiStyle.SCRIM
 	var viewport_size := get_viewport().get_visible_rect().size
 	var portrait := viewport_size.y >= viewport_size.x
 	_portrait_layout = portrait
@@ -58,15 +61,14 @@ func _ready():
 		close_btn.text = "✕"
 		close_btn.custom_minimum_size = Vector2(52, 48)
 		UiStyle.apply_button(close_btn)
-		UiStyle.skin_button(close_btn, Color("#34678d"), Color("#bcdded"))
 	var confirm_btn := get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ConfirmBtn") as Button
 	if confirm_btn:
 		UiStyle.apply_button(confirm_btn, true)
-		UiStyle.skin_button(confirm_btn, UiStyle.BLUE, UiStyle.BLUE_EDGE)
 		confirm_btn.text = "완료"
 	var reset_btn := get_node_or_null("CenterContainer/Panel/Margin/VBox/BottomRow/ResetSaveBtn") as Button
 	if reset_btn:
 		UiStyle.apply_button(reset_btn)
+		UiStyle.skin_button(reset_btn, UiStyle.DANGER, UiStyle.DANGER_EDGE, UiStyle.IVORY)
 		reset_btn.get_parent().remove_child(reset_btn)
 		_advanced_box.add_child(reset_btn)
 		reset_btn.custom_minimum_size = Vector2(0, 48)
@@ -78,17 +80,18 @@ func _ready():
 	var title := $CenterContainer/Panel/Margin/VBox/Header/TitleLabel as Label
 	title.text = "환경 설정"
 	title.add_theme_font_size_override("font_size", 32)
-	title.add_theme_color_override("font_color", Color.WHITE)
+	title.add_theme_color_override("font_color", UiStyle.IVORY)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	UiStyle.ink_outline(title, 7, Color("#24446f"))
+	UiStyle.ink_outline(title, 2)
 	var header := title.get_parent()
+	var settings_icon := UiStyle.icon_view("settings", 28)
+	header.add_child(settings_icon)
+	header.move_child(settings_icon, 0)
 	var header_parent := header.get_parent()
-	var banner := UiStyle.make_panel()
-	banner.add_theme_stylebox_override("panel", UiStyle.frame(Color("#3c83b1"), Color("#b3e2f7"), 12, 4))
+	var banner := UiStyle.notice_board()
 	header_parent.add_child(banner)
 	header_parent.move_child(banner, header.get_index())
 	header.reparent(banner, false)
-	_set_paper_text(content_box)
 	var layout := content_box.get_parent()
 	var content_index := content_box.get_index()
 	var scroll := ScrollContainer.new()
@@ -105,15 +108,6 @@ func _ready():
 	_advanced_button.visible = portrait
 	GameActions.bindings_changed.connect(_refresh_key_list)
 	GameActions.input_mode_changed.connect(_refresh_input_mode)
-
-func _set_paper_text(parent: Node) -> void:
-	for child in parent.get_children():
-		if child is Label:
-			child.add_theme_color_override("font_color", UiStyle.PAPER_INK)
-		elif child is CheckBox:
-			child.add_theme_color_override("font_color", UiStyle.PAPER_INK)
-			child.add_theme_color_override("font_hover_color", UiStyle.PAPER_INK)
-		_set_paper_text(child)
 
 func _fit_panel() -> void:
 	var viewport_size := get_viewport().get_visible_rect().size
@@ -136,14 +130,19 @@ func _style_audio_slider(slider: HSlider, bus: String, connect_change: bool = tr
 		return
 	row.custom_minimum_size.y = 52
 	row.add_theme_constant_override("separation", 12)
-	(row.get_node("Lbl") as Label).add_theme_font_size_override("font_size", 19)
+	var caption := row.get_node("Lbl") as Label
+	caption.text = {"Master": "전체 음량", "BGM": "음악", "SFX": "효과음"}.get(bus, bus)
+	caption.add_theme_font_size_override("font_size", 20)
+	var icon := UiStyle.icon_view("skill" if bus == "BGM" else "settings", 22)
+	row.add_child(icon)
+	row.move_child(icon, 0)
 	var track := StyleBoxFlat.new()
-	track.bg_color = Color("#c29d6f")
+	track.bg_color = UiStyle.STEEL_DARK
 	track.set_corner_radius_all(5)
 	track.content_margin_top = 4
 	track.content_margin_bottom = 4
 	var fill := track.duplicate() as StyleBoxFlat
-	fill.bg_color = Color("#5f9c58")
+	fill.bg_color = UiStyle.AMBER
 	slider.add_theme_stylebox_override("slider", track)
 	slider.add_theme_stylebox_override("grabber_area", fill)
 	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
@@ -161,12 +160,15 @@ func _style_audio_slider(slider: HSlider, bus: String, connect_change: bool = tr
 
 func _build_controls_section():
 	if key_guide:
+		key_guide.visible = not _portrait_layout
 		key_guide.text = "이동과 스킬은 게임 화면의 터치 버튼을 사용합니다." if _portrait_layout else "• 이동: 방향키 (PC)\n• 스킬: Q, W, E, R\n• 아이템: 1, 2, 3\n• 메뉴: C, P, I, K, J, B, O, M\n• 상호작용: E / 일시정지: ESC"
 
 	var sep := HSeparator.new()
 	content_box.add_child(sep)
 
-	_advanced_button = UiStyle.make_button("PC 단축키 · 고급 설정 보기", Vector2(0, 52))
+	_advanced_button = UiStyle.make_button("조작 설정   ›", Vector2(0, 54))
+	UiStyle.button_icon(_advanced_button, "compass")
+	_advanced_button.add_theme_font_size_override("font_size", 19)
 	_advanced_button.pressed.connect(func(): _set_advanced_open(not _advanced_box.visible))
 	content_box.add_child(_advanced_button)
 
@@ -347,7 +349,7 @@ func _set_advanced_open(is_open: bool):
 	if _advanced_box == null:
 		return
 	_advanced_box.visible = is_open
-	_advanced_button.text = "PC 단축키 · 고급 설정 닫기" if is_open else "PC 단축키 · 고급 설정 보기"
+	_advanced_button.text = "조작 설정 닫기" if is_open else "조작 설정   ›"
 	if _portrait_layout:
 		var viewport_height := get_viewport().get_visible_rect().size.y
 		panel.custom_minimum_size.y = minf(viewport_height - 48.0, 900.0 if is_open else 700.0)
@@ -436,6 +438,53 @@ func open():
 		_set_advanced_open(false)
 	_refresh_key_list()
 	_refresh_input_mode()
+	if _approved_settings == null:
+		_build_approved_settings()
+	_approved_settings.show()
+	$CenterContainer.hide()
+
+
+func _build_approved_settings() -> void:
+	_approved_settings = REFERENCE_SCREEN.new()
+	var screen := _approved_settings
+	screen.build(self, "settings")
+	screen.hit(Rect2(482, 30, 55, 57), "닫기", close)
+	screen.hit(Rect2(23, 794, 506, 91), "완료", close)
+	_approved_audio(screen, 0, "BGM", bgm_slider)
+	_approved_audio(screen, 1, "SFX", sfx_slider)
+	screen.mask(Rect2(397, 419, 128, 68), Rect2(272, 419, 105, 68))
+	screen.live_text(Rect2(410, 429, 108, 57), func(): return "미지원", 22, HORIZONTAL_ALIGNMENT_RIGHT)
+	screen.field(Rect2(351, 528, 172, 53), func(): return "기본", 24, HORIZONTAL_ALIGNMENT_CENTER, Color("#30271f"))
+	screen.hit(Rect2(22, 613, 508, 88), "조작 설정", func():
+		screen.hide()
+		$CenterContainer.show()
+		_set_advanced_open(true)
+	)
+
+
+func _approved_audio(screen: REFERENCE_SCREEN, index: int, bus: String, slider: HSlider) -> void:
+	var y := 136 + index * 136
+	var source := slider
+	if AudioServer.get_bus_index(bus) < 0 and index == 0:
+		source = master_slider
+		screen.field(Rect2(118, y + 20, 199, 53), func(): return "전체 음량", 33)
+	screen.mask(Rect2(116, y + 69, 405, 51), Rect2(89, y + 69, 25, 51))
+	if source == slider and AudioServer.get_bus_index(bus) < 0:
+		screen.field(Rect2(403, y + 21, 118, 46), func(): return "미지원", 22, HORIZONTAL_ALIGNMENT_RIGHT)
+		return
+	screen.field(Rect2(412, y + 21, 107, 46), func(): return "%d%%" % roundi(source.value), 29, HORIZONTAL_ALIGNMENT_RIGHT)
+	# Share the value and signal with the original audio control used by advanced settings.
+	var live := HSlider.new()
+	live.min_value = source.min_value
+	live.max_value = source.max_value
+	live.step = source.step
+	live.set_value_no_signal(source.value)
+	for key in ["slider", "grabber_area", "grabber_area_highlight"]:
+		live.add_theme_stylebox_override(key, source.get_theme_stylebox(key))
+	live.value_changed.connect(func(value: float): source.value = value)
+	source.value_changed.connect(live.set_value_no_signal)
+	screen.page.add_child(live)
+	screen.place(live, Rect2(121, y + 74, 392, 43))
 
 func close():
 	if _awaiting_action != "":

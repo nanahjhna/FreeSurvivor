@@ -82,8 +82,22 @@ static func _get_idle_reference_pose(path: String, library: AnimationLibrary) ->
 	_idle_reference_poses[path] = reference
 	return reference
 
+static func _editable_copy(animation: Animation) -> Animation:
+	# copy_track reconstructs original keys in an editable destination track.
+	# The imported catalogue remains compressed until a clip is needed.
+	var copy := Animation.new()
+	copy.length = animation.length
+	copy.loop_mode = animation.loop_mode
+	copy.step = animation.step
+	for track in animation.get_track_count():
+		animation.copy_track(track, copy)
+	for marker in animation.get_marker_names():
+		copy.add_marker(marker, animation.get_marker_time(marker))
+		copy.set_marker_color(marker, animation.get_marker_color(marker))
+	return copy
+
 static func _retarget_idle(animation: Animation, target: Skeleton3D, target_path: NodePath, reference: Dictionary) -> Animation:
-	var clip := animation.duplicate(true) as Animation
+	var clip := _editable_copy(animation)
 	var hips := _find_bone(target, "mixamorigHips")
 	for track in range(clip.get_track_count() - 1, -1, -1):
 		var path := clip.track_get_path(track)
@@ -222,7 +236,7 @@ static func _source_rest_hip(path: String, source: AnimationLibrary, fallback: V
 	return fallback
 
 static func _retarget_clip(animation: Animation, target: Skeleton3D, target_path: NodePath, source_rest: Vector3, target_rest: Vector3) -> Animation:
-	var copy := animation.duplicate(true) as Animation
+	var copy := _editable_copy(animation)
 	var height_ratio := target_rest.z / source_rest.z if absf(source_rest.z) > 0.0001 else 1.0
 	for index in range(copy.get_track_count() - 1, -1, -1):
 		var path := copy.track_get_path(index)

@@ -23,8 +23,9 @@ animation_source_clips = {
 "Sword_Regular_A_Rec": "Sword_Regular_A_Rec",
 "Sword_Regular_B_Rec": "Sword_Regular_B_Rec",
 "Sword_Regular_C_RM": "Sword_Regular_C_RM",
-"Great_Sword_Kick": "Great_Sword_Kick",
-"Sword_Attack_Air_Vertical": "Sword_Attack_Air_Vertical",
+"Great_Sword_Attack": "Great_Sword_Attack",
+"Great_Sword_Slash": "Great_Sword_Slash",
+"Great_Sword_Jump_Attack": "Great_Sword_Jump_Attack",
 "UnarmedIdle": "Standing_Idle",
 "UnarmedWalk": "Unarmed_Walk_Forward",
 "UnarmedRun": "Unarmed_Run_Forward",
@@ -32,7 +33,7 @@ animation_source_clips = {
 "AttackAlt": "Sword_Regular_B_Rec",
 "AttackBase": "Sword_Regular_C_RM",
 "Kick": "Great_Sword_Kick",
-"AirSlash": "Sword_Attack_Air_Vertical",
+"AirSlash": "Great_Sword_Jump_Attack",
 "Hit": "Great_Sword_Impact",
 "Death": "Two_Handed_Sword_Death",
 "Block": "Great_Sword_Blocking",
@@ -57,15 +58,16 @@ animation_aliases = {
 "Sword_Regular_A_Rec": ["Sword_Regular_A_Rec"],
 "Sword_Regular_B_Rec": ["Sword_Regular_B_Rec"],
 "Sword_Regular_C_RM": ["Sword_Regular_C_RM"],
-"Great_Sword_Kick": ["Great_Sword_Kick"],
-"Sword_Attack_Air_Vertical": ["Sword_Attack_Air_Vertical"],
+"Great_Sword_Attack": ["Great_Sword_Attack"],
+"Great_Sword_Slash": ["Great_Sword_Slash"],
+"Great_Sword_Jump_Attack": ["Great_Sword_Jump_Attack"],
 "UnarmedIdle": ["UnarmedIdle"],
 "UnarmedRun": ["UnarmedRun"],
 "UnarmedWalk": ["UnarmedWalk"],
 "Victory": ["Victory"],
 "Walk": ["Walk"]
 }
-basic_attack_animation_keys = PackedStringArray("Attack", "AttackAlt", "AttackBase")
+basic_attack_animation_keys = PackedStringArray()
 base_str = 4
 base_agi = 8
 base_vit = 4
@@ -76,12 +78,14 @@ base_hp = 105.0
 base_atk = 18.0
 base_def = 7.0
 base_spd = 7.4
-skill_ids = Array[String](["Sword_Regular_A_Rec", "Sword_Regular_B_Rec", "Sword_Regular_C_RM", "Great_Sword_Kick", "Sword_Attack_Air_Vertical"])
+skill_ids = Array[String](["Great_Sword_Attack", "Great_Sword_Slash", "Great_Sword_Jump_Attack", "Sword_Regular_A_Rec"])
 skill_loadout = {
-"q": "Great_Sword_Kick",
-"w": "Sword_Attack_Air_Vertical"
+"q": "Great_Sword_Attack",
+"w": "Great_Sword_Slash",
+"e": "Great_Sword_Jump_Attack",
+"r": "Sword_Regular_A_Rec"
 }
-signature_skill = "발차기"
+signature_skill = "삼연 검격"
 weapon_name = "강철 검"
 weapon_scene = ExtResource("4_sword")
 weapon_bone_name = "mixamorigRightHand"
@@ -89,7 +93,7 @@ weapon_grip_position = Vector3(0, 8.65, 0)
 weapon_mount_position = Vector3(-0.051, 0.003, 0.009)
 weapon_mount_rotation_degrees = Vector3(-90, 0, 0)
 weapon_mount_scale = Vector3(0.123, 0.123, 0.123)
-combat_style = "근접 검술과 발차기"
+combat_style = "대검 베기와 연속 검격"
 description = "검술로 주변의 적을 상대하는 근접 전투가."
 starting_gear = {
 "accessory": null,

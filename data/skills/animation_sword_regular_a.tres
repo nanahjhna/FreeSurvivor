@@ -1,21 +1,23 @@
 [gd_resource type="Resource" script_class="SkillData" format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/skill_data.gd" id="1_skill"]
-[ext_resource type="PackedScene" path="res://scenes/skills/spin_attack.tscn" id="2_effect"]
+[ext_resource type="PackedScene" path="res://scenes/skills/sword_wave.tscn" id="2_effect"]
 
 [resource]
 script = ExtResource("1_skill")
 id = "Sword_Regular_A_Rec"
-display_name = "기본 베기 A"
-description = "검을 크게 휘둘러 가까운 적을 베어냅니다."
+display_name = "검기 베기"
+description = "세 번의 검격 애니메이션을 연속으로 재생해 검기를 차례로 날립니다."
 icon = "🗡️"
-cooldown = 0.8
+cooldown = 3.2
 damage_ratio = 0.85
-range = 3.4
-cast_type = "spin"
+range = 6.5
+cast_type = "wave"
 animation_key = "Sword_Regular_A_Rec"
-animation_duration = 0.8
-impact_delay = 0.2
+animation_sequence = PackedStringArray("Sword_Regular_A_Rec", "Sword_Regular_B_Rec", "Sword_Regular_C_RM")
+impact_delay = 0.35
+effect_sequence_delays = PackedFloat32Array(0.35, 1.46, 2.53)
+effect_sequence_damage_ratios = PackedFloat32Array(0.85, 0.95, 1.25)
 bonus_type = "area"
 effect_scene = ExtResource("2_effect")
 implemented = true

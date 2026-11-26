@@ -67,7 +67,7 @@ func _build_toast():
 	_toast_panel.offset_right = 310.0
 	_toast_panel.offset_top = 108.0
 	_toast_panel.offset_bottom = 176.0
-	_toast_panel.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.06, 0.08, 0.13, 0.96), Color(1.0, 0.84, 0.35, 1.0)))
+	_toast_panel.add_theme_stylebox_override("panel", UiStyle.panel_style(UiStyle.INK, UiStyle.RUST))
 	add_child(_toast_panel)
 
 	var margin := UiStyle.make_margin(_toast_panel, 14)
@@ -128,7 +128,7 @@ func _build_tooltip():
 	_tooltip_panel.visible = false
 	_tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tooltip_panel.custom_minimum_size = Vector2(280, 0)
-	_tooltip_panel.add_theme_stylebox_override("panel", UiStyle.panel_style(Color(0.04, 0.06, 0.10, 0.98), Color(0.45, 0.75, 1.0, 1.0), 1))
+	_tooltip_panel.add_theme_stylebox_override("panel", UiStyle.panel_style(UiStyle.INK, UiStyle.STEEL, 1))
 	add_child(_tooltip_panel)
 
 	var margin := UiStyle.make_margin(_tooltip_panel, 14)
@@ -178,7 +178,7 @@ func _build_confirm():
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0, 0, 0, 0.72)
+	backdrop.color = UiStyle.SCRIM
 	_confirm_root.add_child(backdrop)
 
 	var center := CenterContainer.new()

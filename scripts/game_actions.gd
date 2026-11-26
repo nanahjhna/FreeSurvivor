@@ -64,19 +64,19 @@ const ACTIONS := {
 	},
 	"skill_q": {
 		"label": "Q 스킬", "icon": "🗡️", "key": KEY_Q, "input_action": "skill_q",
-		"context": "battle", "rebindable": true, "desc": "쇄도 연권 스킬을 사용합니다."
+		"context": "battle", "rebindable": true, "desc": "Q 슬롯에 장착한 스킬을 사용합니다."
 	},
 	"skill_w": {
 		"label": "W 스킬", "icon": "🌀", "key": KEY_W, "input_action": "skill_w",
-		"context": "battle", "rebindable": true, "desc": "선풍각 스킬을 사용합니다."
+		"context": "battle", "rebindable": true, "desc": "W 슬롯에 장착한 스킬을 사용합니다."
 	},
 	"skill_e": {
 		"label": "E 스킬", "icon": "🔥", "key": KEY_E, "input_action": "skill_e",
-		"context": "battle", "rebindable": true, "desc": "홍련권 스킬을 사용합니다."
+		"context": "battle", "rebindable": true, "desc": "E 슬롯에 장착한 스킬을 사용합니다."
 	},
 	"skill_r": {
 		"label": "R 스킬", "icon": "💥", "key": KEY_R, "input_action": "skill_r",
-		"context": "battle", "rebindable": true, "desc": "궁극기 대폭발을 사용합니다."
+		"context": "battle", "rebindable": true, "desc": "R 슬롯에 장착한 스킬을 사용합니다."
 	},
 	"skill_a": {
 		"label": "삼연 기공탄", "icon": "✴️", "key": KEY_A, "input_action": "skill_a",
@@ -93,10 +93,6 @@ const ACTIONS := {
 	"skill_f": {
 		"label": "F 스킬", "icon": "🌟", "key": KEY_F, "input_action": "skill_f",
 		"context": "battle", "rebindable": true, "desc": "추가 스킬 슬롯 F입니다."
-	},
-	"attack": {
-		"label": "수동 공격", "icon": "⚔️", "key": KEY_SPACE, "input_action": "manual_attack",
-		"context": "battle", "rebindable": true, "desc": "가까운 적을 즉시 공격합니다."
 	},
 	"auto_battle": {
 		"label": "자동 스킬 시전", "icon": "🤖", "key": KEY_T, "input_action": "toggle_auto_battle",

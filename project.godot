@@ -37,8 +37,7 @@ window/size/window_width_override=450
 window/size/window_height_override=800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-# Portrait-first layout. The UI keeps safe-area margins for notches and gesture bars.
-window/handheld/orientation=1
+#Portrait-firstlayout.TheUIkeepssafe-areamarginsfornotchesandgesturebars.window/handheld/orientation=1
 
 [filesystem]
 

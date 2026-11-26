@@ -9,21 +9,21 @@ const CARD_ROWS: Array = [
 	["003", "마력 증폭", "일반", "마법 피해 +12%", "magic_damage", 0.12],
 	["004", "급소 포착", "일반", "치명타 확률 +5%p", "crit_chance", 0.05],
 	["005", "치명적 일격", "희귀", "치명타 피해 +30%", "crit_damage", 0.30],
-	["006", "연속 타격", "희귀", "기본 공격 15% 확률로 추가 공격", "extra_attack", 0.15],
+	["006", "연속 타격", "희귀", "기본 공격 15% 확률로 추가 공격", "extra_attack", 0.15], # legacy: not offered in active-skill combat
 	["007", "처형자", "희귀", "HP 30% 이하 적에게 피해 +25%", "execute_damage", 0.25],
 	["008", "거인 사냥꾼", "희귀", "보스 피해 +20%", "boss_damage", 0.20],
 	["009", "광전사의 분노", "영웅", "내 HP 50% 이하일 때 피해 +35%", "low_hp_damage", 0.35],
 	["010", "파괴의 화신", "전설", "모든 피해 +30%, 받는 피해 +15%", "damage_reckless", 0.30],
-	["011", "신속한 손놀림", "일반", "기본 공격 속도 +10%", "attack_speed", 0.10],
-	["012", "빠른 준비", "일반", "기본 공격 속도 +8%", "attack_speed", 0.08],
-	["013", "정밀 사격", "일반", "기본 공격 속도 +12%", "attack_speed", 0.12],
-	["014", "전투 리듬", "일반", "기본 공격 속도 +8%", "attack_speed", 0.08],
-	["015", "가속 공격", "희귀", "적 처치 시 공격 속도 +3%", "kill_attack_speed_rate", 0.03],
-	["016", "이중 공격", "희귀", "기본 공격 10% 확률로 추가 공격", "extra_attack", 0.10],
-	["017", "폭풍 연격", "희귀", "기본 공격 속도 +15%", "attack_speed", 0.15],
-	["018", "속사의 달인", "희귀", "기본 공격 속도 +12%", "attack_speed", 0.12],
-	["019", "무한 연격", "영웅", "기본 공격 피해 +20%", "physical_damage", 0.20],
-	["020", "광란의 춤", "영웅", "적 처치 시 공격 속도 +20%", "kill_attack_speed_rate", 0.20],
+	["011", "신속한 손놀림", "일반", "스킬 시전 속도 +10%", "attack_speed", 0.10],
+	["012", "빠른 준비", "일반", "스킬 시전 속도 +8%", "attack_speed", 0.08],
+	["013", "정밀 사격", "일반", "스킬 시전 속도 +12%", "attack_speed", 0.12],
+	["014", "전투 리듬", "일반", "스킬 시전 속도 +8%", "attack_speed", 0.08],
+	["015", "가속 공격", "희귀", "적 처치 시 스킬 시전 속도 +3%", "kill_attack_speed_rate", 0.03],
+	["016", "이중 공격", "희귀", "기본 공격 10% 확률로 추가 공격", "extra_attack", 0.10], # legacy: not offered in active-skill combat
+	["017", "폭풍 연격", "희귀", "스킬 시전 속도 +15%", "attack_speed", 0.15],
+	["018", "속사의 달인", "희귀", "스킬 시전 속도 +12%", "attack_speed", 0.12],
+	["019", "무한 연격", "영웅", "물리 스킬 피해 +20%", "physical_damage", 0.20],
+	["020", "광란의 춤", "영웅", "적 처치 시 스킬 시전 속도 +20%", "kill_attack_speed_rate", 0.20],
 	["021", "강인한 육체", "일반", "최대 HP +15%", "max_hp_percent", 0.15],
 	["022", "단단한 피부", "일반", "받는 피해 -8%", "damage_reduction", 0.08],
 	["023", "마법 저항", "일반", "받는 마법 피해 -10%", "magic_reduction", 0.10],
@@ -31,7 +31,7 @@ const CARD_ROWS: Array = [
 	["025", "전투 회복", "희귀", "적 처치 시 HP 회복", "kill_heal", 0.03],
 	["026", "보호막 생성", "희귀", "30초마다 최대 HP의 10% 보호막 생성", "shield_regen", 0.10],
 	["027", "불굴의 의지", "희귀", "HP 30% 이하일 때 받는 피해 감소", "low_hp_reduction", 0.20],
-	["028", "생명 흡수", "희귀", "기본 공격 적중 시 HP 회복", "lifesteal", 0.03],
+	["028", "생명 흡수", "희귀", "기본 공격 적중 시 HP 회복", "lifesteal", 0.03], # legacy: no active-skill lifesteal handler
 	["029", "최후의 저항", "영웅", "치명적인 피해를 1회 막고 최대 HP의 30% 회복", "last_stand", 1.0],
 	["030", "불사의 축복", "전설", "스테이지당 1회 사망 시 HP 50%로 부활", "revive", 1.0],
 	["031", "가벼운 발걸음", "일반", "이동 속도 +10%", "move_speed", 0.10],
@@ -49,7 +49,7 @@ const CARD_ROWS: Array = [
 	["043", "넓은 공격", "일반", "공격 범위 +12%", "attack_range", 0.12],
 	["044", "집중 시전", "일반", "스킬 재사용 대기시간 -8%", "cooldown", 0.08],
 	["045", "연쇄 시전", "희귀", "스킬 피해 +10%", "skill_damage", 0.10],
-	["046", "전투 마법사", "희귀", "기본 공격 피해 +15%", "physical_damage", 0.15],
+	["046", "전투 마법사", "희귀", "물리 스킬 피해 +15%", "physical_damage", 0.15],
 	["047", "기술 숙련", "희귀", "스킬 재사용 대기시간 -10%", "cooldown", 0.10],
 	["048", "과충전", "희귀", "스킬 피해 +25%", "skill_damage", 0.25],
 	["049", "마력 폭주", "영웅", "스킬 피해 +25%", "skill_damage", 0.25],
@@ -57,21 +57,21 @@ const CARD_ROWS: Array = [
 	["052", "화염 강화", "일반", "화염 계열 직접 피해 +15%", "fire_damage", 0.15],
 	["055", "폭발 타격", "희귀", "적 처치 시 폭발 피해 강화", "kill_explosion", 0.10],
 	["059", "화염 폭풍", "영웅", "범위 공격 피해 +25%", "area_damage", 0.25],
-	["061", "전격 무기", "일반", "기본 공격에 추가 번개 피해", "lightning_proc", 0.10],
+	["061", "전격 무기", "일반", "기본 공격에 추가 번개 피해", "lightning_proc", 0.10], # legacy: not offered in active-skill combat
 	["063", "번개 강화", "일반", "스킬 피해 +15%", "magic_damage", 0.15],
 	["064", "냉기 강화", "일반", "스킬 피해 +15%", "magic_damage", 0.15],
-	["065", "연쇄 번개", "희귀", "기본 공격 시 15% 확률로 주변 적에게 번개 피해", "chain_lightning", 0.15],
-	["069", "천둥의 심판", "영웅", "기본 공격 피해 +20%", "physical_damage", 0.20],
-	["081", "관통 사격", "일반", "기본 공격 피해 +10%", "physical_damage", 0.10],
-	["082", "사거리 확장", "일반", "기본 공격 사거리 +15%", "attack_range", 0.15],
+	["065", "연쇄 번개", "희귀", "기본 공격 시 15% 확률로 주변 적에게 번개 피해", "chain_lightning", 0.15], # legacy: not offered in active-skill combat
+	["069", "천둥의 심판", "영웅", "물리 스킬 피해 +20%", "physical_damage", 0.20],
+	["081", "관통 사격", "일반", "물리 스킬 피해 +10%", "physical_damage", 0.10],
+	["082", "사거리 확장", "일반", "스킬 사거리 +15%", "attack_range", 0.15],
 	["083", "투사체 가속", "일반", "스킬 피해 +10%", "skill_damage", 0.10],
 	["084", "폭발 범위", "일반", "범위 스킬 피해 +15%", "area_damage", 0.15],
-	["085", "다중 발사", "희귀", "기본 공격 피해 +15%", "physical_damage", 0.15],
-	["086", "도탄", "희귀", "기본 공격 피해 +15%", "physical_damage", 0.15],
-	["087", "충격파", "희귀", "기본 공격 피해 +20%", "physical_damage", 0.20],
+	["085", "다중 발사", "희귀", "물리 스킬 피해 +15%", "physical_damage", 0.15],
+	["086", "도탄", "희귀", "물리 스킬 피해 +15%", "physical_damage", 0.15],
+	["087", "충격파", "희귀", "물리 스킬 피해 +20%", "physical_damage", 0.20],
 	["088", "회전 칼날", "희귀", "범위 스킬 피해 +15%", "area_damage", 0.15],
 	["089", "화살 폭풍", "영웅", "범위 공격 피해 +25%", "area_damage", 0.25],
-	["090", "무한 탄막", "전설", "기본 공격 피해 +25%", "physical_damage", 0.25],
+	["090", "무한 탄막", "전설", "물리 스킬 피해 +25%", "physical_damage", 0.25],
 	["091", "경험의 지혜", "일반", "획득 경험치 +10%", "xp", 0.10],
 	["092", "탐욕", "일반", "스테이지 골드 +15%", "gold", 0.15],
 	["093", "행운의 별", "일반", "희귀 카드 등장 확률 증가", "rare_weight", 0.05],
@@ -88,11 +88,16 @@ const CARD_ROWS: Array = [
 
 const RARITY_WEIGHTS := {"일반": 55, "희귀": 30, "영웅": 12, "전설": 3}
 const MAX_PICKS := {"일반": 5, "희귀": 3, "영웅": 2, "전설": 1}
+# Kept in CARD_ROWS for save/replay compatibility, but excluded from new
+# active-skill run offers because their handlers only listen to basic attacks.
+const INACTIVE_ACTIVE_COMBAT_CARD_IDS := {"006": true, "016": true, "028": true, "061": true, "065": true}
 
 static func all_ids() -> Array[String]:
 	var result: Array[String] = []
 	for row in CARD_ROWS:
-		result.append(str(row[0]))
+		var id := str(row[0])
+		if not INACTIVE_ACTIVE_COMBAT_CARD_IDS.has(id):
+			result.append(id)
 	return result
 
 static func get_card(card_id: String) -> Dictionary:
@@ -100,6 +105,22 @@ static func get_card(card_id: String) -> Dictionary:
 		if str(row[0]) == card_id:
 			return {"id": row[0], "name": row[1], "grade": row[2], "description": row[3], "type": "survival_bonus", "stat": row[4], "value": row[5]}
 	return {}
+
+static func get_category(stat: String) -> String:
+	if stat in ["max_hp_percent", "damage_reduction", "magic_reduction", "low_hp_reduction", "shield_regen", "last_stand", "revive"]:
+		return "defense"
+	if stat in ["hp_regen", "kill_heal", "lifesteal"]:
+		return "recovery"
+	if stat in ["move_speed", "dodge", "xp", "gold", "rare_weight", "instant_xp", "extra_offer", "free_reroll", "xp_magnet_range", "potion_magnet_range"]:
+		return "utility"
+	return "attack"
+
+static func get_category_name(stat: String) -> String:
+	match get_category(stat):
+		"defense": return "방어"
+		"recovery": return "회복"
+		"utility": return "성장·유틸"
+	return "공격"
 
 static func get_recommendation(card: Dictionary, class_id: String) -> Dictionary:
 	var stat := str(card.get("stat", ""))
@@ -122,6 +143,8 @@ static func draw_offers(count: int, picked: Dictionary, rare_bonus: float = 0.0)
 	var available: Array[Dictionary] = []
 	for row in CARD_ROWS:
 		var id := str(row[0])
+		if INACTIVE_ACTIVE_COMBAT_CARD_IDS.has(id):
+			continue
 		var card := get_card(id)
 		var cap := int(MAX_PICKS.get(str(row[2]), 1))
 		if int(picked.get(id, 0)) < cap:

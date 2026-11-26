@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const REFERENCE_SCREEN := preload("res://scripts/reference_screen.gd")
+
 @onready var hp_bar: ProgressBar = $TopLeft/Bars/HPBar
 @onready var hp_label: Label = $TopLeft/Bars/HPBar/Label
 @onready var exp_bar: ProgressBar = $TopLeft/Bars/EXPBar
@@ -57,6 +59,7 @@ func _ready():
 	_build_battle_action_bar()
 	_build_boss_choice_dialog()
 	_build_mobile_dpad()
+	_apply_reference_hud()
 	_layout_battle_hud()
 	_register_hud_controls()
 	_load_active_hud_layout()
@@ -289,40 +292,94 @@ func _layout_battle_hud() -> void:
 	var safe := UiStyle.safe_insets(get_viewport())
 	var screen := get_viewport().get_visible_rect().size
 	var compact := screen.x < 600.0
-	top_status_panel.offset_left = 22 + safe.x
-	top_status_panel.offset_right = -22 - safe.z
-	top_status_panel.offset_top = 14 + safe.y
-	top_status_panel.offset_bottom = 93 + safe.y
-	bottom_stats_panel.offset_left = -200 - safe.z
-	bottom_stats_panel.offset_right = -22 - safe.z
-	bottom_stats_panel.offset_top = 36 + safe.y
-	bottom_stats_panel.offset_bottom = 91 + safe.y
-	var visible_skill_count := 0
-	for skill_panel in _skill_panels.values():
-		if (skill_panel as Control).visible:
-			visible_skill_count += 1
-	var dock_width := clampf(screen.x - safe.x - safe.z - 24.0, 260.0, 520.0)
-	var skill_gap := 4.0 if compact else 8.0
-	var slot_width := clampf((dock_width - maxf(0.0, float(visible_skill_count - 1)) * skill_gap) / maxf(1.0, float(visible_skill_count)), 54.0, 87.0)
-	var slot_height := 66.0 if compact else 83.0
+	var usable_width := screen.x - safe.x - safe.z
+	var reference_width := usable_width if screen.y >= screen.x else minf(usable_width, 630.0)
+	var reference_scale := reference_width / 552.0
+	var reference_left := safe.x + (usable_width - reference_width) * 0.5
+	top_status_panel.offset_left = reference_left + 70.0 * reference_scale
+	top_status_panel.offset_right = top_status_panel.offset_left + 387.0 * reference_scale - screen.x
+	top_status_panel.offset_top = roundf(73.0 * reference_scale) + safe.y
+	top_status_panel.offset_bottom = top_status_panel.offset_top + 64.0
+	bottom_stats_panel.offset_right = reference_left + reference_width - screen.x - 18.0 * reference_scale
+	bottom_stats_panel.offset_left = bottom_stats_panel.offset_right - 154.0
+	bottom_stats_panel.offset_top = 13 + safe.y
+	bottom_stats_panel.offset_bottom = 67 + safe.y
+	var dock_width := reference_width * 0.9
+	var skill_gap := 6.0 if compact else 8.0
+	var slot_count := maxi(1, _skill_panels.size())
+	var slot_width := floorf((dock_width - float(slot_count - 1) * skill_gap) / float(slot_count))
+	var slot_height := clampf(roundf(134.0 * reference_scale), 98.0, 172.0)
 	var skill_list := action_dock.get_node_or_null("Controls/SkillList") as HBoxContainer
 	if skill_list:
 		skill_list.add_theme_constant_override("separation", int(skill_gap))
 	for skill_panel in _skill_panels.values():
 		(skill_panel as Control).custom_minimum_size = Vector2(slot_width, slot_height)
-	var dock_height := slot_height + (48.0 if not compact else 44.0) + 12.0
+	var dock_height := slot_height + auto_battle_button.get_combined_minimum_size().y + hp_bar.get_combined_minimum_size().y + 24.0
 	action_dock.offset_left = -dock_width * 0.5
 	action_dock.offset_right = dock_width * 0.5
-	action_dock.offset_top = -dock_height - safe.w
-	action_dock.offset_bottom = -20 - safe.w
-	encounter_strip.offset_top = 30 + safe.y
+	action_dock.offset_top = -32.0 * reference_scale - dock_height - safe.w
+	action_dock.offset_bottom = -32.0 * reference_scale - safe.w
+	encounter_strip.offset_top = 14 + safe.y
 	encounter_strip.offset_bottom = 114 + safe.y
 	$MinimapContainer.offset_top = 112 + safe.y
 	$MinimapContainer.offset_bottom = 272 + safe.y
 	$MinimapContainer.offset_left = -176 - safe.z
 	$MinimapContainer.offset_right = -16 - safe.z
-	camera_zoom_control.offset_top = 112 + safe.y
-	camera_zoom_control.offset_bottom = 156 + safe.y
+	camera_zoom_control.offset_top = 184 + safe.y
+	camera_zoom_control.offset_bottom = 228 + safe.y
+
+
+func _apply_reference_hud() -> void:
+	var screen := REFERENCE_SCREEN.new()
+	screen.build(self, "hud", false)
+	var timer := time_label.get_parent() as PanelContainer
+	timer.add_theme_stylebox_override("panel", screen.trim(Rect2(209, 19, 137, 41), 8, false))
+	var time_background := ColorRect.new()
+	time_background.color = Color("#282119ed")
+	time_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	timer.add_child(time_background)
+	timer.move_child(time_background, 0)
+	var gap := Control.new()
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gap.custom_minimum_size.y = 37
+	encounter_strip.add_child(gap)
+	encounter_strip.move_child(gap, 1)
+	encounter_label.add_theme_font_size_override("font_size", 22)
+	boss_health.custom_minimum_size.y = 12
+	exp_bar.custom_minimum_size.y = 10
+	var stats := exp_bar.get_parent() as VBoxContainer
+	var exp_row := HBoxContainer.new()
+	exp_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	exp_row.add_theme_constant_override("separation", 7)
+	stats.add_child(exp_row)
+	stats.move_child(exp_row, 0)
+	var exp_label := UiStyle.make_label("EXP", 18, UiStyle.IVORY)
+	UiStyle.ink_outline(exp_label, 4)
+	exp_row.add_child(exp_label)
+	_reparent_control(exp_bar, exp_row)
+	exp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	exp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	for index in range(4):
+		var key: String = ["q", "w", "e", "r"][index]
+		var panel: Panel = _skill_panels[key]
+		panel.add_theme_stylebox_override("panel", screen.trim(Rect2(45 + index * 120, 761, 110, 128), 10, false))
+		var backing := ColorRect.new()
+		backing.color = Color("#2b241bf1")
+		backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		backing.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		backing.offset_left = 8
+		backing.offset_right = -8
+		backing.offset_top = 8
+		backing.offset_bottom = -8
+		panel.add_child(backing)
+		panel.move_child(backing, 0)
+	var pause_art := screen.trim(Rect2(486, 20, 45, 46), 11)
+	for state in ["normal", "hover", "pressed"]:
+		pause_button.add_theme_stylebox_override(state, pause_art)
+	pause_button.text = ""
+	pause_button.accessibility_name = "전투 일시정지"
+	hp_bar.add_theme_stylebox_override("background", _flat_style(Color("#291915"), UiStyle.STEEL, 2, 6))
+	hp_bar.add_theme_stylebox_override("fill", _flat_style(Color("#ab392e"), Color("#e16c4c"), 2, 6))
 
 func _load_hud_layout(index: int):
 	var config := ConfigFile.new()
@@ -411,7 +468,8 @@ func _style_action_panels():
 		var skill_panel := _skill_panels[key] as Control
 		skill_panel.custom_minimum_size = Vector2(87, 83)
 		if skill_panel is Panel:
-			skill_panel.add_theme_stylebox_override("panel", _flat_style(Color(0.07, 0.13, 0.25, 0.93), Color("#80b8ef"), 3, 13))
+			skill_panel.add_theme_stylebox_override("panel", UiStyle.art_panel(UiStyle.RUST, Vector2.ZERO, 0.93))
+		_add_skill_damage_label(skill_panel)
 		var action_id: String = "skill_" + str(key)
 		_setup_panel(skill_panel, action_id, func(): _cast_skill(str(key)), _skill_tooltip.bind(str(key)))
 	if pause_button:
@@ -423,7 +481,7 @@ func _create_runtime_skill_panel(key: String) -> Panel:
 	var panel := Panel.new()
 	panel.name = "Skill" + key.to_upper()
 	panel.custom_minimum_size = Vector2(48, 48)
-	panel.add_theme_stylebox_override("panel", _flat_style(Color(0.045, 0.03, 0.028, 0.96), Color(0.65, 0.44, 0.23, 0.86), 1, 8))
+	panel.add_theme_stylebox_override("panel", _flat_style(UiStyle.INK, UiStyle.STEEL_DARK, 1, 5))
 	var stack := VBoxContainer.new()
 	stack.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	stack.add_theme_constant_override("separation", 0)
@@ -441,8 +499,67 @@ func _create_runtime_skill_panel(key: String) -> Panel:
 	key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	key_label.add_theme_font_size_override("font_size", 10)
 	stack.add_child(key_label)
+	_add_skill_damage_label(panel)
 	$BottomCenter/SkillContainer.add_child(panel)
 	return panel
+
+func _add_skill_damage_label(panel: Control) -> void:
+	if panel == null or panel.find_child("DamageLabel", false, false) != null:
+		return
+	var icon := panel.find_child("Icon", true, false) as Label
+	var key := panel.find_child("KeyLabel", true, false) as Label
+	if icon:
+		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon.offset_top = 3
+		icon.offset_bottom = -64
+		icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		icon.add_theme_font_size_override("font_size", 33)
+	if key:
+		key.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		key.offset_left = 4
+		key.offset_right = -4
+		key.offset_top = -25
+		key.offset_bottom = -3
+		key.grow_vertical = Control.GROW_DIRECTION_END
+		key.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		key.add_theme_font_size_override("font_size", 18)
+		key.add_theme_color_override("font_color", UiStyle.MUTED)
+		key.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	var overlay := panel.get_node_or_null("CDOverlay") as Control
+	if overlay:
+		overlay.offset_bottom = -56
+	var cooldown := panel.get_node_or_null("CDLabel") as Label
+	if cooldown:
+		cooldown.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+		cooldown.offset_top = 6
+		cooldown.offset_bottom = 36
+		cooldown.add_theme_font_size_override("font_size", 22)
+		cooldown.add_theme_color_override("font_color", UiStyle.IVORY)
+	var damage := Label.new()
+	damage.name = "DamageLabel"
+	damage.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	damage.offset_left = 4
+	damage.offset_top = -69
+	damage.offset_right = -4
+	damage.offset_bottom = -27
+	damage.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	damage.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	damage.add_theme_color_override("font_color", UiStyle.IVORY)
+	damage.add_theme_color_override("font_outline_color", Color("#171016"))
+	damage.add_theme_constant_override("outline_size", 3)
+	damage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(damage)
+	panel.resized.connect(_fit_skill_damage_label.bind(damage))
+	_fit_skill_damage_label(damage)
+
+func _fit_skill_damage_label(label: Label) -> void:
+	var font := label.get_theme_font("font")
+	var available_width := maxf(1.0, (label.get_parent() as Control).size.x - 12.0)
+	var font_size := clampi(roundi(available_width * 0.36), 24, 43)
+	while font_size > 12 and font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > available_width:
+		font_size -= 1
+	label.add_theme_font_size_override("font_size", font_size)
+	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 func _setup_panel(panel: Control, action_id: String, on_activate: Callable, tooltip_builder: Callable):
 	if panel == null:
@@ -458,8 +575,13 @@ func _setup_panel(panel: Control, action_id: String, on_activate: Callable, tool
 	hold_timer.wait_time = 0.55
 	hold_timer.timeout.connect(func():
 		panel.set_meta("long_pressed", true)
+		var skill_key := action_id.trim_prefix("skill_")
+		if skill_manager and skill_manager.has_method("toggle_skill_auto") and skill_manager.get("skill_auto_enabled").has(skill_key):
+			skill_manager.call("toggle_skill_auto", skill_key)
 		var info_value: Variant = tooltip_builder.call()
 		var info: Dictionary = info_value if info_value is Dictionary else {}
+		if skill_manager and skill_manager.has_method("is_skill_auto_enabled") and skill_manager.get("skill_auto_enabled").has(skill_key):
+			info["body"] = str(info.get("body", "")) + "\n자동 사용: " + ("ON" if bool(skill_manager.call("is_skill_auto_enabled", skill_key)) else "OFF")
 		UiFeedback.show_tooltip(str(info.get("title", "")), str(info.get("body", "")), panel.get_global_rect().position + Vector2(0, panel.size.y + 8))
 	)
 	panel.add_child(hold_timer)
@@ -521,10 +643,16 @@ func _build_battle_action_bar():
 	auto_battle_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 	auto_battle_button.toggle_mode = true
 	auto_battle_button.pressed.connect(_toggle_auto_battle)
-	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 전투", "스킬 우선 · 쓸 수 없으면 기본공격\nHP 40% 이하일 때 보유한 물약 사용", auto_battle_button.global_position + Vector2(0, 46)))
+	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 전투", "준비된 액티브 스킬을 자동 시전합니다.\nHP 40% 이하일 때 보유한 물약 사용", auto_battle_button.global_position + Vector2(0, 46)))
 	auto_battle_button.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
 	controls.add_child(auto_battle_button)
 	controls.move_child(auto_battle_button, 0)
+	_reparent_control(hp_bar, controls)
+	controls.move_child(hp_bar, 1)
+	hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hp_label.add_theme_font_size_override("font_size", 16)
+	UiStyle.ink_outline(hp_label, 5)
 	$BottomRight.visible = false
 	var old_containers: Array[Control] = [$TopLeft, $TopRight, $BottomCenter, $BottomRight]
 	for old_container in old_containers:
@@ -596,16 +724,16 @@ func _build_top_status_panel():
 	_reparent_control(exp_bar, stats)
 	exp_bar.show_percentage = false
 	exp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	exp_bar.custom_minimum_size = Vector2(0, 13)
-	exp_bar.add_theme_stylebox_override("background", _flat_style(Color(0.04, 0.09, 0.17, 0.94), Color("#435578"), 2, 6))
-	exp_bar.add_theme_stylebox_override("fill", _flat_style(Color("#f5bb3e"), Color("#ffe19c"), 1, 6))
+	exp_bar.custom_minimum_size = Vector2(0, 9)
+	exp_bar.add_theme_stylebox_override("background", _flat_style(UiStyle.INK, UiStyle.STEEL_DARK, 2, 5))
+	exp_bar.add_theme_stylebox_override("fill", _flat_style(UiStyle.AMBER, UiStyle.GOLD_BRIGHT, 1, 5))
 	for label in [level_label, dungeon_gold_label]:
 		_reparent_control(label, stats)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		label.add_theme_font_size_override("font_size", 21)
-		label.add_theme_color_override("font_color", Color.WHITE if label == level_label else Color("#ffe293"))
-		UiStyle.ink_outline(label, 6, Color("#152644"))
+		label.add_theme_color_override("font_color", UiStyle.IVORY if label == level_label else UiStyle.GOLD_BRIGHT)
+		UiStyle.ink_outline(label, 6)
 	$TopCenter.visible = false
 
 func _build_bottom_stats_panel():
@@ -661,7 +789,7 @@ func _build_encounter_strip():
 	timer_plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	timer_plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	timer_plate.custom_minimum_size.x = 150
-	timer_plate.add_theme_stylebox_override("panel", _flat_style(Color(0.04, 0.09, 0.19, 0.87), Color("#546d9d"), 2, 18))
+	timer_plate.add_theme_stylebox_override("panel", UiStyle.art_panel(UiStyle.RUST, Vector2(13, 8), 0.91))
 	encounter_strip.add_child(timer_plate)
 	_reparent_control(time_label, timer_plate)
 	time_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -722,7 +850,7 @@ func _layout_minimap():
 	minimap_container.visible = false
 
 func _style_hud_buttons():
-	UiStyle.skin_button(pause_button, Color("#182a4c"), Color("#788db4"))
+	UiStyle.skin_button(pause_button, UiStyle.INK_SOFT, UiStyle.RUST, UiStyle.IVORY)
 	pause_button.add_theme_font_size_override("font_size", 27)
 
 func _flat_style(bg: Color, border: Color, border_width: int, radius: int) -> StyleBoxFlat:
@@ -737,6 +865,7 @@ func _flat_style(bg: Color, border: Color, border_width: int, radius: int) -> St
 	style.corner_radius_top_right = radius
 	style.corner_radius_bottom_left = radius
 	style.corner_radius_bottom_right = radius
+	style.corner_detail = 1
 	return style
 
 func _reparent_control(control: Control, new_parent: Control):
@@ -764,12 +893,6 @@ func _cast_skill(key: String):
 		return
 	skill_manager.call("press_skill", key)
 
-func _manual_attack():
-	if player_node == null or not is_instance_valid(player_node):
-		player_node = get_tree().get_first_node_in_group("player")
-	if player_node and player_node.has_method("try_manual_attack"):
-		player_node.call("try_manual_attack")
-
 func _toggle_auto_battle():
 	var enabled: bool = not bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
 	if skill_manager and skill_manager.has_method("set_auto_battle"):
@@ -780,14 +903,13 @@ func _update_auto_battle_label():
 	var enabled := bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
 	auto_battle_button.set_pressed_no_signal(enabled)
 	auto_battle_button.text = "자동 전투 %s" % ("켜짐" if enabled else "꺼짐")
-	UiStyle.skin_button(auto_battle_button, Color("#256b8a") if enabled else Color("#25334a"), Color("#74d3ff") if enabled else Color("#889aba"))
+	UiStyle.skin_button(auto_battle_button, UiStyle.SELECTED if enabled else UiStyle.INK_SOFT,
+		UiStyle.AMBER if enabled else UiStyle.STEEL, UiStyle.IVORY)
 
 func _on_action_requested(action_id: String):
 	match action_id:
 		"skill_q", "skill_w", "skill_e", "skill_a", "skill_s", "skill_r", "skill_d", "skill_f":
 			_cast_skill(action_id.trim_prefix("skill_"))
-		"attack":
-			_manual_attack()
 		"auto_battle":
 			_toggle_auto_battle()
 		"pause":
@@ -815,6 +937,8 @@ func _skill_tooltip(key: String) -> Dictionary:
 		current = float(skill_manager.call("get_cooldown", key))
 	if current > 0.05:
 		body += "\n\n⏳ 쿨타임 %.1f초 남음" % current
+	if skill_manager and skill_manager.has_method("is_skill_auto_enabled") and skill_manager.get("skill_auto_enabled").has(key):
+		body += "\n자동 사용: %s (길게 눌러 전환)" % ("ON" if bool(skill_manager.call("is_skill_auto_enabled", key)) else "OFF")
 	return {"title": "%s %s" % [meta.name, GameActions.get_shortcut_text("skill_" + key)], "body": body}
 
 func _update_skill_slot_labels():
@@ -830,11 +954,42 @@ func _update_skill_slot_labels():
 			if skill_id.is_empty():
 				key_label.text = "—"
 			elif not GameData.is_survival_skill_unlocked(skill_id):
-				key_label.text = "잠김 · Lv.%d" % int(meta.get("unlock_level", 1))
+				key_label.text = "Lv.%d" % int(meta.get("unlock_level", 1))
 			else:
-				key_label.text = GameActions.get_key_name("skill_" + str(slot))
+				key_label.text = str(slot).to_upper() if GameActions.is_mobile() else GameActions.get_key_name("skill_" + str(slot))
 		panel.tooltip_text = str(meta.get("name", "빈 스킬 슬롯"))
+		var damage_label := panel.find_child("DamageLabel", false, false) as Label
+		if damage_label:
+			damage_label.text = _skill_damage_text(str(slot))
+			_fit_skill_damage_label(damage_label)
+			damage_label.tooltip_text = "예상 스킬 피해: %s" % damage_label.text if not damage_label.text.is_empty() else "피해 정보 없음"
 	_update_skill_availability()
+
+func _skill_damage_text(key: String) -> String:
+	var skill_id := GameData.get_equipped_skill(key)
+	var meta: Dictionary = GameData.skill_meta.get(skill_id, {})
+	if meta.is_empty() or str(meta.get("cast_type", "")) in ["heal", "passive"]:
+		return ""
+	var stats := GameData.get_character_stat_manager(GameData.get_leader_id())
+	var uses_magic := bool(meta.get("uses_magic_power", false))
+	var power := stats.mag_atk() if uses_magic else stats.phys_atk()
+	power *= GameData.attack_damage_mult
+	var level := int(GameData.skill_levels.get(skill_id, 1))
+	var ratio := float(meta.get("base_dmg_ratio", 0.0)) + float(meta.get("dmg_step", 0.0)) * float(level - 1)
+	var multiplier := 1.0 + GameData.get_survival_bonus("damage") + GameData.get_survival_bonus("damage_reckless") + GameData.get_survival_bonus("skill_damage")
+	multiplier += GameData.get_survival_bonus("magic_damage") if uses_magic else GameData.get_survival_bonus("physical_damage")
+	if str(meta.get("bonus_type", "")) == "fire":
+		multiplier += GameData.get_survival_bonus("fire_damage")
+	if str(meta.get("bonus_type", "")) == "area":
+		multiplier += GameData.get_survival_bonus("area_damage")
+	var sequence := PackedFloat32Array(meta.get("effect_sequence_damage_ratios", PackedFloat32Array()))
+	if sequence.size() > 0:
+		var base_ratio := maxf(0.001, float(meta.get("base_dmg_ratio", 1.0)))
+		var sequence_total := 0.0
+		for hit_ratio in sequence:
+			sequence_total += float(hit_ratio) * ratio / base_ratio
+		return "%d" % roundi(power * sequence_total * multiplier)
+	return "%d" % roundi(power * ratio * multiplier)
 
 func _update_skill_availability():
 	if _skill_panels.is_empty():
@@ -843,9 +998,9 @@ func _update_skill_availability():
 		var skill_id := GameData.get_equipped_skill(str(slot))
 		var panel: Control = _skill_panels[slot]
 		var unlocked := GameData.is_survival_skill_unlocked(skill_id)
-		panel.visible = not skill_id.is_empty() and (slot in ["q", "w", "e", "r"] or unlocked)
+		panel.visible = slot in ["q", "w", "e", "r"] or (not skill_id.is_empty() and unlocked)
 		panel.modulate = Color.WHITE if unlocked else Color(0.58, 0.59, 0.67)
-	if action_dock != null:
+	if action_dock != null and _hud_preset == 0 and (_hud_editor == null or not _hud_editor.visible):
 		_layout_battle_hud()
 
 # ------------------------------------------------------------
@@ -858,14 +1013,14 @@ func _unhandled_input(event: InputEvent):
 	if get_tree().paused:
 		return
 	var action_id := GameActions.get_action_for_event(event)
-	if action_id in ["attack", "auto_battle"] and GameActions.is_battle_action(action_id):
+	if action_id == "auto_battle" and GameActions.is_battle_action(action_id):
 		GameActions.trigger(action_id)
 		get_viewport().set_input_as_handled()
 
 func _on_hp_changed(curr: float, maximum: float):
 	hp_bar.max_value = maximum
 	hp_bar.value = curr
-	hp_label.text = str(int(curr)) + " / " + str(int(maximum))
+	hp_label.text = "%d / %d" % [ceili(curr), ceili(maximum)]
 
 func _on_exp_changed(curr: int, needed: int):
 	exp_bar.max_value = needed

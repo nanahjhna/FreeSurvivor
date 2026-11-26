@@ -43,7 +43,7 @@ func _ready():
 func _build_ui():
 	var bg := ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.035, 0.025, 0.055)
+	bg.color = UiStyle.ASPHALT
 	add_child(bg)
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 24)
@@ -62,7 +62,7 @@ func _build_ui():
 	for label in ["속도 1x", "속도 2x", "속도 3x"]: speed.add_item(label)
 	speed.item_selected.connect(func(index): battle_speed = float(index + 1))
 	top.add_child(speed)
-	var enemy_panel := UiStyle.make_panel(Color(0.12, 0.04, 0.08, 0.96))
+	var enemy_panel := UiStyle.make_panel()
 	enemy_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(enemy_panel)
 	var enemy_box := VBoxContainer.new()
@@ -120,7 +120,7 @@ func _build_ui():
 	_build_overlay()
 
 func _build_overlay():
-	overlay = UiStyle.make_panel(Color(0.05, 0.08, 0.12, 0.98))
+	overlay = UiStyle.make_panel()
 	overlay.set_anchors_preset(Control.PRESET_CENTER)
 	overlay.position = Vector2(-310, -180)
 	overlay.custom_minimum_size = Vector2(620, 360)

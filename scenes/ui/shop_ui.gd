@@ -32,13 +32,14 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	var backdrop := ColorRect.new()
-	backdrop.color = Color(0, 0, 0, 0.68)
+	backdrop.color = UiStyle.SCRIM
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(backdrop)
 
 	var content := UiStyle.dialog_layout(self, "", 760.0)
 	var header := HBoxContainer.new()
 	content.add_child(header)
+	header.add_child(UiStyle.icon_view("skill", 26))
 	var title := UiStyle.make_title("스킬 상점", 27)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
@@ -48,7 +49,7 @@ func _build_ui() -> void:
 	close.pressed.connect(close_screen)
 	header.add_child(close)
 
-	_preview_panel = UiStyle.make_panel(Color("#20242e"))
+	_preview_panel = UiStyle.make_panel(UiStyle.ASPHALT)
 	_preview_panel.clip_contents = true
 	content.add_child(_preview_panel)
 	_fit_preview()
@@ -102,13 +103,16 @@ func _build_ui() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status.custom_minimum_size.y = 22
 	selection.add_child(_status)
-	_buy = UiStyle.make_button("", Vector2(132, 50), true)
+	_buy = UiStyle.make_button("", Vector2(132, 56), true)
+	_buy.add_theme_font_size_override("font_size", 20)
 	_buy.pressed.connect(_buy_selected)
 	footer.add_child(_buy)
 
 
 func _fit_preview() -> void:
 	_preview_panel.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.30, 165.0, 380.0)
+	if _preview:
+		_preview.set_framing(3.35, 1.35, 2.1)
 
 
 func open() -> void:

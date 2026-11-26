@@ -10,6 +10,7 @@
 - 게임 설계: `docs/GAME_DESIGN.md`
 - 화면 설계: `docs/UI_UX_SPEC.md`
 - 데이터 규칙: `docs/DATA_SCHEMA.md`
+- Android AAB 빌드 규칙: `docs/ANDROID_AAB_BUILD.md`
 - 구현 여부: `docs/IMPLEMENTATION_STATUS.md`
 - 대화에서 합의된 사항: `docs/CHAT_HISTORY.md`
 - 변경 요약: `docs/CHANGELOG.md`

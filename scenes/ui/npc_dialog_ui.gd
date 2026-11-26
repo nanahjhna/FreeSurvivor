@@ -21,7 +21,7 @@ func _build_ui():
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0, 0, 0, 0.65)
+	backdrop.color = UiStyle.SCRIM
 	root.add_child(backdrop)
 
 	var center := CenterContainer.new()

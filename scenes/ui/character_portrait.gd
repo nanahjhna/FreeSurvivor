@@ -5,7 +5,12 @@ const ANIMATION_SOURCE := preload("res://scripts/character_animation_source.gd")
 
 var portrait_view: SubViewport
 var actor: PlayerCharacter
+var portrait_camera: Camera3D
 var active_class := ""
+var portrait_active := true
+var framing_size := 2.7
+var framing_height := 1.12
+var framing_width := 0.0
 
 
 func _ready() -> void:
@@ -37,12 +42,28 @@ func _ready() -> void:
 	actor.process_mode = Node.PROCESS_MODE_DISABLED
 	actor.is_combat_enabled = false
 	portrait_view.add_child(actor)
-	var camera := Camera3D.new()
-	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = 2.7
-	portrait_view.add_child(camera)
-	camera.look_at_from_position(Vector3(0, 1.55, 5), Vector3(0, 1.12, 0))
-	camera.make_current()
+	portrait_camera = Camera3D.new()
+	portrait_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	portrait_view.add_child(portrait_camera)
+	portrait_camera.keep_aspect = Camera3D.KEEP_HEIGHT
+	set_framing(2.7, 1.12)
+	resized.connect(_apply_framing)
+	portrait_camera.make_current()
+
+
+func set_framing(ortho_size: float, target_height: float, min_world_width: float = 0.0) -> void:
+	framing_size = ortho_size
+	framing_height = target_height
+	framing_width = min_world_width
+	_apply_framing()
+
+
+func _apply_framing() -> void:
+	if portrait_camera == null:
+		return
+	var world_height_for_width := framing_width * size.y / maxf(1.0, size.x)
+	portrait_camera.size = maxf(framing_size, world_height_for_width)
+	portrait_camera.look_at_from_position(Vector3(0, framing_height + 0.43, 5), Vector3(0, framing_height, 0))
 
 
 func show_character(class_id: String) -> void:
@@ -50,14 +71,17 @@ func show_character(class_id: String) -> void:
 		return
 	active_class = class_id
 	actor.set_character_appearance(class_id)
+	set_portrait_active(portrait_active)
 	var visual := actor.get_node("VisualRoot") as Node3D
 	visual.rotation.y = deg_to_rad(18)
 
 
 func set_portrait_active(enabled: bool) -> void:
+	portrait_active = enabled
 	if portrait_view:
 		portrait_view.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE if enabled else SubViewport.UPDATE_DISABLED
 	if actor and is_instance_valid(actor.model_animation_player):
+		actor.model_animation_player.process_mode = Node.PROCESS_MODE_ALWAYS if enabled else Node.PROCESS_MODE_DISABLED
 		actor.model_animation_player.active = enabled
 
 
@@ -76,8 +100,14 @@ func preview_skill(skill_id: String, slot_key: String = "") -> bool:
 	var clip := actor.model_animation_player.get_animation(clip_name)
 	if clip == null:
 		return false
-	clip.loop_mode = Animation.LOOP_LINEAR
-	actor.model_animation_player.play(clip_name, 0.12)
+	# The battle actor and preview can share the same cached Animation resource.
+	var preview_clip_copy := clip.duplicate() as Animation
+	preview_clip_copy.loop_mode = Animation.LOOP_LINEAR
+	clear_clip_preview()
+	var preview := AnimationLibrary.new()
+	preview.add_animation(&"Skill", preview_clip_copy)
+	actor.model_animation_player.add_animation_library(&"shop_preview", preview)
+	actor.model_animation_player.play(&"shop_preview/Skill", 0.12)
 	return true
 
 
