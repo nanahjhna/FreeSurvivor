@@ -92,17 +92,20 @@ func _refresh():
 		child.queue_free()
 
 	var claimable := 0
-	var completed := 0
+	var claimed_count := 0
+	var in_progress := 0
 	var display_quests := GameData.quests.filter(_can_claim)
 	display_quests.append_array(GameData.quests.filter(func(quest: Dictionary): return not _can_claim(quest)))
 	for quest in display_quests:
 		if bool(quest.get("claimed", false)):
-			completed += 1
+			claimed_count += 1
 		if not quest.get("claimed", false) and int(quest.get("current", 0)) >= int(quest.get("target", 1)):
 			claimable += 1
+		elif not quest.get("claimed", false):
+			in_progress += 1
 		_list.add_child(_make_quest_card(quest))
-	_summary.text = "완료 %d / 전체 %d   ·   수령 가능 %d개" % [
-		completed, GameData.quests.size(), claimable
+	_summary.text = "진행 중 %d개  ·  수령 가능 %d개  ·  수령 완료 %d개" % [
+		in_progress, claimable, claimed_count
 	]
 	_refresh_approved_quests(display_quests)
 
@@ -168,7 +171,9 @@ func _refresh_approved_quests(quests: Array) -> void:
 		var heading := UiStyle.make_label(str(quest.get("title", "")), 29)
 		heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(heading)
-		row.add_child(UiStyle.make_label("수령 완료" if claimed else "%d / %d" % [current, target], 22, UiStyle.GOLD_BRIGHT))
+		var status_text := "수령 완료" if claimed else ("수령 가능" if claimable else "%d / %d" % [current, target])
+		var status_color := UiStyle.GOLD_BRIGHT if claimable else (UiStyle.RECOVERY if claimed else UiStyle.MUTED)
+		row.add_child(UiStyle.make_label(status_text, 22, status_color))
 		var description := UiStyle.make_label(str(quest.get("desc", "")), 17, UiStyle.MUTED)
 		description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		stack.add_child(description)
@@ -214,11 +219,9 @@ func _make_quest_card(quest: Dictionary) -> PanelContainer:
 	var current: int = int(quest.get("current", 0))
 	var target: int = int(quest.get("target", 1))
 	var complete := current >= target
-	var status := UiStyle.make_label(
-		"수령 완료" if claimed else ("%d / %d" % [min(current, target), target]),
-		13,
-		Color(0.5, 1.0, 0.6) if complete and not claimed else (Color(0.6, 0.62, 0.7) if claimed else Color(0.65, 0.78, 0.95))
-	)
+	var status_text := "수령 완료" if claimed else ("수령 가능" if complete else "%d / %d" % [min(current, target), target])
+	var status_color := UiStyle.GOLD_BRIGHT if complete and not claimed else (UiStyle.RECOVERY if claimed else Color(0.65, 0.78, 0.95))
+	var status := UiStyle.make_label(status_text, 13, status_color)
 	top.add_child(status)
 
 	var description := UiStyle.make_label(str(quest.get("desc", "")), 16, UiStyle.MUTED)

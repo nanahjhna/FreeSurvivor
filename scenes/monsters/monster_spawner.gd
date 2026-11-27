@@ -75,6 +75,9 @@ func _spawn_boss():
 	)
 	if boss == null:
 		return
+	var boss_sfx := get_tree().root.get_node_or_null("SfxManager")
+	if boss_sfx and boss_sfx.has_method("play_3d"):
+		boss_sfx.play_3d("boss_spawn", spawn_pos, -2.0, 10.0)
 	boss.set_meta("boss_reward_multiplier", GameManager.boss_reward_multiplier)
 	boss.died.connect(_on_boss_died)
 

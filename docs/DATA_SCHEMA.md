@@ -29,6 +29,7 @@
 - `SkillData.auto_min_targets`는 광역 스킬의 자동 사용 최소 주변 적 수이며 기본값은 2입니다.
 - `SkillData.auto_priority`는 자동 전투 점수의 선택 가중치이며 0이면 슬롯별 기본 우선도가 사용됩니다.
 - `SkillData.wave_width_multiplier`는 전방 검기의 판정과 시각 효과 폭을 함께 조정합니다. 기본값은 1입니다.
+- `SkillData.effect_visual`은 검기의 외형을 고르는 설정입니다. 검사 스킬은 `sword_cut`, `sword_sweep`, `sword_impact`, `sword_combo`를 사용하며, 기본값 `legacy`는 기존 효과 씬의 외형을 사용합니다. 연속기가 효과를 생성할 때 넘기는 `effect_sequence_index`는 시각 연출용 런타임 값입니다.
 - 검사 Q·W·E의 이전 스킬 ID는 `legacy_id`로 조회하며 기존 장착 슬롯을 복원할 때 사용합니다.
 - 슬롯별 자동 사용 토글과 대기 중인 스킬은 런타임 상태이며 저장 데이터에는 기록하지 않습니다.
 

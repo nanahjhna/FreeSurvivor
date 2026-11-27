@@ -37,7 +37,7 @@ window/size/window_width_override=450
 window/size/window_height_override=800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-#Portrait-firstlayout.TheUIkeepssafe-areamarginsfornotchesandgesturebars.window/handheld/orientation=1
+window/handheld/orientation=1
 
 [filesystem]
 

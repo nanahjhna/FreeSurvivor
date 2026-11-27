@@ -7,6 +7,7 @@ var _name_label: Label
 var _role_label: Label
 var _line_label: Label
 var _options_box: VBoxContainer
+var _panel: PanelContainer
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -28,11 +29,10 @@ func _build_ui():
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(center)
 
-	var panel := UiStyle.make_panel()
-	panel.custom_minimum_size = Vector2(600, 0)
-	center.add_child(panel)
+	_panel = UiStyle.make_panel()
+	center.add_child(_panel)
 
-	var margin := UiStyle.make_margin(panel, 26)
+	var margin := UiStyle.make_margin(_panel, 26)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 12)
 	margin.add_child(vbox)
@@ -44,7 +44,7 @@ func _build_ui():
 	vbox.add_child(HSeparator.new())
 	_line_label = UiStyle.make_label("", 16, Color(0.92, 0.94, 1.0))
 	_line_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_line_label.custom_minimum_size = Vector2(540, 80)
+	_line_label.custom_minimum_size = Vector2(0, 80)
 	vbox.add_child(_line_label)
 
 	_options_box = VBoxContainer.new()
@@ -54,6 +54,18 @@ func _build_ui():
 	var close := UiStyle.make_button("← 닫기 [ESC]", Vector2(150, 42))
 	close.pressed.connect(close_screen)
 	vbox.add_child(close)
+	get_viewport().size_changed.connect(_fit_layout)
+	_fit_layout()
+
+func _fit_layout() -> void:
+	if not is_instance_valid(_panel):
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var compact := viewport_size.y >= viewport_size.x and viewport_size.x < 600.0
+	UiStyle.fit_centered_panel(_panel, Vector2(600.0, 620.0), Vector2(16.0, 20.0))
+	_line_label.custom_minimum_size = Vector2(0, 72 if compact else 96)
+	_line_label.add_theme_font_size_override("font_size", 15 if compact else 17)
+	_name_label.add_theme_font_size_override("font_size", 23 if compact else 28)
 
 func open(npc_name: String, role: String, line: String, options: Array):
 	visible = true

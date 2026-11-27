@@ -65,6 +65,8 @@ func _check_character_creation(game: Node) -> void:
 	await scene_changed
 	var select := current_scene
 	select._show_creation(1)
+	select.creation_name.text = TEST_NAME
+	select._update_create_button()
 	_check(select.selected_class_id == "char01" and not select.create_button.disabled, "등록된 검사를 생성 화면에서 선택할 수 없습니다.")
 	var preview: Node = select.preview_player
 	_check(preview != null and preview.model_clips.has("Idle") and preview.model_clips.has("Attack"), "검사의 미리보기 애니메이션이 누락됐습니다.")

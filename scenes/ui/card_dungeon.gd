@@ -21,6 +21,10 @@ var overlay_text: Label
 var overlay_button: Button
 var pending_reward: Dictionary = {}
 var battle_speed := 1.0
+var _root: VBoxContainer
+var _top: HBoxContainer
+var _player_row: HBoxContainer
+var _enemy_panel: PanelContainer
 
 func _ready():
 	GameManager.current_location = GameManager.Location.CARD_DECK
@@ -46,10 +50,12 @@ func _build_ui():
 	bg.color = UiStyle.ASPHALT
 	add_child(bg)
 	var root := VBoxContainer.new()
+	_root = root
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 24)
 	root.add_theme_constant_override("separation", 12)
 	add_child(root)
 	var top := HBoxContainer.new()
+	_top = top
 	root.add_child(top)
 	floor_label = UiStyle.make_title("", 24)
 	floor_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -63,6 +69,7 @@ func _build_ui():
 	speed.item_selected.connect(func(index): battle_speed = float(index + 1))
 	top.add_child(speed)
 	var enemy_panel := UiStyle.make_panel()
+	_enemy_panel = enemy_panel
 	enemy_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(enemy_panel)
 	var enemy_box := VBoxContainer.new()
@@ -77,7 +84,8 @@ func _build_ui():
 	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	enemy_box.add_child(icon)
 	enemy_hp = ProgressBar.new()
-	enemy_hp.custom_minimum_size = Vector2(700, 34)
+	enemy_hp.custom_minimum_size = Vector2(0, 34)
+	enemy_hp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	enemy_box.add_child(enemy_hp)
 	enemy_info = UiStyle.make_label("", 15)
 	enemy_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -92,6 +100,7 @@ func _build_ui():
 	cancel_button.pressed.connect(_cancel_card_selection)
 	enemy_box.add_child(cancel_button)
 	var player_row := HBoxContainer.new()
+	_player_row = player_row
 	root.add_child(player_row)
 	player_hp = ProgressBar.new()
 	player_hp.custom_minimum_size = Vector2(430, 32)
@@ -118,12 +127,40 @@ func _build_ui():
 	feedback_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root.add_child(feedback_label)
 	_build_overlay()
+	get_viewport().size_changed.connect(_fit_layout)
+	_fit_layout()
+
+func _fit_layout() -> void:
+	if _root == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var safe := UiStyle.safe_insets(get_viewport())
+	var compact := viewport_size.y >= viewport_size.x
+	_root.offset_left = 16.0 + safe.x
+	_root.offset_top = 12.0 + safe.y
+	_root.offset_right = -16.0 - safe.z
+	_root.offset_bottom = -12.0 - safe.w
+	if _top:
+		_top.add_theme_constant_override("separation", 6 if compact else 12)
+		for child in _top.get_children():
+			if child is Button or child is OptionButton:
+				child.custom_minimum_size.x = 0.0 if compact else 120.0
+				child.size_flags_horizontal = Control.SIZE_EXPAND_FILL if compact else Control.SIZE_SHRINK_END
+	if _player_row:
+		_player_row.add_theme_constant_override("separation", 6 if compact else 12)
+		var hp_width := clampf(viewport_size.x * (0.34 if compact else 0.42), 110.0, 430.0)
+		player_hp.custom_minimum_size.x = hp_width
+		end_turn_button.custom_minimum_size.x = 112.0 if compact else 150.0
+		if _enemy_panel:
+			enemy_hp.custom_minimum_size.x = 0.0
+		_fit_overlay()
 
 func _build_overlay():
 	overlay = UiStyle.make_panel()
 	overlay.set_anchors_preset(Control.PRESET_CENTER)
-	overlay.position = Vector2(-310, -180)
-	overlay.custom_minimum_size = Vector2(620, 360)
+	overlay.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	overlay.grow_vertical = Control.GROW_DIRECTION_BOTH
+	overlay.custom_minimum_size = Vector2(0, 0)
 	add_child(overlay)
 	var box := VBoxContainer.new()
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -140,6 +177,20 @@ func _build_overlay():
 	overlay_button.pressed.connect(_overlay_action)
 	box.add_child(overlay_button)
 	overlay.visible = false
+	_fit_overlay()
+
+func _fit_overlay() -> void:
+	if overlay == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var safe := UiStyle.safe_insets(get_viewport())
+	var width := minf(620.0, viewport_size.x - safe.x - safe.z - 32.0)
+	var height := minf(360.0, viewport_size.y - safe.y - safe.w - 48.0)
+	overlay.offset_left = -width * 0.5
+	overlay.offset_right = width * 0.5
+	overlay.offset_top = -height * 0.5
+	overlay.offset_bottom = height * 0.5
+	overlay.custom_minimum_size = Vector2(width, height)
 
 func _refresh():
 	if battle == null: return

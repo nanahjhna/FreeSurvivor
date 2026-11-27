@@ -36,13 +36,14 @@ var route_overlay: Control
 var route_label: Label
 var _travel_buttons: Dictionary = {}
 var _travel_attention_badges: Dictionary = {}
-var auto_move_attention_badge: Label
+var auto_move_attention_badge: Control
 var hud_dock: VBoxContainer
 var profile_label: Label
 var objective_panel: PanelContainer
 var objective_title: Label
 var objective_button: Button
 var objective_stage := ""
+var _attention_refresh_remaining := 0.0
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -71,7 +72,7 @@ func _refresh_village_character() -> void:
 	profile_label.text = "%s LV.%d" % [profile.get("name", character.get("name", "모험가")), GameData.get_character_total_level(leader_id)]
 	_refresh_objective()
 
-func _process(_delta: float):
+func _process(delta: float):
 	var lobby := get_parent()
 	var moving := lobby.has_method("is_auto_moving") and bool(lobby.call("is_auto_moving"))
 	auto_move_button.text = "이동 취소" if moving else "자동 이동"
@@ -81,8 +82,10 @@ func _process(_delta: float):
 	route_label.visible = show_route
 	if show_route:
 		route_overlay.queue_redraw()
-	_refresh_attention_badges()
-	_refresh_npc_attention()
+	_attention_refresh_remaining -= delta
+	if _attention_refresh_remaining <= 0.0:
+		_attention_refresh_remaining = 0.25
+		_refresh_attention_badges()
 
 func _hide_legacy_status():
 	if status_label:
@@ -150,14 +153,12 @@ func _build_bottom_menu():
 		button.pressed.connect(open_screen.bind(str(item[1])))
 		row.add_child(button)
 	_build_auto_move_button(row)
-	auto_move_attention_badge = UiStyle.make_label("!", 23, Color("#ff7168"))
-	UiStyle.ink_outline(auto_move_attention_badge, 4, Color("#250000"))
-	auto_move_attention_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	auto_move_attention_badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	auto_move_attention_badge = UiStyle.attention_badge(30)
 	auto_move_attention_badge.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	auto_move_attention_badge.offset_left = -22
-	auto_move_attention_badge.offset_right = -2
-	auto_move_attention_badge.offset_top = -5
+	auto_move_attention_badge.offset_left = -38
+	auto_move_attention_badge.offset_right = -8
+	auto_move_attention_badge.offset_top = -8
+	auto_move_attention_badge.offset_bottom = 22
 	auto_move_button.add_child(auto_move_attention_badge)
 	var button_min_width := 64.0
 	for child in row.get_children():
@@ -255,53 +256,41 @@ func _build_fast_travel_menu():
 		button.pressed.connect(_auto_move_to.bind(destination[1], destination[0]))
 		box.add_child(button)
 		_travel_buttons[destination[1]] = button
-		var attention := Label.new()
-		attention.text = "!"
-		attention.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		attention.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		attention.add_theme_color_override("font_color", Color("#ff3d3d"))
-		attention.add_theme_color_override("font_outline_color", Color("#250000"))
-		attention.add_theme_constant_override("outline_size", 4)
-		attention.add_theme_font_size_override("font_size", 23)
-		attention.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var attention := UiStyle.attention_badge(30)
 		attention.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
-		attention.offset_left = -30.0
-		attention.offset_top = -18.0
+		attention.offset_left = -38.0
+		attention.offset_top = -15.0
 		attention.offset_right = -8.0
-		attention.offset_bottom = 18.0
+		attention.offset_bottom = 15.0
 		attention.visible = false
 		button.add_child(attention)
 		_travel_attention_badges[destination[1]] = attention
 
 func _refresh_attention_badges() -> void:
 	var any_destination_attention := false
+	var attention_by_destination := {
+		"shop": GameData.has_skill_shop_purchase_available(),
+		"inn": GameData.has_permanent_upgrade_available(),
+		"quest": GameData.has_claimable_quest(),
+	}
 	for id in _travel_buttons:
-		var needs_attention := _has_destination_attention(str(id))
+		var needs_attention := bool(attention_by_destination.get(id, false))
 		any_destination_attention = any_destination_attention or needs_attention
-		var attention_mark := _travel_attention_badges.get(id) as Label
+		var attention_mark := _travel_attention_badges.get(id) as Control
 		if attention_mark:
 			attention_mark.visible = needs_attention
 	if auto_move_attention_badge != null:
 		auto_move_attention_badge.visible = any_destination_attention
-
-func _has_destination_attention(destination_id: String) -> bool:
-	match destination_id:
-		"inn": return GameData.has_permanent_upgrade_available()
-		"quest": return GameData.has_claimable_quest()
-		"shop": return GameData.has_skill_shop_purchase_available()
-	return false
-
-func _refresh_npc_attention() -> void:
-	var attention_by_npc := {
-		"npc_merchant": GameData.has_skill_shop_purchase_available(),
-		"npc_innkeeper": GameData.has_permanent_upgrade_available(),
-		"npc_villager": GameData.has_claimable_quest(),
+	var npc_destinations := {
+		"npc_merchant": "shop",
+		"npc_innkeeper": "inn",
+		"npc_villager": "quest",
 	}
 	for npc in get_tree().get_nodes_in_group("npcs"):
 		if not is_instance_valid(npc) or not npc.has_method("set_attention_visible"):
 			continue
 		var interaction_id := str(npc.get_meta("interaction_id", ""))
-		npc.call("set_attention_visible", bool(attention_by_npc.get(interaction_id, false)))
+		npc.call("set_attention_visible", bool(attention_by_destination.get(npc_destinations.get(interaction_id, ""), false)))
 
 func _build_auto_move_button(parent: Control = null):
 	auto_move_button = UiStyle.make_button("자동 이동", Vector2(64, 76))

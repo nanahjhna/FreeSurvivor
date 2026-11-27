@@ -9,6 +9,8 @@ var detail: ITEM_DETAIL
 var approved: REFERENCE_SCREEN
 var legacy_layout: Control
 var details_return: Button
+var current_result: Dictionary = {}
+var combat_log_popup: Control
 
 
 func _ready() -> void:
@@ -51,12 +53,19 @@ func _result_state() -> int:
 
 func _on_state_changed(state: int) -> void:
 	detail.hide()
+	if combat_log_popup:
+		combat_log_popup.queue_free()
+		combat_log_popup = null
 	visible = state == _result_state()
 	if visible:
 		_render_result(GameData.last_battle_result)
 
 
 func _render_result(result: Dictionary) -> void:
+	current_result = result.duplicate(true)
+	if combat_log_popup:
+		combat_log_popup.queue_free()
+		combat_log_popup = null
 	for child in body.get_children():
 		body.remove_child(child)
 		child.queue_free()
@@ -115,7 +124,8 @@ func _render_result(result: Dictionary) -> void:
 	if not damage.is_empty():
 		var breakdown := VBoxContainer.new()
 		breakdown.add_theme_constant_override("separation", 8)
-		var toggle := UiStyle.make_button("상세 전투 기록  ▾", Vector2(0, 52))
+		var toggle := UiStyle.make_button("상세 전투 기록  ▾", Vector2(0, 58))
+		toggle.add_theme_font_size_override("font_size", 20)
 		toggle.pressed.connect(func():
 			breakdown.visible = not breakdown.visible
 			toggle.text = "상세 전투 기록  ▴" if breakdown.visible else "상세 전투 기록  ▾"
@@ -157,9 +167,9 @@ func _build_approved_result(result: Dictionary, heading: String) -> void:
 	var extra := PackedStringArray()
 	for item in result.get("items_earned", []):
 		extra.append(str(item))
-	for card in result.get("cards_earned", []):
-		extra.append(str(card))
-	screen.solid(Rect2(301, 590, 171, 141), Color("#2a231e"))
+		for card in result.get("cards_earned", []):
+			extra.append(str(card))
+		screen.solid(Rect2(301, 590, 171, 141), Color("#2a231e"))
 	screen.text(Rect2(303, 600, 169, 75), "◆" if not extra.is_empty() else "—", 53, HORIZONTAL_ALIGNMENT_CENTER, REFERENCE_SCREEN.AMBER)
 	var reward_title := "추가 보상 없음"
 	if extra.size() == 1:
@@ -168,7 +178,8 @@ func _build_approved_result(result: Dictionary, heading: String) -> void:
 		reward_title = "추가 보상 %d종" % extra.size()
 	screen.text(Rect2(295, 683, 188, 56), reward_title, 23, HORIZONTAL_ALIGNMENT_CENTER)
 	screen.hit(Rect2(69, 576, 423, 173), "획득 보상 상세", _show_result_details)
-	screen.styled_button(Rect2(167, 751, 218, 42), "상세 전투 기록", _show_result_details).add_theme_font_size_override("font_size", 19)
+	var detail_button := screen.styled_button(Rect2(124, 746, 304, 48), "상세 전투 기록", _show_result_details)
+	detail_button.add_theme_font_size_override("font_size", 21)
 	screen.hit(Rect2(19, 797, 236, 102), "마을 복귀", GameManager.go_to_lobby)
 	screen.hit(Rect2(269, 797, 264, 102), "다시 도전", GameManager.restart)
 	_show_approved_summary()
@@ -177,12 +188,90 @@ func _build_approved_result(result: Dictionary, heading: String) -> void:
 func _show_approved_summary() -> void:
 	detail.hide()
 	legacy_layout.hide()
+	if combat_log_popup:
+		combat_log_popup.queue_free()
+		combat_log_popup = null
 	approved.show()
 
 
 func _show_result_details() -> void:
-	approved.hide()
-	legacy_layout.show()
+	legacy_layout.hide()
+	approved.show()
+	_build_combat_log_popup()
+
+
+func _build_combat_log_popup() -> void:
+	if combat_log_popup:
+		combat_log_popup.queue_free()
+	combat_log_popup = Control.new()
+	combat_log_popup.name = "CombatLogPopup"
+	combat_log_popup.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	combat_log_popup.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(combat_log_popup)
+
+	var scrim := ColorRect.new()
+	scrim.color = UiStyle.SCRIM
+	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	combat_log_popup.add_child(scrim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	combat_log_popup.add_child(center)
+	var panel := UiStyle.make_panel()
+	var viewport_size := get_viewport().get_visible_rect().size
+	panel.custom_minimum_size = Vector2(minf(520.0, viewport_size.x - 32.0), minf(620.0, viewport_size.y - 48.0))
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	center.add_child(panel)
+	var margin := UiStyle.make_margin(panel, 18)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 10)
+	margin.add_child(column)
+
+	var title := UiStyle.make_title("상세 전투 기록", 30)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+	var context := UiStyle.make_label("이번 전투에서 기록된 피해량", 17, UiStyle.MUTED)
+	context.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(context)
+	UiStyle.divider(column)
+
+	var damage: Dictionary = current_result.get("damage_by_source", {})
+	var total := 0.0
+	for amount in damage.values():
+		total += float(amount)
+	var sources := damage.keys()
+	sources.sort_custom(func(a: String, b: String): return float(damage[a]) > float(damage[b]))
+	var captions := {"basic": "기본 공격", "card_effect": "카드 효과", "item": "전투 아이템", "other": "기타"}
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column.add_child(scroll)
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 8)
+	rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(rows)
+	for source in sources:
+		var amount := float(damage[source])
+		var name := str(GameData.skill_meta.get(source, {}).get("name", source))
+		_stat_row(rows, str(captions.get(source, name)), "%.0f  ·  %.1f%%" % [amount, 100.0 * amount / maxf(total, 0.001)])
+	if sources.is_empty():
+		var empty := UiStyle.make_label("기록된 전투 피해가 없습니다.", 19, UiStyle.MUTED)
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		rows.add_child(empty)
+	UiStyle.divider(column)
+	var total_row := HBoxContainer.new()
+	total_row.add_theme_constant_override("separation", 8)
+	column.add_child(total_row)
+	var total_label := UiStyle.make_label("총 피해량", 21, UiStyle.IVORY)
+	total_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	total_row.add_child(total_label)
+	total_row.add_child(UiStyle.make_label("%.0f" % total, 24, UiStyle.GOLD_BRIGHT))
+	var close := UiStyle.make_button("닫기", Vector2(0, 52), true)
+	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	close.pressed.connect(_show_approved_summary)
+	column.add_child(close)
 
 
 func _stat_row(parent: Control, caption: String, value: String) -> void:
@@ -216,7 +305,10 @@ func _add_reward_items(result: Dictionary) -> void:
 	if rewards.is_empty():
 		return
 	var grid := GridContainer.new()
-	grid.columns = 5
+	var viewport_size := get_viewport().get_visible_rect().size
+	var safe := UiStyle.safe_insets(get_viewport())
+	var available_width := viewport_size.x - safe.x - safe.z - 48.0
+	grid.columns = clampi(floori(available_width / 88.0), 3, 5)
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 8)
 	body.add_child(grid)

@@ -12,15 +12,15 @@ const CLASS_WEAPONS := {
 	"fighter": "권갑", "char01": "검", "char02": "지팡이", "archer": "쌍드럼 라이플", "mage": "원소 지팡이",
 	"paladin": "성검과 방패"
 }
+const VISIBLE_SLOT_COUNT := 3
 const STAT_EXPLANATIONS := {
-	"STR": "물리 스킬 피해를 높입니다. 현재 능력치가 직업 기본값보다 1 높아질 때 물리 공격력이 2 증가합니다.",
-	"AGI": "이동 속도를 높입니다. 전투에서 캐릭터가 더 빠르게 움직일 수 있습니다.",
-	"VIT": "최대 HP를 높입니다. 직업 기본값보다 1 높아질 때 최대 HP가 8 증가합니다.",
-	"INT": "마법 스킬 공격력을 높입니다. 마법 계열 스킬의 피해 계산에 사용됩니다.",
-	"DEX": "스킬 시전 속도를 높입니다. 액티브 스킬 애니메이션과 타격 시점이 빨라지며, 쿨다운은 줄이지 않습니다.",
-	"LUK": "치명타 확률을 높입니다. 현재 치명타 확률은 최대 75%까지 적용됩니다."
+	"STR": "힘은 물리 공격력을 높입니다. 현재 적용되는 물리 공격력과 장비·증강 보너스를 함께 확인할 수 있습니다.",
+	"AGI": "민첩은 이동 속도를 높입니다. 전투에서 캐릭터의 이동과 회피 감각에 영향을 줍니다.",
+	"VIT": "체력은 최대 HP를 높입니다. 생존에 직접 영향을 주는 능력치입니다.",
+	"INT": "지능은 마법 공격력을 높입니다. 마법 계열 스킬의 피해 계산에 사용됩니다.",
+	"DEX": "손재주는 스킬 시전 속도를 높입니다. 쿨다운 감소와는 별도 능력치입니다.",
+	"LUK": "행운은 치명타 확률을 높입니다. 치명타가 발생하면 피해가 증가합니다."
 }
-
 enum ScreenMode { SELECT, CREATE }
 
 var screen_mode := ScreenMode.SELECT
@@ -43,8 +43,6 @@ var detail_progress_block: VBoxContainer
 var feedback_label: Label
 var delete_button: Button
 var new_character_button: Button
-var delete_dialog: ConfirmationDialog
-var stat_info_dialog: AcceptDialog
 var create_button: Button
 
 var preview_container: SubViewportContainer
@@ -100,16 +98,6 @@ func _show_selection(preferred_id: String = ""):
 		info_section.add_child(delete_button)
 
 	feedback_label = _add_feedback(layout, "")
-	delete_dialog = ConfirmationDialog.new()
-	delete_dialog.title = "캐릭터 영구 삭제"
-	delete_dialog.ok_button_text = "삭제"
-	delete_dialog.cancel_button_text = "취소"
-	delete_dialog.confirmed.connect(_confirm_delete)
-	screen_root.add_child(delete_dialog)
-	stat_info_dialog = AcceptDialog.new()
-	stat_info_dialog.title = "능력치 설명"
-	stat_info_dialog.ok_button_text = "확인"
-	screen_root.add_child(stat_info_dialog)
 
 	selected_character_id = preferred_id
 	if not GameData.character_profiles.has(selected_character_id):
@@ -122,7 +110,7 @@ func _show_selection(preferred_id: String = ""):
 
 
 func _show_creation(slot_index: int):
-	if slot_index < 0 or slot_index >= GameData.get_character_slot_count():
+	if slot_index < 0 or slot_index >= _visible_slot_count():
 		return
 	if not GameData.get_profile_at_slot(slot_index).is_empty():
 		return
@@ -136,7 +124,6 @@ func _show_creation(slot_index: int):
 	_clear_screen()
 	var layout := _build_shell("캐릭터 생성", "뒤로", _show_selection)
 	var body := _new_body(layout)
-
 	if _is_portrait_layout():
 		_build_preview(body)
 		_build_portrait_details(body)
@@ -155,6 +142,7 @@ func _show_creation(slot_index: int):
 	creation_name.add_theme_color_override("font_placeholder_color", UiStyle.MUTED)
 	creation_name.add_theme_stylebox_override("normal", UiStyle.art_panel())
 	creation_name.add_theme_stylebox_override("focus", UiStyle.frame(Color.TRANSPARENT, UiStyle.AMBER))
+	creation_name.text_changed.connect(func(_text: String): _update_create_button())
 	layout.add_child(creation_name)
 
 	create_button = UiStyle.make_button("캐릭터 생성", Vector2(0, 60), true)
@@ -202,10 +190,11 @@ func _build_approved_selection(layout: VBoxContainer) -> void:
 	approved.build(screen_root, "select")
 	_approved_preview(approved, Rect2(0, 73, 552, 403), layout)
 	approved.mask(Rect2(222, 476, 292, 51), Rect2(18, 485, 90, 43))
-	approved.live_text(Rect2(220, 478, 315, 50), func():
+	var approved_profile_label := approved.live_text(Rect2(220, 478, 315, 50), func():
 		var profile := GameData.get_character_profile(selected_character_id)
 		return "저장된 캐릭터 없음" if profile.is_empty() else _approved_profile_name(profile)
-	, 39)
+	, 33)
+	approved_profile_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	for index in range(StatManager.STAT_KEYS.size()):
 		var x := [119, 285, 457][index % 3] as int
 		var y := 546 + floori(index / 3.0) * 49
@@ -215,20 +204,25 @@ func _build_approved_selection(layout: VBoxContainer) -> void:
 			var source := detail_stat_cells[index].get_child(0) as Label
 			return source.text.get_slice(" ", 1)
 		, 27, HORIZONTAL_ALIGNMENT_CENTER)
-		approved.hit(Rect2(x + 31, y - 7, 41, 50), "능력치 설명", func():
-			if index < detail_stat_cells.size():
-				(detail_stat_cells[index].get_child(1) as Button).pressed.emit()
-		)
+		var stat_key: String = StatManager.STAT_KEYS[index]
+		# 원본 승인 이미지의 능력치 장식 아이콘이 느낌표 버튼 뒤에 비치지 않도록 제거합니다.
+		approved.solid(Rect2(x + 34, y, 36, 35), Color("#2a241e"))
+		var info := UiStyle.attention_button(29)
+		info.tooltip_text = "%s 상세 능력치" % stat_key
+		info.pressed.connect(_show_stat_info.bind(stat_key))
+		approved.page.add_child(info)
+		approved.place(info, Rect2(x + 37, y + 3, 29, 29))
 	approved.solid(Rect2(19, 662, 514, 128), Color("#201b17"))
-	var slots := ScrollContainer.new()
-	slots.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	# The approved portrait reference has room for exactly three slots.  Keep
+	# this row fixed-width so an extra saved slot can never create a clipped or
+	# scrollable fourth column on a phone.
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
-	approved.page.add_child(slots)
-	slots.add_child(row)
-	approved.place(slots, Rect2(22, 665, 508, 123))
-	for index in range(GameData.get_character_slot_count()):
-		var button := UiStyle.make_button("", Vector2(245, 110))
+	row.add_theme_constant_override("separation", 8)
+	approved.page.add_child(row)
+	approved.place(row, Rect2(22, 665, 508, 123))
+	for index in range(_visible_slot_count()):
+		var button := UiStyle.make_button("", Vector2(164, 110))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		button.add_theme_font_size_override("font_size", 26)
 		button.pressed.connect(func():
@@ -277,8 +271,16 @@ func _build_approved_creation(layout: VBoxContainer) -> void:
 	creation_name.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	creation_name.add_theme_font_size_override("font_size", 31)
 	approved.native(creation_name, Rect2(123, 663, 373, 71))
-	approved.relay(Rect2(27, 792, 504, 89), create_button)
-	approved.live_text(Rect2(19, 895, 514, 35), func(): return feedback_label.text, 20, HORIZONTAL_ALIGNMENT_CENTER)
+	approved.mask(Rect2(27, 792, 504, 89), Rect2(24, 899, 485, 29))
+	var create_target := approved.styled_button(Rect2(27, 792, 504, 89), create_button.text, _create_character, true)
+	create_target.add_theme_font_size_override("font_size", 34)
+	create_target.disabled = create_button.disabled
+	approved.updates.append(func():
+		if create_target.disabled != create_button.disabled:
+			create_target.disabled = create_button.disabled
+	)
+	var message := approved.live_text(Rect2(19, 884, 514, 53), func(): return feedback_label.text, 20, HORIZONTAL_ALIGNMENT_CENTER)
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 func _build_creation_roster(section: VBoxContainer) -> void:
 	creation_roster = section
@@ -306,7 +308,6 @@ func _clear_screen():
 	create_button = null
 	creation_name = null
 	creation_roster = null
-	stat_info_dialog = null
 	_dragging = false
 	if is_instance_valid(screen_root):
 		remove_child(screen_root)
@@ -391,17 +392,12 @@ func _make_section(parent: Control, width: float, heading: String) -> VBoxContai
 
 func _build_slot_section(parent: Control):
 	var section := _make_section(parent, 350, "")
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size.y = 74.0 if _is_portrait_layout() else 120.0
-	scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if _is_portrait_layout() else Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.scroll_deadzone = 24
-	section.add_child(scroll)
 	slot_list = HBoxContainer.new()
+	slot_list.custom_minimum_size.y = 74.0 if _is_portrait_layout() else 120.0
+	slot_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slot_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	slot_list.add_theme_constant_override("separation", 8)
-	scroll.add_child(slot_list)
+	slot_list.add_theme_constant_override("separation", 6)
+	section.add_child(slot_list)
 
 
 func _create_delete_button() -> Button:
@@ -498,32 +494,30 @@ func _populate_stat_grid(stats: StatManager, class_id: String) -> void:
 		var stat_label := UiStyle.make_label(str(stat_cell_texts[index]), 16, UiStyle.IVORY)
 		stat_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		stat_cell.add_child(stat_label)
-		var info_button := UiStyle.make_button("!", Vector2(24, 24))
-		info_button.add_theme_font_size_override("font_size", 14)
-		info_button.tooltip_text = "%s 능력치 설명" % stat_keys[index]
-		info_button.pressed.connect(_show_stat_info.bind(stat_keys[index], stats))
+		var info_button := UiStyle.attention_button(30)
+		info_button.tooltip_text = "%s 상세 능력치" % stat_keys[index]
+		info_button.pressed.connect(_show_stat_info.bind(stat_keys[index]))
 		stat_cell.add_child(info_button)
 		detail_stats_grid.add_child(stat_cell)
 		detail_stat_cells.append(stat_cell)
 
-
-func _show_stat_info(stat_name: String, stats: StatManager) -> void:
-	if not is_instance_valid(stat_info_dialog):
+func _show_stat_info(stat_name: String) -> void:
+	var stats := GameData.get_character_stat_manager(selected_character_id)
+	if stats == null:
 		return
-	var value := stats.get_stat(stat_name)
+	var value := int(stats.get_stat(stat_name))
 	var current_effect := ""
 	match stat_name:
 		"STR": current_effect = "현재 물리 공격력: %d" % int(round(stats.phys_atk()))
-		"AGI": current_effect = "현재 이동 속도 배율: %d%%" % int(round(stats.move_speed_multiplier() * 100.0))
+		"AGI": current_effect = "현재 이동 속도: %.2f m/s" % (stats.base_spd * stats.move_speed_multiplier())
 		"VIT": current_effect = "현재 최대 HP: %d" % int(round(stats.max_hp()))
-		"INT": current_effect = "현재 마법 공격력: %d" % int(round(stats.mag_atk()))
+		"INT": current_effect = "현재 마법 공격력: %.1f" % stats.mag_atk()
 		"DEX": current_effect = "현재 시전 속도: %d%%" % int(round(stats.cast_speed() * 100.0))
 		"LUK": current_effect = "현재 치명타 확률: %d%%" % int(round(stats.crit_rate()))
-	stat_info_dialog.title = "%s  %d · 능력치 설명" % [stat_name, value]
-	stat_info_dialog.dialog_text = "%s\n\n%s" % [str(STAT_EXPLANATIONS.get(stat_name, "이 능력치의 설명이 준비되지 않았습니다.")), current_effect]
-	var width := mini(560, int(get_viewport_rect().size.x) - 26)
-	stat_info_dialog.popup_centered(Vector2i(width, 250))
-
+	UiFeedback.show_detail_popup(
+		"%s  %d" % [stat_name, value],
+		"%s\n\n현재 적용값\n%s\n\n장비와 증강 효과는 최종 전투 수치에 함께 반영됩니다." % [STAT_EXPLANATIONS.get(stat_name, ""), current_effect]
+	)
 
 func _add_feedback(layout: VBoxContainer, text: String) -> Label:
 	var label := UiStyle.make_label(text, 13, UiStyle.MUTED)
@@ -536,16 +530,28 @@ func _is_portrait_layout() -> bool:
 	var viewport_size := get_viewport_rect().size
 	return viewport_size.y >= viewport_size.x
 
+func _visible_slot_count() -> int:
+	if GameData.character_slot_manager.has_method("ensure_minimum_slots"):
+		GameData.character_slot_manager.ensure_minimum_slots(VISIBLE_SLOT_COUNT)
+	return VISIBLE_SLOT_COUNT
+
+func _find_empty_visible_slot() -> int:
+	for index in range(_visible_slot_count()):
+		if GameData.get_profile_at_slot(index).is_empty():
+			return index
+	return -1
+
 
 func _populate_slots():
-	new_character_button.disabled = GameData.find_empty_character_slot() < 0
+	new_character_button.disabled = _find_empty_visible_slot() < 0
 	for child in slot_list.get_children():
 		slot_list.remove_child(child)
 		child.queue_free()
-	for index in range(GameData.get_character_slot_count()):
+	for index in range(_visible_slot_count()):
 		var profile := GameData.get_profile_at_slot(index)
 		if profile.is_empty():
-			var empty_button := UiStyle.make_button("＋ 빈 슬롯", Vector2(144, 62))
+			var empty_button := UiStyle.make_button("＋ 빈 슬롯", Vector2(124 if _is_portrait_layout() else 144, 62))
+			empty_button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			empty_button.add_theme_font_size_override("font_size", 17)
 			empty_button.tooltip_text = "새 캐릭터를 만들 수 있는 슬롯입니다."
 			empty_button.pressed.connect(_on_empty_slot_pressed.bind(index))
@@ -554,7 +560,8 @@ func _populate_slots():
 		var class_data := GameData.get_profile_class_data(profile)
 		var id := str(profile.get("id", ""))
 		var caption := "%s  %s" % [class_data.get("icon", "⚔"), profile.get("name", class_data.get("role", ""))]
-		var button := UiStyle.make_button(caption, Vector2(144, 62), id == selected_character_id)
+		var button := UiStyle.make_button(caption, Vector2(124 if _is_portrait_layout() else 144, 62), id == selected_character_id)
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		button.add_theme_font_size_override("font_size", 18)
 		button.pressed.connect(_on_slot_pressed.bind(index))
 		slot_list.add_child(button)
@@ -669,7 +676,7 @@ func _format_survival_time(total_seconds: float) -> String:
 
 
 func _first_profile_id() -> String:
-	for index in range(GameData.get_character_slot_count()):
+	for index in range(_visible_slot_count()):
 		var profile := GameData.get_profile_at_slot(index)
 		if not profile.is_empty():
 			return str(profile.get("id", ""))
@@ -677,7 +684,7 @@ func _first_profile_id() -> String:
 
 
 func _create_in_first_empty_slot():
-	var empty_slot := GameData.find_empty_character_slot()
+	var empty_slot := _find_empty_visible_slot()
 	if empty_slot < 0:
 		feedback_label.text = "사용 가능한 슬롯이 없습니다."
 		return
@@ -709,10 +716,10 @@ func _request_delete():
 	var profile := GameData.get_character_profile(selected_character_id)
 	if profile.is_empty():
 		return
-	delete_dialog.dialog_text = (
+	var message := (
 		"캐릭터를 삭제하시겠습니까?\n\n캐릭터: %s\n직업: %s\n\n영구 능력치, 기록, 장비, 인벤토리가 모두 삭제되며 복구할 수 없습니다.\n다른 캐릭터 데이터에는 영향을 주지 않습니다."
 		% [str(profile.get("name", "")), str(profile.get("class_id", ""))])
-	delete_dialog.popup_centered(Vector2i(620, 340))
+	UiFeedback.confirm("캐릭터 영구 삭제", message, _confirm_delete)
 
 
 func _confirm_delete():
@@ -786,10 +793,17 @@ func _update_create_button():
 	if not is_instance_valid(create_button):
 		return
 	var creation_error := GameData.get_character_creation_error(creation_slot, selected_class_id)
-	create_button.disabled = not creation_error.is_empty()
-	if create_button.disabled:
-		create_button.tooltip_text = creation_error
+	var profile_name := creation_name.text.strip_edges() if is_instance_valid(creation_name) else ""
+	var name_error := GameData.get_character_name_error(profile_name)
+	var error := creation_error if not creation_error.is_empty() else name_error
+	create_button.disabled = not creation_error.is_empty() or not name_error.is_empty()
+	if not error.is_empty():
+		create_button.tooltip_text = error
+		if is_instance_valid(feedback_label):
+			feedback_label.text = error
 		return
+	if is_instance_valid(feedback_label):
+		feedback_label.text = ""
 	var character_template := GameData.get_class_template_data(selected_class_id)
 	var job_name := str(character_template.get("name", character_template.get("role", "무도가")))
 	create_button.text = "캐릭터 생성"
@@ -804,8 +818,6 @@ func _create_character():
 	var character_template := GameData.get_class_template_data(selected_class_id)
 	var job_name := str(character_template.get("name", character_template.get("role", "무도가")))
 	var profile_name := creation_name.text.strip_edges() if is_instance_valid(creation_name) else ""
-	if profile_name.is_empty():
-		profile_name = job_name
 	var name_error := GameData.get_character_name_error(profile_name)
 	if not name_error.is_empty():
 		feedback_label.text = name_error

@@ -14,7 +14,6 @@ var bob_offset: float = 0.0
 var base_y: float = 0.0
 var _remaining_lifetime: float = 0.0
 var _collected: bool = false
-static var _pickup_stream: AudioStreamWAV
 
 @onready var mesh_instance: MeshInstance3D = $MeshInstance3D
 var pickup_label: Label3D
@@ -28,14 +27,17 @@ func _ready():
 	bob_offset = randf() * TAU
 	base_y = position.y
 	body_entered.connect(_on_body_entered)
-	pickup_label = Label3D.new()
-	pickup_label.position = Vector3(0.0, 0.65, 0.0)
-	pickup_label.font_size = 36
-	pickup_label.pixel_size = 0.009
-	pickup_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	pickup_label.no_depth_test = true
-	add_child(pickup_label)
 	if reward_type != "경험치":
+		# XP is already communicated by the bottom EXP bar.  A Label3D on every
+		# gem becomes a stack of overlapping "EXP" labels when a crowd is
+		# collected at once, so only the rarer non-XP pickups get floating text.
+		pickup_label = Label3D.new()
+		pickup_label.position = Vector3(0.0, 0.65, 0.0)
+		pickup_label.font_size = 36
+		pickup_label.pixel_size = 0.009
+		pickup_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		pickup_label.no_depth_test = true
+		add_child(pickup_label)
 		var material := mesh_instance.get_active_material(0).duplicate() as StandardMaterial3D
 		mesh_instance.material_override = material
 		mesh_instance.mesh = SphereMesh.new()
@@ -53,8 +55,9 @@ func _ready():
 			material.emission = Color(0.65, 0.04, 0.06)
 			material.emission_enabled = true
 	else:
-		refresh_label()
-		pickup_label.modulate = Color(0.45, 1.0, 0.7)
+		# XP pickups intentionally have no floating label; the HUD EXP bar is
+		# the single readable source of experience feedback.
+		pass
 
 func refresh_label():
 	if pickup_label and reward_type == "경험치":
@@ -119,30 +122,7 @@ func collect():
 
 
 func _play_pickup_sound():
-	if _pickup_stream == null:
-		var sample_rate := 22050
-		var sample_count := int(sample_rate * 0.18)
-		var samples := PackedByteArray()
-		samples.resize(sample_count * 2)
-		for i in range(sample_count):
-			var phase := float(i) / sample_rate
-			var progress := float(i) / sample_count
-			var frequency := lerpf(980.0, 520.0, progress)
-			var envelope := sin(PI * progress) * (1.0 - progress) * 0.45
-			var sample := int(sin(TAU * frequency * phase) * envelope * 32767.0)
-			samples.encode_s16(i * 2, sample)
-
-		_pickup_stream = AudioStreamWAV.new()
-		_pickup_stream.format = AudioStreamWAV.FORMAT_16_BITS
-		_pickup_stream.mix_rate = sample_rate
-		_pickup_stream.stereo = false
-		_pickup_stream.data = samples
-
-	var sound := AudioStreamPlayer3D.new()
-	sound.stream = _pickup_stream
-	sound.volume_db = -4.0
-	sound.unit_size = 8.0
-	sound.global_position = global_position
-	get_tree().current_scene.add_child(sound)
-	sound.finished.connect(sound.queue_free)
-	sound.play()
+	# Sound is intentionally disabled.  Do not allocate an AudioStreamPlayer3D
+	# for every pickup; a dense wave can otherwise create hundreds of short-lived
+	# nodes and audio buffers.
+	return

@@ -2,7 +2,7 @@ extends Node
 class_name CharacterSlotManager
 
 const MAX_SLOTS = 10
-const DEFAULT_SLOTS = 5
+const DEFAULT_SLOTS = 3
 
 signal slots_changed()
 
@@ -16,6 +16,16 @@ func initialize(slot_count: int = DEFAULT_SLOTS):
 	var safe_count := clampi(slot_count, 1, MAX_SLOTS)
 	slots.resize(safe_count)
 	for i in range(slots.size()):
+		slots[i] = null
+	slots_changed.emit()
+
+func ensure_minimum_slots(required_count: int) -> void:
+	var target := clampi(maxi(DEFAULT_SLOTS, required_count), 1, MAX_SLOTS)
+	if slots.size() >= target:
+		return
+	var old_count := slots.size()
+	slots.resize(target)
+	for i in range(old_count, target):
 		slots[i] = null
 	slots_changed.emit()
 

@@ -43,6 +43,8 @@ func _build_ui():
 	var profile := GameData.get_character_profile(GameData.active_character_id)
 	var title := UiStyle.make_title("🃏 카드 덱 · %s" % profile.get("name", "모험가"), 23 if portrait else 28)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	header.add_child(title)
 	deck_name_edit = LineEdit.new()
 	deck_name_edit.custom_minimum_size = Vector2(240, 44)
@@ -68,6 +70,7 @@ func _build_ui():
 	filters.add_child(search_edit)
 	type_filter = OptionButton.new()
 	type_filter.custom_minimum_size = Vector2(220, 44)
+	type_filter.size_flags_horizontal = Control.SIZE_EXPAND_FILL if portrait else Control.SIZE_SHRINK_END
 	for item in ["전체 유형", "공격", "방어", "상태/연계", "버프/특수"]: type_filter.add_item(item)
 	type_filter.item_selected.connect(func(_index): _refresh())
 	if portrait:

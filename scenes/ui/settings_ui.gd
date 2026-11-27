@@ -179,25 +179,31 @@ func _build_controls_section():
 
 	input_box.add_child(UiStyle.make_label("⌨️ 입력 및 단축키", 16, Color(0.9, 0.94, 1.0)))
 
-	var mode_row := HBoxContainer.new()
+	var mode_row := VBoxContainer.new()
 	mode_row.add_theme_constant_override("separation", 10)
 	input_box.add_child(mode_row)
 	var mode_label := UiStyle.make_label("입력 모드", 14)
-	mode_label.custom_minimum_size = Vector2(100, 0)
 	mode_row.add_child(mode_label)
+	var mode_controls := HBoxContainer.new()
+	mode_controls.add_theme_constant_override("separation", 8)
+	mode_controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mode_row.add_child(mode_controls)
 	_input_mode_option = OptionButton.new()
-	_input_mode_option.custom_minimum_size = Vector2(220, 38)
+	_input_mode_option.custom_minimum_size = Vector2(0, 38)
+	_input_mode_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_input_mode_option.add_item("자동 감지")
 	_input_mode_option.add_item("PC (키보드/마우스)")
 	_input_mode_option.add_item("모바일 (터치)")
-	mode_row.add_child(_input_mode_option)
+	mode_controls.add_child(_input_mode_option)
 	_input_mode_option.item_selected.connect(_on_input_mode_selected)
 	var reset_keys := UiStyle.make_button("단축키 초기화", Vector2(150, 38))
+	reset_keys.custom_minimum_size.x = 0.0
+	reset_keys.size_flags_horizontal = Control.SIZE_SHRINK_END
 	reset_keys.pressed.connect(func():
 		GameActions.reset_bindings()
 		UiFeedback.show_success("단축키를 기본값으로 되돌렸습니다.")
 	)
-	mode_row.add_child(reset_keys)
+	mode_controls.add_child(reset_keys)
 
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 250)
@@ -465,12 +471,9 @@ func _build_approved_settings() -> void:
 func _approved_audio(screen: REFERENCE_SCREEN, index: int, bus: String, slider: HSlider) -> void:
 	var y := 136 + index * 136
 	var source := slider
-	if AudioServer.get_bus_index(bus) < 0 and index == 0:
-		source = master_slider
-		screen.field(Rect2(118, y + 20, 199, 53), func(): return "전체 음량", 33)
 	screen.mask(Rect2(116, y + 69, 405, 51), Rect2(89, y + 69, 25, 51))
-	if source == slider and AudioServer.get_bus_index(bus) < 0:
-		screen.field(Rect2(403, y + 21, 118, 46), func(): return "미지원", 22, HORIZONTAL_ALIGNMENT_RIGHT)
+	if AudioServer.get_bus_index(bus) < 0:
+		screen.field(Rect2(403, y + 21, 118, 46), func(): return "꺼짐", 22, HORIZONTAL_ALIGNMENT_RIGHT)
 		return
 	screen.field(Rect2(412, y + 21, 107, 46), func(): return "%d%%" % roundi(source.value), 29, HORIZONTAL_ALIGNMENT_RIGHT)
 	# Share the value and signal with the original audio control used by advanced settings.

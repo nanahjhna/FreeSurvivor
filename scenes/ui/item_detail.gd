@@ -48,6 +48,7 @@ func _ready() -> void:
 	var item_header := HBoxContainer.new()
 	item_header.add_theme_constant_override("separation", 16)
 	content.add_child(item_header)
+	item_header.name = "ItemHeader"
 	emblem = UiStyle.make_panel()
 	emblem.custom_minimum_size = Vector2(146, 146)
 	item_header.add_child(emblem)
@@ -90,7 +91,16 @@ func _ready() -> void:
 
 func _fit() -> void:
 	var safe := UiStyle.safe_insets(get_viewport())
-	card.custom_minimum_size.x = minf(620, get_viewport_rect().size.x - safe.x - safe.z - 48)
+	var viewport_size := get_viewport_rect().size
+	var compact := viewport_size.y >= viewport_size.x and viewport_size.x < 600.0
+	card.custom_minimum_size = Vector2(
+		maxf(1.0, minf(620.0, viewport_size.x - safe.x - safe.z - 28.0)),
+		maxf(1.0, minf(760.0, viewport_size.y - safe.y - safe.w - 28.0))
+	)
+	emblem.custom_minimum_size = Vector2(104 if compact else 146, 104 if compact else 146)
+	title.add_theme_font_size_override("font_size", 25 if compact else 33)
+	stats.add_theme_font_size_override("font_size", 18 if compact else 22)
+	description.add_theme_font_size_override("font_size", 17 if compact else 21)
 
 
 func show_item(item: Dictionary, action_text: String = "", comparison: String = "") -> void:

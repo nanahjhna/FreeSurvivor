@@ -18,6 +18,7 @@ animation_key = "Great_Sword_Slash"
 impact_delay = 0.88
 bonus_type = "area"
 effect_scene = ExtResource("2_effect")
+effect_visual = "sword_sweep"
 wave_width_multiplier = 1.7
 implemented = true
 support_status = "animation_skill"

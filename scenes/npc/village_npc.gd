@@ -51,6 +51,11 @@ func _ready():
 		interaction_bubble.position.y = _bubble_base_y
 	if attention_mark:
 		attention_mark.visible = false
+		attention_mark.text = "!"
+		attention_mark.font_size = 64
+		attention_mark.modulate = Color("#f05b46")
+		attention_mark.outline_size = 14
+		attention_mark.outline_modulate = Color("#3b1713")
 		attention_mark.position.y += overhead_offset
 	
 	# Apply custom color if body mesh exists

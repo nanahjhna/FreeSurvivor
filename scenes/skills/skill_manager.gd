@@ -1,6 +1,7 @@
 extends Node
 
 signal skill_cooldown_updated(skill_key: String, current_cd: float, max_cd: float)
+signal skill_auto_cast(skill_key: String)
 
 var cooldowns: Dictionary = {
 	"q": 0.0,
@@ -24,6 +25,10 @@ var _queued_skill_key: String = ""
 var _queued_skill_is_auto := false
 const AUTO_BATTLE_INTERVAL := 0.10
 const MANUAL_SKILL_PRIORITY_SECONDS := 1.25
+const ENEMY_SCAN_INTERVAL := 0.10
+var _enemy_scan_timer := 0.0
+var _enemy_snapshot: Array[Node3D] = []
+var _effect_scene_cache: Dictionary = {}
 
 func _ready():
 	player = get_parent() as Node3D
@@ -39,6 +44,7 @@ func _process(delta: float):
 		return
 	if player.is_dead:
 		return
+	_refresh_enemy_snapshot(delta)
 	_manual_priority_timer = maxf(0.0, _manual_priority_timer - delta)
 	
 	# Update cooldown values every frame but refresh the HUD at 10 Hz.
@@ -114,8 +120,18 @@ func try_cast(skill_key: String, target: Node3D = null, is_automatic: bool = fal
 	if cast_type == "heal":
 		player.play_skill_animation(skill_key, ability_id, PackedFloat32Array(), Callable(), playback_rate, Vector3.ZERO)
 		player.heal(player.max_hp * float(meta.get("heal_ratio", 0.2)))
+		var heal_sfx := get_tree().root.get_node_or_null("SfxManager")
+		if heal_sfx and heal_sfx.has_method("play"):
+			heal_sfx.play("heal", -2.0)
+		if is_automatic:
+			skill_auto_cast.emit(skill_key)
 		return true
+	var skill_sfx := get_tree().root.get_node_or_null("SfxManager")
+	if skill_sfx and skill_sfx.has_method("play"):
+		skill_sfx.play("skill_%s" % skill_key.to_lower(), -3.0)
 	_play_attack_skill(skill_key, ability_id, meta, target, playback_rate)
+	if is_automatic:
+		skill_auto_cast.emit(skill_key)
 	return true
 
 
@@ -132,6 +148,7 @@ func _play_attack_skill(skill_key: String, ability_id: String, meta: Dictionary,
 		var base_ratio := maxf(0.001, float(meta.get("base_dmg_ratio", 1.0)))
 		for index in impact_times.size():
 			var impact := definition.duplicate()
+			impact["effect_sequence_index"] = index
 			if index < ratios.size():
 				impact["resolved_damage"] = float(definition["resolved_damage"]) * ratios[index] / base_ratio
 			impacts.append(impact)
@@ -226,7 +243,7 @@ func _spawn_registered_effect(
 	if scene_path.is_empty() or not ResourceLoader.exists(scene_path):
 		push_warning("등록된 스킬 효과 씬을 찾을 수 없습니다: %s (%s)" % [skill_id, scene_path])
 		return
-	var effect_scene := load(scene_path) as PackedScene
+	var effect_scene := _get_effect_scene(scene_path)
 	if effect_scene == null:
 		push_warning("스킬 효과 씬을 불러오지 못했습니다: %s" % scene_path)
 		return
@@ -321,9 +338,11 @@ func _run_auto_battle(delta: float):
 		var reach := float(meta.get("range", 8.0)) * _get_skill_range_multiplier(meta)
 		if distance > reach:
 			continue
-		var nearby_count := _count_nearby_enemies(maxf(1.0, reach))
-		if _is_area_skill(meta) and nearby_count < maxi(1, int(meta.get("auto_min_targets", 2))):
-			continue
+		var nearby_count := 0
+		if _is_area_skill(meta):
+			nearby_count = _count_nearby_enemies(maxf(1.0, reach))
+			if nearby_count < maxi(1, int(meta.get("auto_min_targets", 2))):
+				continue
 		candidates.append({
 			"key": key,
 			"score": _get_auto_skill_score(key, meta, distance, reach, nearby_count)
@@ -352,7 +371,7 @@ func _is_area_skill(meta: Dictionary) -> bool:
 func _count_nearby_enemies(radius: float) -> int:
 	var count := 0
 	var radius_squared := radius * radius
-	for enemy in get_tree().get_nodes_in_group("enemies"):
+	for enemy in _enemy_snapshot:
 		if not is_instance_valid(enemy) or bool(enemy.get("is_dead")):
 			continue
 		if player.global_position.distance_squared_to(enemy.global_position) <= radius_squared:
@@ -365,9 +384,15 @@ func _process_queued_skill() -> bool:
 	if player.is_skill_animation_busy():
 		return false
 	var key := _queued_skill_key
+	var was_auto := _queued_skill_is_auto
 	_queued_skill_key = ""
-	if _queued_skill_is_auto:
-		# Re-score when the previous animation ends so toggles and enemy counts are current.
+	_queued_skill_is_auto = false
+	if was_auto:
+		# Retry queued automatic casts after the current animation ends.
+		# Previously the queued automatic skill was cleared and silently dropped.
+		var target := _nearest_enemy()
+		if try_cast(key, target, true):
+			return true
 		_auto_battle_timer = AUTO_BATTLE_INTERVAL
 		return false
 	return try_cast(key)
@@ -379,13 +404,30 @@ func should_use_basic_attack() -> bool:
 func _nearest_enemy(max_range: float = INF) -> Node3D:
 	var nearest: Node3D = null
 	var best_distance := max_range * max_range
-	for enemy in get_tree().get_nodes_in_group("enemies"):
+	for enemy in _enemy_snapshot:
 		if is_instance_valid(enemy) and not enemy.get("is_dead"):
 			var distance := player.global_position.distance_squared_to(enemy.global_position)
 			if distance < best_distance:
 				nearest = enemy
 				best_distance = distance
 	return nearest
+
+func _refresh_enemy_snapshot(delta: float) -> void:
+	_enemy_scan_timer -= delta
+	if _enemy_scan_timer > 0.0:
+		return
+	_enemy_scan_timer = ENEMY_SCAN_INTERVAL
+	_enemy_snapshot.clear()
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(enemy) and not bool(enemy.get("is_dead")):
+			_enemy_snapshot.append(enemy as Node3D)
+
+func _get_effect_scene(scene_path: String) -> PackedScene:
+	if _effect_scene_cache.has(scene_path):
+		return _effect_scene_cache[scene_path] as PackedScene
+	var effect_scene := load(scene_path) as PackedScene
+	_effect_scene_cache[scene_path] = effect_scene
+	return effect_scene
 
 func _get_cast_direction(target: Node3D) -> Vector3:
 	if is_instance_valid(target):

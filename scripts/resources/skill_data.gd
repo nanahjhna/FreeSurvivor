@@ -35,6 +35,8 @@ extends Resource
 @export var bonus_type: String = "physical"
 @export var effect_scene: PackedScene
 @export var effect_color: Color = Color.WHITE
+## Presentation preset for the registered effect scene.
+@export_enum("legacy", "sword_cut", "sword_sweep", "sword_impact", "sword_combo") var effect_visual: String = "legacy"
 @export var uses_magic_power: bool = false
 @export var cast_pattern: String = ""
 @export var projectile_count: int = 1
@@ -75,6 +77,7 @@ func to_game_dictionary() -> Dictionary:
 		"bonus_type": bonus_type,
 		"effect_scene": effect_scene.resource_path if effect_scene != null else "",
 		"visual_color": effect_color.to_html(false),
+		"effect_visual": effect_visual,
 		"uses_magic_power": uses_magic_power,
 		"cast_pattern": cast_pattern,
 		"projectile_count": projectile_count,

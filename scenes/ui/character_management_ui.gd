@@ -118,6 +118,7 @@ func _build_approved_profile() -> void:
 	screen.show_label(character_exp_label, Rect2(254, 254, 267, 36), 24, HORIZONTAL_ALIGNMENT_CENTER, Color("#23201c"))
 	for index in range(StatManager.STAT_KEYS.size()):
 		var data: Dictionary = stat_rows[StatManager.STAT_KEYS[index]]
+		var stat_name: String = StatManager.STAT_KEYS[index]
 		var y := 348 + 52 * index
 		screen.mask(Rect2(408, y, 105, 42), Rect2(309, y, 89, 42))
 		screen.live_text(Rect2(408, y, 87, 42), func(): return data.basic.text, 35, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -126,16 +127,6 @@ func _build_approved_profile() -> void:
 		var y := 702 + 61 * index
 		screen.mask(Rect2(379, y, 136, 48), Rect2(276, y, 91, 48))
 		screen.live_text(Rect2(382, y, 118, 48), func(): return data.detail.text, 30, HORIZONTAL_ALIGNMENT_RIGHT)
-	# The approved panel highlights three derived stats. The remaining values are available on demand.
-	screen.hit(Rect2(38, 342, 475, 317), "능력치 상세", func():
-		var lines := PackedStringArray()
-		for key in StatManager.STAT_KEYS:
-			var entry: Dictionary = stat_rows[key]
-			lines.append("%s  %s" % [LINKED_STATS[key][0], entry.detail.text])
-		UiFeedback.show_reward("능력치 상세", Array(lines))
-	)
-
-
 func _build_approved_growth() -> void:
 	approved_growth = REFERENCE_SCREEN.new()
 	var screen := approved_growth
@@ -145,9 +136,17 @@ func _build_approved_growth() -> void:
 	screen.show_label(gold_label, Rect2(390, 116, 139, 61), 29, HORIZONTAL_ALIGNMENT_RIGHT)
 	screen.bar(Rect2(27, 193, 493, 28), func(): return character_exp_bar.ratio, Color("#eaa443"))
 	screen.live_text(Rect2(27, 189, 493, 37), func(): return character_exp_label.text, 24, HORIZONTAL_ALIGNMENT_CENTER)
-	screen.show_label(growth_gain_label, Rect2(149, 469, 255, 67), 44, HORIZONTAL_ALIGNMENT_CENTER, Color("#56381b"))
-	screen.show_label(growth_progress_label, Rect2(139, 603, 273, 47), 38, HORIZONTAL_ALIGNMENT_CENTER)
-	screen.show_label(growth_next_label, Rect2(104, 725, 343, 46), 19, HORIZONTAL_ALIGNMENT_CENTER).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	screen.solid(Rect2(28, 347, 496, 349), Color("#241d18f5"))
+	var growth_card := PanelContainer.new()
+	growth_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	growth_card.add_theme_stylebox_override("panel", UiStyle.frame(Color("#28211ae8"), UiStyle.RUST, 2))
+	screen.page.add_child(growth_card)
+	screen.place(growth_card, Rect2(28, 347, 496, 349))
+	screen.text(Rect2(54, 370, 444, 30), "이번 구매", 18, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.GOLD_BRIGHT)
+	screen.live_text(Rect2(54, 404, 444, 61), func(): return growth_gain_label.text, 38, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.IVORY)
+	screen.text(Rect2(54, 477, 444, 29), "현재 EXP  →  구매 후 EXP", 16, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.MUTED)
+	screen.live_text(Rect2(54, 510, 444, 58), func(): return growth_progress_label.text, 34, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.GOLD_BRIGHT)
+	screen.live_text(Rect2(54, 595, 444, 60), func(): return growth_next_label.text, 18, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.MUTED).autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	screen.mask(Rect2(52, 823, 448, 57), Rect2(38, 823, 57, 57))
 	screen.live_text(Rect2(46, 825, 460, 53), func(): return experience_purchase_button.text, 34, HORIZONTAL_ALIGNMENT_CENTER)
 	screen.relay(Rect2(18, 807, 518, 93), experience_purchase_button)
@@ -298,7 +297,6 @@ func _linked_value_text(stats: StatManager, stat_name: String) -> String:
 		"LUK": value = stats.crit_rate()
 	return str(LINKED_STATS[stat_name][1]) % value
 
-
 func _on_purchase_experience() -> void:
 	var class_id := selected_char_id
 	var before_level := GameData.get_character_total_level(class_id)
@@ -308,6 +306,7 @@ func _on_purchase_experience() -> void:
 	var current_xp := GameData.get_character_current_xp(class_id)
 	var xp_to_next := GameData.get_character_xp_to_next(class_id)
 	if after_level > before_level:
+		UiStyle.play_sfx("level_up", -1.0)
 		feedback_label.text = "캐릭터 레벨업!  Lv.%d  ·  다음 레벨까지 %d / %d EXP" % [after_level, current_xp, xp_to_next]
 	else:
 		feedback_label.text = "경험치 +%d  ·  현재 %d / %d EXP  ·  남은 골드 %d G" % [GameData.get_character_xp_per_purchase(), current_xp, xp_to_next, GameData.player_gold]

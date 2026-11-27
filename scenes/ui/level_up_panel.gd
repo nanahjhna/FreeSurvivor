@@ -25,9 +25,11 @@ func _ready():
 	title_label.add_theme_color_override("font_color", UiStyle.IVORY)
 	UiStyle.ink_outline(title_label, 4)
 	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title_label.max_lines_visible = 2
 	subtitle.add_theme_font_size_override("font_size", 20)
 	subtitle.add_theme_color_override("font_color", UiStyle.MUTED)
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.max_lines_visible = 2
 	cards_scroll = ScrollContainer.new()
 	cards_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cards_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -70,7 +72,6 @@ func show_upgrades():
 	subtitle.text = "카드 한 장을 고르세요"
 	if is_start_draft:
 		title_label.text = "시작 카드 · %d / 10" % (11 - GameManager.starting_draft_picks)
-		subtitle.text = "카드 한 장을 고르세요"
 	elif GameManager.level_card_picks > 1:
 		title_label.text += " · 남은 선택 %d회" % GameManager.level_card_picks
 	if not learned.is_empty():
@@ -79,6 +80,9 @@ func show_upgrades():
 	reroll_button.visible = rerolls_left > 0
 	reroll_button.text = "↻  다시 뽑기 · %d회" % rerolls_left
 	current_upgrades = GameData.get_random_upgrades(3)
+	if current_upgrades.is_empty():
+		_finish_exhausted_draft()
+		return
 	_render_cards()
 
 func _render_cards():
@@ -91,6 +95,7 @@ func _render_cards():
 		var up = current_upgrades[i]
 		var card = _create_card(up, i)
 		cards_container.add_child(card)
+	call_deferred("_fit_card_heights")
 	_fit_card_scroll.call_deferred()
 
 func _on_reroll_pressed():
@@ -100,7 +105,17 @@ func _on_reroll_pressed():
 	reroll_button.visible = rerolls_left > 0
 	reroll_button.text = "↻  다시 뽑기 · %d회" % rerolls_left
 	current_upgrades = GameData.get_random_upgrades(3)
+	if current_upgrades.is_empty():
+		_finish_exhausted_draft()
+		return
 	_render_cards()
+
+func _finish_exhausted_draft() -> void:
+	GameManager.starting_draft_picks = 0
+	GameManager.level_card_picks = 0
+	is_start_draft = false
+	hide()
+	GameManager.exit_level_up.call_deferred()
 
 func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	var card := Button.new()
@@ -110,7 +125,7 @@ func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	var category := SurvivalCardDatabase.get_category(str(upgrade_data.get("stat", "")))
 	var color := UiStyle.category_tint(category)
 	UiStyle.apply_button(card)
-	UiStyle.skin_button(card, UiStyle.INK_SOFT, UiStyle.RUST, UiStyle.IVORY)
+	UiStyle.skin_button(card, UiStyle.INK_SOFT, color, UiStyle.IVORY)
 	var recommendation := SurvivalCardDatabase.get_recommendation(upgrade_data, GameData.get_leader_id())
 	card.tooltip_text = str(recommendation.get("reason", ""))
 	var margin := UiStyle.make_margin(card, 12)
@@ -138,7 +153,9 @@ func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	copy.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	heading.add_child(copy)
 	_card_label(copy, str(upgrade_data.get("name", "강화")), 25, UiStyle.IVORY)
-	_card_label(copy, str(upgrade_data.get("description", "")), 18, UiStyle.MUTED)
+	var description := _card_label(copy, str(upgrade_data.get("description", "")), 18, UiStyle.MUTED)
+	description.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	description.max_lines_visible = 3
 	var chevron := _card_label(heading, "›", 28, UiStyle.RUST)
 	chevron.autowrap_mode = TextServer.AUTOWRAP_OFF
 	chevron.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -147,12 +164,28 @@ func _create_card(upgrade_data: Dictionary, index: int) -> Button:
 	var application := AUGMENT_PREVIEW.describe(upgrade_data)
 	if not application.is_empty():
 		UiStyle.divider(column)
-		_card_label(column, application, 20, UiStyle.IVORY)
+		var application_label := _card_label(column, application, 20, UiStyle.IVORY)
+		application_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		application_label.max_lines_visible = 3
 	margin.minimum_size_changed.connect(func():
 		card.custom_minimum_size.y = maxf(122.0, margin.get_combined_minimum_size().y)
 	)
 	card.pressed.connect(_apply_upgrade_at.bind(index))
 	return card
+
+
+func _fit_card_heights() -> void:
+	if cards_container == null or cards_container.get_child_count() == 0:
+		return
+	var fixed_height := 122.0
+	for child in cards_container.get_children():
+		var card := child as Control
+		if card:
+			fixed_height = maxf(fixed_height, card.get_combined_minimum_size().y)
+	for child in cards_container.get_children():
+		var card := child as Control
+		if card:
+			card.custom_minimum_size.y = fixed_height
 
 func _card_label(parent: Control, caption: String, font_size: int, color: Color) -> Label:
 	var label := UiStyle.make_label(caption, font_size, color)
@@ -176,6 +209,7 @@ func _apply_layout():
 	cards_scroll.custom_minimum_size.x = target_width
 	for child in cards_container.get_children():
 		(child as Control).custom_minimum_size.x = card_width
+	_fit_card_heights.call_deferred()
 	_fit_card_scroll.call_deferred()
 
 
@@ -194,6 +228,7 @@ func _apply_upgrade_at(index: int):
 		return
 	if index < 0 or index >= current_upgrades.size():
 		return
+	UiStyle.play_sfx("card_apply", -2.0)
 	GameData.apply_upgrade(current_upgrades[index])
 	if is_start_draft:
 		GameManager.starting_draft_picks = maxi(0, GameManager.starting_draft_picks - 1)

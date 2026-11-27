@@ -35,7 +35,9 @@ func build(parent: Node, id: String, whole_page: bool = true) -> void:
 	if whole_page:
 		var fill := ColorRect.new()
 		fill.color = Color("#171411")
-		fill.mouse_filter = Control.MOUSE_FILTER_STOP
+		# The reference artwork is decorative.  A full-page STOP control can
+		# swallow touch input before the transparent hit buttons below receive it.
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		fill.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		add_child(fill)
 	page = Control.new()
@@ -124,9 +126,9 @@ func show_label(source: Control, rect: Rect2, font_size: int, align: HorizontalA
 	return field(rect, func(): return str(source.get("text")), font_size, align, backing)
 
 func styled_button(rect: Rect2, title: String, action: Callable, primary: bool = false) -> Button:
-	var button := UiStyle.make_button(title, Vector2.ZERO, primary)
+	var button := UiStyle.make_clean_button(title, Vector2.ZERO, false, primary)
 	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	button.add_theme_font_size_override("font_size", 24)
+	button.add_theme_font_size_override("font_size", 20 if rect.size.x < 160.0 else 22)
 	button.pressed.connect(action)
 	page.add_child(button)
 	place(button, rect)
@@ -168,6 +170,9 @@ func hit(rect: Rect2, caption: String, action: Callable) -> Button:
 	var button := Button.new()
 	button.tooltip_text = caption
 	button.accessibility_name = caption
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.focus_mode = Control.FOCUS_ALL
+	button.action_mode = BaseButton.ACTION_MODE_BUTTON_RELEASE
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		button.add_theme_stylebox_override(state, StyleBoxEmpty.new())

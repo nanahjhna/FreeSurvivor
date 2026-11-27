@@ -20,5 +20,6 @@ effect_sequence_delays = PackedFloat32Array(0.35, 1.46, 2.53)
 effect_sequence_damage_ratios = PackedFloat32Array(0.85, 0.95, 1.25)
 bonus_type = "area"
 effect_scene = ExtResource("2_effect")
+effect_visual = "sword_combo"
 implemented = true
 support_status = "animation_skill"

@@ -12,8 +12,8 @@ const SLOT_ICONS := {"weapon": "sword", "armor": "armor", "accessory": "ring", "
 
 var heading: Label
 var count_label: Label
+var card_header: HBoxContainer
 var grid: GridContainer
-var card_source: OptionButton
 var card_list: VBoxContainer
 var card_detail: VBoxContainer
 var card_detail_text: Label
@@ -43,8 +43,8 @@ var slot_buttons: Dictionary = {}
 var _approved_catalog: REFERENCE_SCREEN
 var _approved_card: REFERENCE_SCREEN
 var _approved_forge: REFERENCE_SCREEN
-var _approved_source: OptionButton
 var _approved_forge_heading: Button
+var _approved_forge_cards_tab: Button
 var _approved_card_icon := ""
 var _approved_card_category := ""
 var _approved_damage_changes: Array[Dictionary] = []
@@ -127,18 +127,11 @@ func _ready() -> void:
 	auto_equip.pressed.connect(_auto_equip_recommended)
 	owned_header.add_child(auto_equip)
 
-	card_source = OptionButton.new()
-	card_source.custom_minimum_size.y = 60
-	card_source.add_theme_font_size_override("font_size", 22)
-	UiStyle.apply_button(card_source)
-	card_source.add_theme_font_size_override("font_size", 21)
-	card_source.add_item("전투 증강 도감")
-	card_source.add_item("카드 던전 보유 카드")
-	card_source.item_selected.connect(func(_index: int): _refresh_cards(true))
-	var card_header := HBoxContainer.new()
+	card_header = HBoxContainer.new()
 	layout.add_child(card_header)
-	card_source.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	card_header.add_child(card_source)
+	var card_title := UiStyle.make_title("전투 증강 도감", 22)
+	card_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card_header.add_child(card_title)
 	card_header.add_child(count_label)
 
 	grid = GridContainer.new()
@@ -205,7 +198,6 @@ func open(_show_equipment: bool = false, at_forge: bool = false) -> void:
 	forge_mode = at_forge
 	selected_item = {}
 	show()
-	card_source.select(0)
 	_show_mode("equipment")
 
 
@@ -230,7 +222,7 @@ func _refresh() -> void:
 	heading.visible = forge_mode and equipment_mode
 	equipment.visible = equipment_mode
 	grid.visible = equipment_mode
-	(card_source.get_parent() as Control).visible = not equipment_mode
+	card_header.visible = not equipment_mode
 	card_list.visible = not equipment_mode and not card_detail.visible
 	tray.size_flags_vertical = Control.SIZE_FILL if equipment_mode else Control.SIZE_EXPAND_FILL
 	list_scroll.custom_minimum_size.y = 86 if equipment_mode else 0
@@ -283,11 +275,11 @@ func _refresh() -> void:
 func _sync_approved_screen() -> void:
 	if _approved_forge:
 		_approved_forge.visible = equipment_mode
-		_approved_forge_heading.visible = not forge_mode
+		_approved_forge_heading.visible = true
+		_approved_forge_cards_tab.visible = true
 	if _approved_catalog:
 		_approved_catalog.visible = not equipment_mode and not card_detail.visible
 		_approved_card.visible = not equipment_mode and card_detail.visible
-		_approved_source.select(card_source.selected)
 	_legacy_layout.hide()
 
 
@@ -295,14 +287,11 @@ func _build_approved_forge() -> void:
 	_approved_forge = REFERENCE_SCREEN.new()
 	var screen := _approved_forge
 	screen.build(self, "forge")
+	_build_reference_tabs(screen, true)
 	screen.smithy(Rect2(0, 70, 552, 371), Rect2(166, 89, 212, 333))
 	screen.native(portrait, Rect2(145, 77, 263, 365))
 	portrait.set_framing(3.13, 1.29, 1.7)
 	portrait.stretch_shrink = 1 if not OS.has_feature("android") else 2
-	_approved_forge_heading = screen.styled_button(Rect2(28, 18, 277, 54), "장비 관리", func(): _show_mode("equipment"))
-	var cards_tab := screen.styled_button(Rect2(386, 22, 104, 48), "증강 카드", func(): _show_mode("cards"))
-	cards_tab.add_theme_font_size_override("font_size", 16)
-	screen.styled_button(Rect2(498, 20, 43, 50), "×", close)
 	var rectangles := [Rect2(51, 148, 107, 107), Rect2(413, 148, 107, 107),
 		Rect2(51, 272, 107, 105), Rect2(413, 272, 107, 105)]
 	for index in range(EQUIPMENT_TYPES.size()):
@@ -345,9 +334,7 @@ func _ensure_approved_catalog() -> void:
 	_approved_card = REFERENCE_SCREEN.new()
 	_approved_card.build(self, "card")
 	for screen in [_approved_catalog, _approved_card]:
-		screen.relay(Rect2(15, 28, 248, 65), mode_buttons["equipment"])
-		screen.relay(Rect2(278, 28, 215, 65), mode_buttons["cards"])
-		screen.styled_button(Rect2(496, 35, 43, 51), "×", close)
+		_build_reference_tabs(screen, false)
 
 	_approved_catalog.solid(Rect2(19, 212, 516, 704), Color("#211d19"))
 	var scroll := ScrollContainer.new()
@@ -359,20 +346,10 @@ func _ensure_approved_catalog() -> void:
 	card_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	card_list.add_theme_constant_override("separation", 15)
 	list_scroll = scroll
-	_approved_source = OptionButton.new()
-	for index in range(card_source.item_count):
-		_approved_source.add_item(card_source.get_item_text(index))
-	_approved_source.select(card_source.selected)
-	_approved_source.add_theme_font_size_override("font_size", 32)
-	for state in ["normal", "hover", "pressed", "focus"]:
-		_approved_source.add_theme_stylebox_override(state, _approved_catalog.trim(Rect2(20, 124, 514, 73), 14, false))
-	_approved_catalog.solid(Rect2(30, 134, 491, 52), Color("#2c251f"))
-	_approved_source.item_selected.connect(func(index: int):
-		card_source.select(index)
-		_refresh_cards(true)
-	)
-	_approved_catalog.page.add_child(_approved_source)
-	_approved_catalog.place(_approved_source, Rect2(21, 123, 514, 73))
+	_approved_catalog.solid(Rect2(19, 112, 516, 91), Color("#211d19"))
+	_approved_catalog.live_text(Rect2(31, 123, 490, 70), func():
+		return "전투 증강 도감  ·  %s" % count_label.text
+	, 27, HORIZONTAL_ALIGNMENT_CENTER)
 
 	var screen := _approved_card
 	screen.hit(Rect2(32, 108, 187, 65), "목록으로", _close_card_detail)
@@ -401,6 +378,42 @@ func _ensure_approved_catalog() -> void:
 			for part in [box, fill, skill_name, difference]:
 				part.visible = shown
 		)
+	screen.solid(Rect2(28, 744, 496, 132), Color("#241d18f5"))
+	var scope_panel := PanelContainer.new()
+	scope_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	scope_panel.add_theme_stylebox_override("panel", UiStyle.frame(Color("#211b16e8"), UiStyle.STEEL, 1))
+	screen.page.add_child(scope_panel)
+	screen.place(scope_panel, Rect2(28, 744, 496, 132))
+	screen.text(Rect2(45, 758, 462, 25), "적용 대상 스킬", 17, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.GOLD_BRIGHT)
+	var scope_label := screen.live_text(Rect2(45, 790, 462, 38), _approved_card_scope_text, 24, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.IVORY)
+	scope_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	screen.text(Rect2(45, 835, 462, 25), "장착 중인 스킬 기준으로 계산된 예상값", 14, HORIZONTAL_ALIGNMENT_CENTER, UiStyle.MUTED)
+
+
+func _build_reference_tabs(screen: REFERENCE_SCREEN, forge_screen: bool) -> void:
+	# Keep navigation in one predictable strip. The old forge screen mixed a
+	# title, a small card button and a separate close button in different sizes.
+	# A two-tab strip makes the current area obvious at a glance.
+	var bar_height := 76.0 if forge_screen else 100.0
+	screen.solid(Rect2(0, 0, 552, bar_height), Color("#171411"))
+	var first_width := 220.0 if forge_screen else 224.0
+	var second_x := 246.0 if forge_screen else 238.0
+	var second_width := 236.0 if forge_screen else 238.0
+	var close_x := 490.0 if forge_screen else 490.0
+	var first := screen.styled_button(Rect2(18, 13, first_width, 52), "장비 관리", func(): _show_mode("equipment"))
+	var second := screen.styled_button(Rect2(second_x, 13, second_width, 52), "증강 카드", func(): _show_mode("cards"))
+	var close_button := screen.styled_button(Rect2(close_x, 15, 46, 48), "×", close)
+	first.add_theme_font_size_override("font_size", 18 if forge_screen else 20)
+	second.add_theme_font_size_override("font_size", 18 if forge_screen else 20)
+	close_button.add_theme_font_size_override("font_size", 24)
+	if forge_screen:
+		_approved_forge_heading = first
+		_approved_forge_cards_tab = second
+	screen.updates.append(func():
+		var equipment_selected := current_mode == "equipment"
+		UiStyle.style_clean_button(first, equipment_selected)
+		UiStyle.style_clean_button(second, not equipment_selected)
+	)
 
 
 func _build_card_detail(parent: VBoxContainer) -> void:
@@ -433,28 +446,13 @@ func _refresh_cards(source_changed: bool = false) -> void:
 	for child in card_list.get_children():
 		card_list.remove_child(child)
 		child.queue_free()
-	var show_catalog := card_source.selected == 0
-	var ids := SurvivalCardDatabase.all_ids() if show_catalog else CardDatabase.all_ids()
-	if show_catalog:
-		# The three examples on the approved spread lead into the complete catalog.
-		for id in ["024", "022", "042"]:
-			if ids.has(id):
-				ids.erase(id)
-				ids.push_front(id)
+	var ids := SurvivalCardDatabase.all_ids()
 	var shown := 0
 	for card_id in ids:
-		if show_catalog:
-			var card := SurvivalCardDatabase.get_card(card_id)
-			var category := SurvivalCardDatabase.get_category_name(str(card.stat))
-			var grade := str(card.grade)
-			_add_card_row(str(card.name), "%s · %s" % [category, grade], str(card.description), grade, card)
-		else:
-			var count := GameManager.card_manager.get_owned_count(card_id)
-			if count <= 0:
-				continue
-			var card := CardDatabase.get_card(card_id)
-			var grade := str(card.grade)
-			_add_card_row(str(card.name), "%s · 보유 %d장" % [grade, count], str(card.desc), grade)
+		var card := SurvivalCardDatabase.get_card(card_id)
+		var category := SurvivalCardDatabase.get_category_name(str(card.stat))
+		var grade := str(card.grade)
+		_add_card_row(str(card.name), "%s · %s" % [category, grade], str(card.description), grade, card)
 		shown += 1
 	count_label.text = "%d종" % shown
 	if shown == 0:
@@ -493,7 +491,13 @@ func _add_card_row(title: String, meta: String, description: String, grade: Stri
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_theme_constant_override("separation", 3)
 	row.add_child(content)
-	for label in [UiStyle.make_title(title, 23), UiStyle.make_label(meta, 18, edge), UiStyle.make_label(description, 19)]:
+	var display_title := title
+	if upgrade.has("stat"):
+		var category_name := SurvivalCardDatabase.get_category_name(str(upgrade.stat))
+		display_title = "%s  ·  %s  ·  %s" % [title, category_name, grade]
+	var title_label := UiStyle.make_title(display_title, 20 if upgrade.has("stat") else 23)
+	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for label in [title_label, UiStyle.make_label(meta, 16 if upgrade.has("stat") else 18, edge), UiStyle.make_label(description, 18 if upgrade.has("stat") else 19)]:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		content.add_child(label)
@@ -523,6 +527,16 @@ func _show_card_detail(title: String, meta: String, description: String, upgrade
 	card_detail.show()
 	list_scroll.set_deferred("scroll_vertical", 0)
 	_sync_approved_screen()
+
+func _approved_card_scope_text() -> String:
+	if not _approved_damage_changes.is_empty():
+		var slots := PackedStringArray()
+		for change in _approved_damage_changes:
+			slots.append(str(change.get("slot", "")))
+		return " · ".join(slots)
+	if not card_detail_preview.text.is_empty():
+		return card_detail_preview.text
+	return "카드 효과에 따라 적용 대상이 결정됩니다"
 
 
 func _close_card_detail() -> void:
@@ -692,6 +706,7 @@ func _on_item_action() -> void:
 	current[slot] = null if current.get(slot) == id else id
 	GameData.equipped_gear[leader] = current
 	_commit_equipment()
+	UiStyle.play_sfx("equip", -2.0)
 
 
 func _auto_equip_recommended() -> void:
@@ -708,6 +723,7 @@ func _auto_equip_recommended() -> void:
 			current[slot] = str(item.get("id", ""))
 	GameData.equipped_gear[leader] = current
 	_commit_equipment()
+	UiStyle.play_sfx("equip", -2.0)
 	UiFeedback.show_success("추천 장비를 장착했습니다.")
 
 

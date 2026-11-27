@@ -88,6 +88,7 @@ func _build_ui() -> void:
 	_list.add_theme_constant_override("v_separation", 17)
 	_list.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
 	_list.item_selected.connect(_select_motion)
+	_list.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	content.add_child(_list)
 
 	var footer := HBoxContainer.new()
@@ -110,9 +111,15 @@ func _build_ui() -> void:
 
 
 func _fit_preview() -> void:
-	_preview_panel.custom_minimum_size.y = clampf(get_viewport().get_visible_rect().size.y * 0.30, 165.0, 380.0)
+	var viewport_size := get_viewport().get_visible_rect().size
+	var compact := viewport_size.y >= viewport_size.x and viewport_size.x < 600.0
+	_preview_panel.custom_minimum_size.y = clampf(viewport_size.y * (0.22 if compact else 0.30), 132.0 if compact else 165.0, 300.0 if compact else 380.0)
 	if _preview:
-		_preview.set_framing(3.35, 1.35, 2.1)
+		_preview.set_framing(3.35, 1.35, 2.0 if compact else 2.1)
+	if _search:
+		_search.add_theme_font_size_override("font_size", 15 if compact else 17)
+	if _list:
+		_list.add_theme_font_size_override("font_size", 15 if compact else 17)
 
 
 func open() -> void:

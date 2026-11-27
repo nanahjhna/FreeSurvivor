@@ -3,6 +3,8 @@ extends CanvasLayer
 signal closed()
 
 var _list: GridContainer
+var _scroll: ScrollContainer
+var _panel: PanelContainer
 var _tab_char: Button
 var _tab_monster: Button
 var _current_tab: String = "character"
@@ -28,11 +30,10 @@ func _build_ui():
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(center)
 
-	var panel := UiStyle.make_panel()
-	panel.custom_minimum_size = Vector2(980, 700)
-	center.add_child(panel)
+	_panel = UiStyle.make_panel()
+	center.add_child(_panel)
 
-	var margin := UiStyle.make_margin(panel, 24)
+	var margin := UiStyle.make_margin(_panel, 24)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 14)
 	margin.add_child(vbox)
@@ -59,17 +60,19 @@ func _build_ui():
 	tabs.add_child(_tab_monster)
 	vbox.add_child(HSeparator.new())
 
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vbox.add_child(scroll)
+	_scroll = ScrollContainer.new()
+	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(_scroll)
 
 	_list = GridContainer.new()
 	_list.columns = 3
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_list.add_theme_constant_override("h_separation", 12)
 	_list.add_theme_constant_override("v_separation", 12)
-	scroll.add_child(_list)
+	_scroll.add_child(_list)
+	get_viewport().size_changed.connect(_fit_layout)
+	_fit_layout()
 
 func open():
 	visible = true
@@ -99,6 +102,25 @@ func _refresh():
 		_render_characters()
 	else:
 		_render_monsters()
+	_fit_layout.call_deferred()
+
+func _fit_layout() -> void:
+	if not is_instance_valid(_panel) or not is_instance_valid(_list):
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var safe := UiStyle.safe_insets(get_viewport())
+	var width := maxf(260.0, viewport_size.x - safe.x - safe.z - 24.0)
+	var height := maxf(360.0, viewport_size.y - safe.y - safe.w - 24.0)
+	_panel.custom_minimum_size = Vector2(minf(980.0, width), minf(700.0, height))
+	var compact := viewport_size.y >= viewport_size.x and viewport_size.x < 600.0
+	_list.columns = 1 if compact else (2 if width < 900.0 else 3)
+	var gaps := float(maxi(0, _list.columns - 1) * 12)
+	var card_width := maxf(1.0, (width - 28.0 - gaps) / float(_list.columns))
+	for card in _list.get_children():
+		var panel := card as Control
+		if panel == null:
+			continue
+		panel.custom_minimum_size = Vector2(card_width, 154.0 if compact else 180.0)
 
 func _render_characters():
 	for cid in GameData.characters:
@@ -141,7 +163,7 @@ func _render_monsters():
 
 func _make_card(icon: String, title: String, subtitle: String, body: String, accent: Color) -> PanelContainer:
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(300, 180)
+	panel.custom_minimum_size = Vector2(0, 180)
 	panel.add_theme_stylebox_override("panel", UiStyle.sub_panel_style())
 
 	var margin := UiStyle.make_margin(panel, 14)
@@ -161,7 +183,9 @@ func _make_card(icon: String, title: String, subtitle: String, body: String, acc
 	titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(titles)
 	titles.add_child(UiStyle.make_label(title, 17, accent))
-	titles.add_child(UiStyle.make_label(subtitle, 12, Color(0.7, 0.8, 0.92)))
+	var subtitle_label := UiStyle.make_label(subtitle, 12, Color(0.7, 0.8, 0.92))
+	subtitle_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	titles.add_child(subtitle_label)
 
 	var body_label := UiStyle.make_label(body, 12, Color(0.86, 0.9, 0.98))
 	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

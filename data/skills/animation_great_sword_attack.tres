@@ -18,6 +18,7 @@ animation_key = "Great_Sword_Attack"
 impact_delay = 0.43
 bonus_type = "physical"
 effect_scene = ExtResource("2_effect")
+effect_visual = "sword_cut"
 projectile_pierce = 2
 implemented = true
 support_status = "animation_skill"

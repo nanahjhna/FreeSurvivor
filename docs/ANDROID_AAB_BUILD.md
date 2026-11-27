@@ -5,11 +5,12 @@
 ## 기본 출력과 프리셋
 
 - Godot의 `Android` 프리셋을 사용합니다.
-- 출력은 `build/FreeSurvivor-{version-name}-optimized.aab` 형식을 사용합니다. 현재 기준 출력은 `build/FreeSurvivor-2.1-optimized.aab`입니다.
+- 출력은 `build/FreeSurvivor-{version-name}-optimized.aab` 형식을 사용합니다. 현재 기준 출력은 `build/FreeSurvivor-2.3-optimized.aab`입니다.
 - `gradle_build/export_format=1`로 AAB 형식을 유지합니다.
 - 출시 서명(`package/signed=true`)을 유지합니다. 서명 파일과 비밀값은 문서나 저장소에 기록하지 않습니다.
 - `armeabi-v7a`와 `arm64-v8a`를 기본 포함합니다.
 - x86·x86_64는 별도 요구가 없으면 포함하지 않습니다.
+- 세로형 모바일 게임이므로 `project.godot`의 `window/handheld/orientation=1`을 유지합니다. Android 기기에서 가로 회전으로 실행되면 먼저 이 설정과 새로 설치한 APK/AAB의 버전을 확인합니다.
 - `version/name`과 `version/code`는 빌드 전에 확인하고, 직전 AAB보다 반드시 높은 값을 사용합니다. 둘 중 하나라도 직전 값 이하이면 빌드를 진행하지 않습니다.
 - 직전 AAB의 버전명과 버전 코드는 파일명, 빌드 기록 또는 AAB Manifest에서 확인합니다. 확인할 기준이 없으면 먼저 기준 빌드를 정합니다.
 - 최소 SDK·대상 SDK가 프리셋에 비어 있으면 Godot/Gradle 기본값을 사용하는 상태로 보고하며, 값을 변경할 때는 변경 이유와 결과를 기록합니다.

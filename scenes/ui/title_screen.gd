@@ -31,9 +31,12 @@ func _ready() -> void:
 	_layout()
 	var approved := REFERENCE_SCREEN.new()
 	approved.build(self, "title")
-	approved.relay(Rect2(72, 604, 414, 86), start_button)
-	approved.relay(Rect2(72, 705, 414, 76), settings_button)
-	approved.relay(Rect2(72, 798, 414, 76), quit_button)
+	# Keep the approved screen's transparent hit targets as the single source
+	# of touch input.  Relaying through hidden scene buttons made mobile input
+	# dependent on two Control trees and was easy to block with an overlay.
+	approved.hit(Rect2(72, 604, 414, 86), "게스트로 시작", _on_start_btn_pressed)
+	approved.hit(Rect2(72, 705, 414, 76), "환경 설정", _on_settings_btn_pressed)
+	approved.hit(Rect2(72, 798, 414, 76), "종료", _on_quit_btn_pressed)
 	$Center.hide()
 	$BottomLeft.hide()
 

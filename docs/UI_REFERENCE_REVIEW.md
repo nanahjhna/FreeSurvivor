@@ -123,3 +123,8 @@ FreeSurvivor의 자체 승인 시안은 2026-11-27부터 게임 화면에 직접
 - [Nonstop Knight 2](https://play.google.com/store/apps/details?id=com.flaregames.nonstop.action.rpg)의 캐릭터 주변 장착 슬롯 구성을 참고했습니다. 장비 화면의 캐릭터와 슬롯은 같은 영역에 두고, 보유 장비 목록은 그 아래에 배치합니다.
 - [탕탕특공대](https://play.google.com/store/apps/details?id=com.dxx.firenow)의 중앙 전투 시야를 참고했습니다. FreeSurvivor는 하단 스킬 슬롯의 별도 줄에 피해 숫자를 표시합니다.
 - [궁수의 전설 2](https://play.google.com/store/apps/details?id=com.xq.archeroii)의 강화 선택 구성을 참고했습니다. 카드의 아이콘·이름·분류·효과를 순서대로 보여주고 적용 스킬과 예상 피해를 아래에 표시합니다.
+## 2026-11-27 UI 정리 패스
+
+- 장비 관리와 증강 카드의 상단 이동을 제목 옆 작은 버튼으로 분리하지 않고, 동일 폭의 2탭 스트립으로 통일합니다.
+- 오버레이로 추가되는 실제 터치 버튼은 기존 배경 그림의 장식 프레임과 겹치지 않도록 얇은 테두리·작은 그림자의 평면형 스타일을 사용합니다.
+- 화면의 정보 순서는 `현재 위치/탭 → 핵심 콘텐츠 → 비교·상세 → 하단 주요 행동`으로 고정하고, 같은 기능을 두 곳에 노출하지 않습니다.

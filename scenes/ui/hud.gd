@@ -16,6 +16,7 @@ const REFERENCE_SCREEN := preload("res://scripts/reference_screen.gd")
 
 var player_node: Node3D = null
 var skill_manager: Node = null
+var _skill_manager_signal_connected := false
 var dpad: CanvasLayer = null
 
 var auto_battle_button: Button
@@ -46,7 +47,8 @@ var _hud_overlap_label: Label
 const HUD_CONFIG_PATH := "user://hud_layout.cfg"
 
 var _skill_panels: Dictionary = {}
-var boss_choice_dialog: ConfirmationDialog
+var _skill_manager_resolve_timer := 0.0
+const SKILL_MANAGER_RESOLVE_INTERVAL := 0.25
 
 const VIRTUAL_DPAD: PackedScene = preload("res://scenes/ui/virtual_dpad.tscn")
 
@@ -57,7 +59,6 @@ func _ready():
 	_build_infinite_dungeon_controls()
 	_build_encounter_strip()
 	_build_battle_action_bar()
-	_build_boss_choice_dialog()
 	_build_mobile_dpad()
 	_apply_reference_hud()
 	_layout_battle_hud()
@@ -67,6 +68,10 @@ func _ready():
 	GameActions.action_requested.connect(_on_action_requested)
 	GameActions.input_mode_changed.connect(_build_mobile_dpad)
 	GameManager.boss_defeated.connect(_on_boss_defeated)
+	GameManager.state_changed.connect(func(state):
+		if state == GameManager.GameState.PLAYING:
+			_update_skill_slot_labels()
+	)
 	_update_skill_slot_labels()
 	_on_time_updated(GameManager.battle_time)
 	_on_leveled_up(GameData.player_level)
@@ -89,8 +94,19 @@ func _setup_player(p: Node3D):
 	if p.has_signal("leveled_up"):
 		p.leveled_up.connect(_on_leveled_up)
 	skill_manager = p.get_node_or_null("SkillManager")
-	if skill_manager and skill_manager.has_signal("skill_cooldown_updated"):
+	_resolve_skill_manager()
+
+func _resolve_skill_manager() -> Node:
+	if player_node == null or not is_instance_valid(player_node):
+		return skill_manager
+	var candidate := player_node.get_node_or_null("SkillManager")
+	if candidate != skill_manager:
+		skill_manager = candidate
+		_skill_manager_signal_connected = false
+	if skill_manager and not _skill_manager_signal_connected and skill_manager.has_signal("skill_cooldown_updated"):
 		skill_manager.skill_cooldown_updated.connect(_on_skill_cooldown_updated)
+		_skill_manager_signal_connected = true
+	return skill_manager
 
 func _process(delta: float):
 	_boss_scan_timer = maxf(0.0, _boss_scan_timer - delta)
@@ -98,6 +114,10 @@ func _process(delta: float):
 		player_node = get_tree().get_first_node_in_group("player")
 		if player_node:
 			_setup_player(player_node)
+	_skill_manager_resolve_timer -= delta
+	if _skill_manager_resolve_timer <= 0.0 or not is_instance_valid(skill_manager):
+		_skill_manager_resolve_timer = SKILL_MANAGER_RESOLVE_INTERVAL
+		_resolve_skill_manager()
 
 	_indicator_update_timer += delta
 	if _indicator_update_timer >= 0.12:
@@ -138,21 +158,31 @@ func begin_hud_edit():
 		layer = 30
 		get_tree().paused = true
 		_hud_editor.visible = true
+		_fit_hud_editor()
 		return
 	_hud_old_layer = layer
 	layer = 30
 	get_tree().paused = true
 	_hud_editor = PanelContainer.new()
 	_hud_editor.name = "HudLayoutEditor"
-	_hud_editor.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_hud_editor.position = Vector2(16, 150)
+	_hud_editor.set_anchors_preset(Control.PRESET_CENTER)
+	_hud_editor.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_hud_editor.grow_vertical = Control.GROW_DIRECTION_BOTH
+	_hud_editor.add_theme_stylebox_override("panel", UiStyle.art_panel(UiStyle.RUST, Vector2(2, 2)))
 	_hud_editor.custom_minimum_size = Vector2(300, 420)
+	var editor_scroll := ScrollContainer.new()
+	editor_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	editor_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	editor_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	editor_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_hud_editor.add_child(editor_scroll)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
-	_hud_editor.add_child(box)
+	editor_scroll.add_child(box)
 	box.add_child(UiStyle.make_label("HUD 배치 편집 · 요소를 드래그하세요", 16, Color(1, 0.85, 0.35)))
 	var select := OptionButton.new()
-	for name in _hud_controls.keys(): select.add_item(str(name))
+	for name in _hud_controls.keys():
+		select.add_item(str(name))
 	select.item_selected.connect(_on_hud_target_selected)
 	box.add_child(select)
 	_hud_size_slider = _make_hud_slider(box, "크기", 0.6, 1.6, 1.0)
@@ -188,9 +218,24 @@ func begin_hud_edit():
 	_hud_overlap_label = UiStyle.make_label("겹침 확인 중", 12, Color(1, 0.7, 0.5))
 	box.add_child(_hud_overlap_label)
 	add_child(_hud_editor)
+	get_viewport().size_changed.connect(_fit_hud_editor)
+	_fit_hud_editor()
 	select.select(0)
 	_on_hud_target_selected(0)
 	_update_hud_overlap_warning()
+
+func _fit_hud_editor() -> void:
+	if _hud_editor == null:
+		return
+	var viewport_size := get_viewport().get_visible_rect().size
+	var safe := UiStyle.safe_insets(get_viewport())
+	var width := minf(360.0, viewport_size.x - safe.x - safe.z - 24.0)
+	var height := minf(500.0, viewport_size.y - safe.y - safe.w - 32.0)
+	_hud_editor.offset_left = -width * 0.5
+	_hud_editor.offset_right = width * 0.5
+	_hud_editor.offset_top = -height * 0.5
+	_hud_editor.offset_bottom = height * 0.5
+	_hud_editor.custom_minimum_size = Vector2(width, height)
 
 func _make_hud_slider(parent: VBoxContainer, caption: String, minimum: float, maximum: float, initial: float) -> HSlider:
 	parent.add_child(UiStyle.make_label(caption, 13))
@@ -304,21 +349,22 @@ func _layout_battle_hud() -> void:
 	bottom_stats_panel.offset_left = bottom_stats_panel.offset_right - 154.0
 	bottom_stats_panel.offset_top = 13 + safe.y
 	bottom_stats_panel.offset_bottom = 67 + safe.y
-	var dock_width := reference_width * 0.9
-	var skill_gap := 6.0 if compact else 8.0
+	# Keep the combat controls compact so the playfield remains visible on a
+	# narrow portrait screen. HP and EXP are stacked immediately above them.
+	var dock_width := reference_width * 0.84
+	var skill_gap := 5.0 if compact else 6.0
 	var slot_count := maxi(1, _skill_panels.size())
 	var slot_width := floorf((dock_width - float(slot_count - 1) * skill_gap) / float(slot_count))
-	var slot_height := clampf(roundf(134.0 * reference_scale), 98.0, 172.0)
+	var slot_height := clampf(roundf(104.0 * reference_scale), 78.0, 126.0)
 	var skill_list := action_dock.get_node_or_null("Controls/SkillList") as HBoxContainer
 	if skill_list:
 		skill_list.add_theme_constant_override("separation", int(skill_gap))
 	for skill_panel in _skill_panels.values():
 		(skill_panel as Control).custom_minimum_size = Vector2(slot_width, slot_height)
-	var dock_height := slot_height + auto_battle_button.get_combined_minimum_size().y + hp_bar.get_combined_minimum_size().y + 24.0
 	action_dock.offset_left = -dock_width * 0.5
 	action_dock.offset_right = dock_width * 0.5
-	action_dock.offset_top = -32.0 * reference_scale - dock_height - safe.w
 	action_dock.offset_bottom = -32.0 * reference_scale - safe.w
+	action_dock.offset_top = action_dock.offset_bottom - action_dock.get_combined_minimum_size().y
 	encounter_strip.offset_top = 14 + safe.y
 	encounter_strip.offset_bottom = 114 + safe.y
 	$MinimapContainer.offset_top = 112 + safe.y
@@ -348,17 +394,18 @@ func _apply_reference_hud() -> void:
 	boss_health.custom_minimum_size.y = 12
 	exp_bar.custom_minimum_size.y = 10
 	var stats := exp_bar.get_parent() as VBoxContainer
-	var exp_row := HBoxContainer.new()
-	exp_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	exp_row.add_theme_constant_override("separation", 7)
-	stats.add_child(exp_row)
-	stats.move_child(exp_row, 0)
-	var exp_label := UiStyle.make_label("EXP", 18, UiStyle.IVORY)
-	UiStyle.ink_outline(exp_label, 4)
-	exp_row.add_child(exp_label)
-	_reparent_control(exp_bar, exp_row)
-	exp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	exp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if stats != action_dock.get_node_or_null("Controls"):
+		var exp_row := HBoxContainer.new()
+		exp_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		exp_row.add_theme_constant_override("separation", 7)
+		stats.add_child(exp_row)
+		stats.move_child(exp_row, 0)
+		var exp_label := UiStyle.make_label("EXP", 18, UiStyle.IVORY)
+		UiStyle.ink_outline(exp_label, 4)
+		exp_row.add_child(exp_label)
+		_reparent_control(exp_bar, exp_row)
+		exp_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		exp_bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	for index in range(4):
 		var key: String = ["q", "w", "e", "r"][index]
 		var panel: Panel = _skill_panels[key]
@@ -471,7 +518,7 @@ func _style_action_panels():
 			skill_panel.add_theme_stylebox_override("panel", UiStyle.art_panel(UiStyle.RUST, Vector2.ZERO, 0.93))
 		_add_skill_damage_label(skill_panel)
 		var action_id: String = "skill_" + str(key)
-		_setup_panel(skill_panel, action_id, func(): _cast_skill(str(key)), _skill_tooltip.bind(str(key)))
+		_setup_panel(skill_panel, action_id, Callable(self, "_cast_skill").bind(str(key)), _skill_tooltip.bind(str(key)))
 	if pause_button:
 		UiStyle.apply_button(pause_button)
 		pause_button.text = "⏸"
@@ -504,7 +551,7 @@ func _create_runtime_skill_panel(key: String) -> Panel:
 	return panel
 
 func _add_skill_damage_label(panel: Control) -> void:
-	if panel == null or panel.find_child("DamageLabel", false, false) != null:
+	if panel == null or panel.find_child("DamageLabel", true, false) != null:
 		return
 	var icon := panel.find_child("Icon", true, false) as Label
 	var key := panel.find_child("KeyLabel", true, false) as Label
@@ -535,27 +582,45 @@ func _add_skill_damage_label(panel: Control) -> void:
 		cooldown.offset_bottom = 36
 		cooldown.add_theme_font_size_override("font_size", 22)
 		cooldown.add_theme_color_override("font_color", UiStyle.IVORY)
+	var damage_row := HBoxContainer.new()
+	damage_row.name = "DamageRow"
+	damage_row.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	damage_row.offset_left = 3
+	damage_row.offset_top = -52
+	damage_row.offset_right = -3
+	damage_row.offset_bottom = -26
+	damage_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	damage_row.add_theme_constant_override("separation", 2)
+	damage_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(damage_row)
+	var damage_type := Label.new()
+	damage_type.name = "DamageTypeLabel"
+	damage_type.custom_minimum_size = Vector2(44, 0)
+	damage_type.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	damage_type.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	damage_type.add_theme_font_size_override("font_size", 9)
+	damage_type.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
+	damage_type.add_theme_color_override("font_outline_color", Color("#171016"))
+	damage_type.add_theme_constant_override("outline_size", 2)
+	damage_type.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	damage_row.add_child(damage_type)
 	var damage := Label.new()
 	damage.name = "DamageLabel"
-	damage.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	damage.offset_left = 4
-	damage.offset_top = -69
-	damage.offset_right = -4
-	damage.offset_bottom = -27
+	damage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	damage.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	damage.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	damage.add_theme_color_override("font_color", UiStyle.IVORY)
 	damage.add_theme_color_override("font_outline_color", Color("#171016"))
 	damage.add_theme_constant_override("outline_size", 3)
 	damage.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(damage)
-	panel.resized.connect(_fit_skill_damage_label.bind(damage))
+	damage_row.add_child(damage)
+	damage.resized.connect(_fit_skill_damage_label.bind(damage))
 	_fit_skill_damage_label(damage)
 
 func _fit_skill_damage_label(label: Label) -> void:
 	var font := label.get_theme_font("font")
-	var available_width := maxf(1.0, (label.get_parent() as Control).size.x - 12.0)
-	var font_size := clampi(roundi(available_width * 0.36), 24, 43)
+	var available_width := maxf(1.0, label.size.x)
+	var font_size := clampi(roundi(available_width * 0.34), 18, 32)
 	while font_size > 12 and font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > available_width:
 		font_size -= 1
 	label.add_theme_font_size_override("font_size", font_size)
@@ -586,27 +651,44 @@ func _setup_panel(panel: Control, action_id: String, on_activate: Callable, tool
 	)
 	panel.add_child(hold_timer)
 
+	var touch := {"index": -1, "origin": Vector2.ZERO}
+	var cancel_touch := func():
+		touch.index = -1
+		hold_timer.stop()
+		panel.set_meta("long_pressed", false)
+		UiFeedback.hide_tooltip()
+	GameManager.state_changed.connect(func(_state): cancel_touch.call())
+	panel.visibility_changed.connect(func():
+		if not panel.is_visible_in_tree():
+			cancel_touch.call()
+	)
 	panel.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if get_tree().paused:
+			return
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and event.device != InputEvent.DEVICE_ID_EMULATION:
 			on_activate.call()
-			get_viewport().set_input_as_handled()
+			panel.accept_event()
 		elif event is InputEventScreenTouch:
-			if event.pressed:
+			if event.pressed and touch.index == -1:
+				touch.index = event.index
+				touch.origin = event.position
 				panel.set_meta("long_pressed", false)
 				hold_timer.start()
-				get_viewport().set_input_as_handled()
-			else:
-				hold_timer.stop()
-				UiFeedback.hide_tooltip()
-				if not bool(panel.get_meta("long_pressed", false)):
+			elif not event.pressed and event.index == touch.index:
+				var tapped: bool = not event.canceled and not bool(panel.get_meta("long_pressed", false))
+				tapped = tapped and Rect2(Vector2.ZERO, panel.size).has_point(event.position)
+				cancel_touch.call()
+				if tapped:
 					on_activate.call()
-				panel.set_meta("long_pressed", false)
-				get_viewport().set_input_as_handled()
-		elif event is InputEventScreenDrag:
-			hold_timer.stop()
-			UiFeedback.hide_tooltip()
+			panel.accept_event()
+		elif event is InputEventScreenDrag and event.index == touch.index:
+			if event.position.distance_to(touch.origin) > 16.0:
+				cancel_touch.call()
+			panel.accept_event()
 	)
 	panel.mouse_entered.connect(func():
+		if GameActions.is_mobile():
+			return
 		var info_value: Variant = tooltip_builder.call()
 		var info: Dictionary = info_value if info_value is Dictionary else {}
 		UiFeedback.show_tooltip(str(info.get("title", "")), str(info.get("body", "")), panel.get_global_rect().position + Vector2(0, panel.size.y + 8))
@@ -620,6 +702,7 @@ func _build_battle_action_bar():
 	action_dock = PanelContainer.new()
 	action_dock.name = "ActionDock"
 	action_dock.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	action_dock.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	action_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	action_dock.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(action_dock)
@@ -643,12 +726,24 @@ func _build_battle_action_bar():
 	auto_battle_button.size_flags_horizontal = Control.SIZE_SHRINK_END
 	auto_battle_button.toggle_mode = true
 	auto_battle_button.pressed.connect(_toggle_auto_battle)
-	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 전투", "준비된 액티브 스킬을 자동 시전합니다.\nHP 40% 이하일 때 보유한 물약 사용", auto_battle_button.global_position + Vector2(0, 46)))
+	auto_battle_button.mouse_entered.connect(func(): UiFeedback.show_tooltip("자동 스킬 시전", "준비된 액티브 스킬을 자동 시전합니다.\nHP 70% 이하일 때 회복 스킬을 우선 사용합니다.", auto_battle_button.global_position + Vector2(0, 46)))
 	auto_battle_button.mouse_exited.connect(func(): UiFeedback.hide_tooltip())
 	controls.add_child(auto_battle_button)
 	controls.move_child(auto_battle_button, 0)
 	_reparent_control(hp_bar, controls)
 	controls.move_child(hp_bar, 1)
+	_reparent_control(exp_bar, controls)
+	controls.move_child(exp_bar, 2)
+	exp_bar.custom_minimum_size = Vector2(0, 9)
+	var exp_caption := UiStyle.make_label("EXP", 11, UiStyle.MUTED)
+	exp_caption.name = "ExpCaption"
+	exp_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	exp_caption.add_theme_font_size_override("font_size", 13)
+	exp_caption.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
+	UiStyle.ink_outline(exp_caption, 3)
+	controls.add_child(exp_caption)
+	controls.move_child(exp_caption, 2)
+	controls.move_child(exp_bar, 3)
 	hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hp_label.add_theme_font_size_override("font_size", 16)
@@ -762,22 +857,13 @@ func _layout_dungeon_gold():
 	if dungeon_gold_label:
 		dungeon_gold_label.add_theme_color_override("font_color", UiStyle.GOLD_BRIGHT)
 
-func _build_boss_choice_dialog():
-	boss_choice_dialog = ConfirmationDialog.new()
-	boss_choice_dialog.name = "BossContinueDialog"
-	boss_choice_dialog.process_mode = Node.PROCESS_MODE_ALWAYS
-	boss_choice_dialog.title = "보스 처치!"
-	boss_choice_dialog.ok_button_text = "다음 보스 도전"
-	boss_choice_dialog.cancel_button_text = "마을로 귀환"
-	boss_choice_dialog.confirmed.connect(GameManager.continue_boss_chain)
-	boss_choice_dialog.canceled.connect(GameManager.decline_boss_chain)
-	add_child(boss_choice_dialog)
-
 func _on_boss_defeated(defeated_count: int, next_reward_multiplier: float):
-	if boss_choice_dialog == null:
-		_build_boss_choice_dialog()
-	boss_choice_dialog.dialog_text = "보스 %d마리를 처치했습니다.\n\n다음 보스를 쓰러뜨리면 보상이 %.1f배로 증가합니다.\n계속 도전할까요?" % [defeated_count, next_reward_multiplier]
-	boss_choice_dialog.popup_centered(Vector2i(440, 220))
+	UiFeedback.confirm_with_cancel(
+		"보스 처치!",
+		"보스 %d마리를 처치했습니다.\n\n다음 보스를 쓰러뜨리면 보상이 %.1f배로 증가합니다.\n계속 도전할까요?" % [defeated_count, next_reward_multiplier],
+		GameManager.continue_boss_chain,
+		GameManager.decline_boss_chain
+	)
 
 func _build_encounter_strip():
 	encounter_strip = VBoxContainer.new()
@@ -888,21 +974,24 @@ func _build_mobile_dpad():
 	add_child(dpad)
 
 func _cast_skill(key: String):
+	_resolve_skill_manager()
 	if skill_manager == null or not is_instance_valid(skill_manager):
 		UiFeedback.show_error("스킬 시스템을 찾을 수 없습니다.")
 		return
 	skill_manager.call("press_skill", key)
 
 func _toggle_auto_battle():
+	_resolve_skill_manager()
 	var enabled: bool = not bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
 	if skill_manager and skill_manager.has_method("set_auto_battle"):
 		skill_manager.call("set_auto_battle", enabled)
 	_update_auto_battle_label()
 
 func _update_auto_battle_label():
+	_resolve_skill_manager()
 	var enabled := bool(skill_manager.get("auto_battle_enabled")) if skill_manager else true
 	auto_battle_button.set_pressed_no_signal(enabled)
-	auto_battle_button.text = "자동 전투 %s" % ("켜짐" if enabled else "꺼짐")
+	auto_battle_button.text = "자동 시전: %s" % ("켜짐" if enabled else "꺼짐")
 	UiStyle.skin_button(auto_battle_button, UiStyle.SELECTED if enabled else UiStyle.INK_SOFT,
 		UiStyle.AMBER if enabled else UiStyle.STEEL, UiStyle.IVORY)
 
@@ -958,12 +1047,27 @@ func _update_skill_slot_labels():
 			else:
 				key_label.text = str(slot).to_upper() if GameActions.is_mobile() else GameActions.get_key_name("skill_" + str(slot))
 		panel.tooltip_text = str(meta.get("name", "빈 스킬 슬롯"))
-		var damage_label := panel.find_child("DamageLabel", false, false) as Label
+		var damage_label := panel.find_child("DamageLabel", true, false) as Label
 		if damage_label:
 			damage_label.text = _skill_damage_text(str(slot))
 			_fit_skill_damage_label(damage_label)
 			damage_label.tooltip_text = "예상 스킬 피해: %s" % damage_label.text if not damage_label.text.is_empty() else "피해 정보 없음"
+		var damage_type_label := panel.find_child("DamageTypeLabel", true, false) as Label
+		if damage_type_label:
+			damage_type_label.text = _skill_damage_type_text(str(slot))
 	_update_skill_availability()
+
+func _skill_damage_type_text(key: String) -> String:
+	var skill_id := GameData.get_equipped_skill(key)
+	var meta: Dictionary = GameData.skill_meta.get(skill_id, {})
+	if meta.is_empty():
+		return ""
+	var cast_type := str(meta.get("cast_type", ""))
+	if cast_type == "heal":
+		return "회복"
+	if cast_type == "passive":
+		return ""
+	return "마법 피해" if bool(meta.get("uses_magic_power", false)) else "물리 피해"
 
 func _skill_damage_text(key: String) -> String:
 	var skill_id := GameData.get_equipped_skill(key)

@@ -112,10 +112,13 @@ func _build_approved_skills() -> void:
 	for index in range(4):
 		var slot: String = ["q", "w", "e", "r"][index]
 		var rect := Rect2(34 + index * 126, 666, 96, 82)
-		screen.field(rect, func():
+		screen.field(Rect2(rect.position, Vector2(rect.size.x, 46)), func():
 			var equipped: Dictionary = GameData.skill_meta.get(GameData.get_equipped_skill(slot), {})
 			return str(equipped.get("icon", "—"))
-		, 47, HORIZONTAL_ALIGNMENT_CENTER)
+		, 39, HORIZONTAL_ALIGNMENT_CENTER)
+		screen.solid(Rect2(rect.position + Vector2(0, 46), Vector2(rect.size.x, 36)), Color("#241d18"))
+		screen.text(Rect2(rect.position + Vector2(0, 46), Vector2(rect.size.x, 17)), slot.to_upper(), 14, HORIZONTAL_ALIGNMENT_CENTER)
+		screen.live_text(Rect2(rect.position + Vector2(0, 61), Vector2(rect.size.x, 20)), _approved_slot_damage.bind(slot), 17, HORIZONTAL_ALIGNMENT_CENTER, REFERENCE_SCREEN.AMBER)
 		var touch := screen.hit(Rect2(rect.position.x - 1, 653, 118, 138), "%s 슬롯" % slot.to_upper(), _on_loadout_slot_pressed.bind(slot))
 		var highlight := UiStyle.frame(Color.TRANSPARENT, UiStyle.AMBER, 9, 3)
 		highlight.shadow_size = 0
@@ -125,6 +128,8 @@ func _build_approved_skills() -> void:
 			elif touch.get_theme_stylebox("normal") == highlight:
 				touch.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
 		)
+	# The approved artwork already contains the CTA label. Drawing a second
+	# live label here caused "스킬 선택" to render twice and overlap.
 	screen.hit(Rect2(18, 807, 518, 90), "스킬 선택", func(): _on_skill_selected(_preview_skill_id))
 	var passive := screen.live_text(Rect2(21, 899, 509, 32), func():
 		return passive_info_label.text if passive_info_label.visible else ""
@@ -173,6 +178,29 @@ func _approved_skill_value(key: String) -> String:
 		"range": return "%.1fm" % float(meta.get("range", 0.0))
 		"damage": return _damage_summary_text(meta, level).replace("피해 공식: ", "").replace(" 공격력", "")
 	return "—"
+
+func _approved_slot_damage(slot: String) -> String:
+	var skill_id := GameData.get_equipped_skill(slot)
+	var meta: Dictionary = GameData.skill_meta.get(skill_id, {})
+	if meta.is_empty():
+		return "—"
+	var level := int(GameData.skill_levels.get(skill_id, 1))
+	if str(meta.get("cast_type", "")) == "heal":
+		return "회복 %.0f%%" % (float(meta.get("heal_ratio", 0.2)) * 100.0)
+	var stats := GameData.get_character_stat_manager(GameData.get_leader_id())
+	var base_power := stats.mag_atk() if bool(meta.get("uses_magic_power", false)) else stats.phys_atk()
+	var power := base_power * GameData.attack_damage_mult
+	var ratio := float(meta.get("base_dmg_ratio", 0.0)) + float(meta.get("dmg_step", 0.0)) * float(level - 1)
+	var multiplier := _preview_skill_bonus_multiplier(meta)
+	var sequence := PackedFloat32Array(meta.get("effect_sequence_damage_ratios", PackedFloat32Array()))
+	var damage := power * ratio * multiplier
+	if not sequence.is_empty():
+		var base_ratio := maxf(0.001, float(meta.get("base_dmg_ratio", 1.0)))
+		var total_ratio := 0.0
+		for hit_ratio in sequence:
+			total_ratio += float(hit_ratio) * ratio / base_ratio
+		damage = power * total_ratio * multiplier
+	return "%.0f" % damage
 
 func close():
 	if skill_preview:

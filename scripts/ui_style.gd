@@ -311,6 +311,17 @@ static func apply_button(button: Button, accent: bool = false):
 	button.add_theme_font_size_override("font_size", 15)
 	button.focus_mode = Control.FOCUS_ALL
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	if not button.has_meta("_sfx_click_bound"):
+		button.pressed.connect(func(): play_sfx("ui_click"))
+		button.set_meta("_sfx_click_bound", true)
+
+static func play_sfx(sound_id: String, volume_db: float = 0.0) -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or tree.root == null:
+		return
+	var sfx := tree.root.get_node_or_null("SfxManager")
+	if sfx and sfx.has_method("play"):
+		sfx.play(sound_id, volume_db)
 
 static func make_label(text: String, size: int = 14, color: Color = IVORY) -> Label:
 	var label := Label.new()
@@ -330,6 +341,78 @@ static func make_button(text: String, min_size: Vector2 = Vector2(140, 44), acce
 	button.text = text
 	button.custom_minimum_size = min_size
 	apply_button(button, accent)
+	return button
+
+static func make_clean_button(text: String, min_size: Vector2 = Vector2(140, 44), selected: bool = false, accent: bool = false) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size = min_size
+	button.focus_mode = Control.FOCUS_ALL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_size_override("font_size", 18)
+	style_clean_button(button, selected, accent)
+	if not button.has_meta("_sfx_click_bound"):
+		button.pressed.connect(func(): play_sfx("ui_click"))
+		button.set_meta("_sfx_click_bound", true)
+	return button
+
+static func style_clean_button(button: Button, selected: bool = false, accent: bool = false) -> void:
+	var face := CTA if accent else (SELECTED if selected else INK_SOFT)
+	var edge := CTA_EDGE if accent else (AMBER if selected else STEEL)
+	for state in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var state_face := face
+		if state == "hover":
+			state_face = face.lightened(0.10)
+		elif state == "pressed":
+			state_face = face.darkened(0.12)
+		elif state == "disabled":
+			state_face = face.darkened(0.35)
+		var style := frame(state_face, edge, 7, 1)
+		style.shadow_size = 1
+		style.shadow_offset = Vector2.ZERO
+		button.add_theme_stylebox_override(state, style)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(state, IVORY)
+	button.add_theme_color_override("font_disabled_color", MUTED)
+
+static func attention_badge(diameter: float = 30.0) -> PanelContainer:
+	var badge := PanelContainer.new()
+	badge.custom_minimum_size = Vector2(diameter, diameter)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := frame(Color("#a63f35"), Color("#f6ba70"), 99, 2)
+	style.content_margin_left = 0
+	style.content_margin_top = 0
+	style.content_margin_right = 0
+	style.content_margin_bottom = 0
+	style.shadow_size = 2
+	style.shadow_color = Color(0.08, 0.01, 0.0, 0.65)
+	badge.add_theme_stylebox_override("panel", style)
+	var label := make_label("!", maxi(15, roundi(diameter * 0.62)), IVORY)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.add_child(label)
+	return badge
+
+static func attention_button(diameter: float = 30.0) -> Button:
+	var button := Button.new()
+	button.text = "!"
+	diameter = maxf(32.0, diameter)
+	button.custom_minimum_size = Vector2(diameter, diameter)
+	button.tooltip_text = "설명 보기"
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.add_theme_font_size_override("font_size", maxi(17, roundi(diameter * 0.58)))
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var face := Color("#30251f") if state != "hover" else Color("#4a3024")
+		var state_style := frame(face, Color("#e7a951"), 99, 2)
+		state_style.content_margin_left = 0
+		state_style.content_margin_top = 0
+		state_style.content_margin_right = 0
+		state_style.content_margin_bottom = 0
+		state_style.shadow_size = 1
+		button.add_theme_stylebox_override(state, state_style)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
+		button.add_theme_color_override(state, GOLD_BRIGHT)
 	return button
 
 static func make_panel(bg: Color = INK) -> PanelContainer:
@@ -372,3 +455,13 @@ static func fit_modal(panel: Control, maximum_size: Vector2, padding: Vector2 = 
 		panel.offset_top = -target.y * 0.5
 		panel.offset_bottom = target.y * 0.5
 	return portrait
+
+static func fit_centered_panel(panel: Control, maximum_size: Vector2, padding: Vector2 = Vector2(16, 16)) -> bool:
+	var viewport_size := panel.get_viewport().get_visible_rect().size
+	var safe := safe_insets(panel.get_viewport())
+	var target := Vector2(
+		minf(maximum_size.x, viewport_size.x - safe.x - safe.z - padding.x * 2.0),
+		minf(maximum_size.y, viewport_size.y - safe.y - safe.w - padding.y * 2.0)
+	)
+	panel.custom_minimum_size = Vector2(maxf(1.0, target.x), maxf(1.0, target.y))
+	return viewport_size.y >= viewport_size.x

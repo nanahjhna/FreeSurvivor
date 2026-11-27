@@ -98,6 +98,7 @@ const RANGED_AIM_TURN_SPEED := 17.0
 var _has_ranged_weapon := false
 var _gait := "Idle"
 var _gait_rate := 1.0
+var _last_requested_gait := ""
 var _walk_reference_speed := 2.7
 var _run_reference_speed := 6.8
 var _attack_legs: MovingAttackLegs
@@ -114,8 +115,9 @@ func _ready():
 	first_person_mode = false
 	if character_model:
 		character_model.visible = true
-	_create_head_hp_bar()
-	hp_changed.connect(_update_head_hp_bar)
+		# 임시 비활성화: 영웅 머리 위 HP바는 전투 화면 확인 후 다시 활성화합니다.
+		# _create_head_hp_bar()
+		# hp_changed.connect(_update_head_hp_bar)
 	refresh_persistent_stats()
 	collision_layer = 1 # Layer 1: Player
 	collision_mask = 35 # Layer 1: Player, Layer 2: Enemies, Layer 6: Environment
@@ -284,7 +286,10 @@ func _animate_character(delta: float, horizontal_speed: float) -> void:
 	var playback_rate := _gait_rate if _gait != "Idle" else 1.0
 	if not is_equal_approx(model_animation_player.speed_scale, playback_rate):
 		model_animation_player.speed_scale = playback_rate
-	_play_model_animation(_gait)
+	var desired_clip := str(model_clips.get(_gait, ""))
+	if _last_requested_gait != _gait or str(model_animation_player.current_animation) != desired_clip or not model_animation_player.is_playing():
+		_last_requested_gait = _gait
+		_play_model_animation(_gait)
 
 
 func set_character_appearance(character_id: String):
@@ -309,6 +314,7 @@ func set_character_appearance(character_id: String):
 	_ranged_attack_busy = false
 	_gait = "Idle"
 	_gait_rate = 1.0
+	_last_requested_gait = ""
 	_attack_legs = null
 	_standing_attack_direction = Vector3.ZERO
 	_pending_ranged_shots.clear()
@@ -784,7 +790,7 @@ func _apply_incoming_damage(amount: float, defense: float, is_magic: bool = fals
 		current_hp = max_hp * 0.5
 	GameData.player_current_hp = current_hp
 	emit_signal("hp_changed", current_hp, max_hp)
-	_show_damage_popup(reduced_damage, false, false)
+	_show_damage_popup(reduced_damage, false, false, "", true)
 	if current_hp <= 0.0:
 		die()
 	elif reduced_damage > 0.0:
@@ -798,10 +804,9 @@ func _flash_red():
 	_hit_flash_tween.tween_property(visual_root, "scale", Vector3(1.15, 0.85, 1.15), 0.08)
 	_hit_flash_tween.tween_property(visual_root, "scale", Vector3.ONE, 0.12)
 
-func _show_damage_popup(amount: float, is_crit: bool = false, is_heal: bool = false, custom_text: String = ""):
-	var popup_scene = load("res://scenes/effects/damage_number.tscn")
-	if popup_scene:
-		var popup = popup_scene.instantiate()
+func _show_damage_popup(amount: float, is_crit: bool = false, is_heal: bool = false, custom_text: String = "", is_incoming: bool = false):
+	if damage_number_scene:
+		var popup = damage_number_scene.instantiate()
 		get_tree().current_scene.add_child(popup)
 		popup.global_position = global_position + Vector3(0, 1.8, 0)
 		if custom_text != "":
@@ -809,8 +814,12 @@ func _show_damage_popup(amount: float, is_crit: bool = false, is_heal: bool = fa
 			if lbl:
 				lbl.text = custom_text
 				lbl.modulate = Color(1.0, 0.8, 0.1)
-		else:
-			popup.setup(amount, is_crit, is_heal)
+			else:
+				popup.setup(amount, is_crit, is_heal)
+				if is_incoming:
+					var incoming_label := popup.get_node_or_null("Label3D") as Label3D
+					if incoming_label:
+						incoming_label.modulate = Color(1.0, 0.08, 0.08)
 
 func die():
 	if is_dead:

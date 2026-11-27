@@ -14,6 +14,7 @@ signal died(monster)
 @export var model_faces_negative_z: bool = false
 
 const DAMAGE_NUMBER_SCENE: PackedScene = preload("res://scenes/effects/damage_number.tscn")
+const XP_GEM_SCENE: PackedScene = preload("res://scenes/effects/xp_gem.tscn")
 
 var current_hp: float
 var target: Node3D = null
@@ -136,6 +137,10 @@ func take_damage(amount: float, is_crit: bool = false, source: String = "other")
 	current_hp -= amount
 	_show_damage_popup(amount, is_crit)
 	_flash_hit()
+	var hit_sfx := get_tree().root.get_node_or_null("SfxManager")
+	if hit_sfx and hit_sfx.has_method("play_3d"):
+		var hit_sound := "hit_crit" if is_crit else ("hit_heavy" if amount >= 25.0 else "hit_light")
+		hit_sfx.play_3d(hit_sound, global_position, -5.0)
 	
 	if current_hp <= 0.0:
 		die()
@@ -177,6 +182,9 @@ func die():
 	GameManager.add_kill()
 	var monster_definition := MonsterManager.get_definition(monster_id)
 	var is_boss := bool(monster_definition.get("is_boss", false))
+	var death_sfx := get_tree().root.get_node_or_null("SfxManager")
+	if death_sfx and death_sfx.has_method("play_3d"):
+		death_sfx.play_3d("boss_defeat" if is_boss else "enemy_death", global_position, -4.0)
 	var boss_reward_multiplier := float(get_meta("boss_reward_multiplier", 1.0)) if is_boss else 1.0
 	var gold_drop := int(monster_definition.get("gold", 25))
 	GameManager.add_dungeon_gold(int(round(gold_drop * (1.0 + GameData.get_survival_bonus("gold")) * boss_reward_multiplier)))
@@ -203,11 +211,10 @@ func die():
 		queue_free()
 
 func _spawn_xp_gem():
-	var gem_scene = load("res://scenes/effects/xp_gem.tscn")
-	if gem_scene:
+	if XP_GEM_SCENE:
 		var monster_definition := MonsterManager.get_definition(monster_id)
 		var is_boss := bool(monster_definition.get("is_boss", false))
-		var gem := gem_scene.instantiate() as PickupGem
+		var gem := XP_GEM_SCENE.instantiate() as PickupGem
 		var boss_bonus := 1.0 + GameData.get_survival_bonus("boss_xp") if is_boss else 1.0
 		if is_boss:
 			boss_bonus *= float(get_meta("boss_reward_multiplier", 1.0))
